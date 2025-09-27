@@ -6,6 +6,7 @@ data/
 /.quarto/
 **/*.quarto_ipynb
 docs/
+_output/
 .jupyter_cache/
 figures/
 _freeze/

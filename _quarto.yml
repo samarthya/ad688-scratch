@@ -1,31 +1,32 @@
 project:
   type: website
-  title: "Job Market Trends and Salary Analysis"
-  output-dir: docs
+  title: "Technology Job Market: Salary Disparity Analysis"
+  output-dir: _output
+  preview:
+    port: 4200
+    browser: true
+    watch-inputs: true
+    navigate: true
 
 website:
-  title: "Career Analytics: Job Market Trends & Compensation Analysis"
-  description: "Data-driven insights for career planning in the evolving job market"
+  title: "Salary Disparity Analysis: Technology Job Market"
+  description: "Investigating compensation inequities in the technology industry"
   
   navbar:
-    title: "Career Analytics"
+    title: "Salary Disparity Research"
     left:
       - href: index.qmd
         text: Home
-      - href: data-analysis.qmd
-        text: Data Analysis
       - href: notebooks/job_market_skill_analysis.ipynb
-        text: Skills Analysis
+        text: Interactive Analysis
       - href: salary-analysis.qmd
-        text: Salary Analysis
+        text: Salary Research
+      - href: data-analysis.qmd
+        text: Data Processing
       - href: regional-trends.qmd
-        text: Regional Trends
-      - href: ai-vs-traditional.qmd
-        text: AI vs Traditional
+        text: Geographic Analysis
       - href: remote-work.qmd
-        text: Remote Work
-      - href: career-roadmap.qmd
-        text: Career Roadmap
+        text: Remote Work Impact
     right:
       - icon: github
         href: https://github.com/samarthya/ad688-scratch
@@ -35,36 +36,26 @@ website:
     style: "docked"
     search: true
     contents:
-      - section: "Introduction"
+      - section: "Research Overview"
         contents:
           - index.qmd
           - data-methodology.qmd
-      - section: "Data Cleaning & Exploration" 
-        contents:
-          - data-analysis.qmd
-      - section: "Exploratory Data Analysis (EDA)"
-        contents:
-          - salary-analysis.qmd
-          - regional-trends.qmd
-          - ai-vs-traditional.qmd
-          - remote-work.qmd
-      - section: "Skill Gap Analysis"
+      - section: "Salary Disparity Analysis" 
         contents:
           - notebooks/job_market_skill_analysis.ipynb
-          - skills-analysis.qmd
-      - section: "ML & NLP Methods"
+          - salary-analysis.qmd
+      - section: "Supporting Analysis"
         contents:
-          - technical-approach.qmd
-      - section: "Career Planning"
-        contents:
-          - career-roadmap.qmd
+          - regional-trends.qmd
+          - remote-work.qmd
+          - data-analysis.qmd
 
 format:
   html:
-    theme: 
-      - cosmo
-      - custom.scss
-    css: styles.css
+    theme: flatly
+    css: 
+      - styles.css
+      - navigation.css
     toc: true
     toc-depth: 3
     number-sections: true
