@@ -1,0 +1,226 @@
+/* Custom CSS for Quarto website */
+
+/* Color scheme */
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --accent-color: #e74c3c;
+  --text-color: #2c3e50;
+  --light-bg: #ecf0f1;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Typography */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Navigation */
+.navbar {
+  background-color: var(--primary-color) !important;
+  box-shadow: var(--card-shadow);
+}
+
+.navbar-brand, .nav-link {
+  color: white !important;
+}
+
+.nav-link:hover {
+  color: var(--secondary-color) !important;
+}
+
+/* Content cards */
+.card {
+  border: none;
+  box-shadow: var(--card-shadow);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: var(--light-bg);
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+}
+
+/* Callout boxes */
+.callout {
+  border-left: 4px solid var(--secondary-color);
+  background-color: #f8f9fa;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.callout-important {
+  border-left-color: var(--accent-color);
+  background-color: #fdf2f2;
+}
+
+.callout-note {
+  border-left-color: var(--secondary-color);
+  background-color: #f0f7ff;
+}
+
+.callout-warning {
+  border-left-color: #f39c12;
+  background-color: #fffbf0;
+}
+
+/* Code blocks */
+pre {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+code {
+  background-color: #f1f3f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* Tables */
+.table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.table th {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem;
+}
+
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+/* Buttons and interactive elements */
+.btn-primary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #2980b9;
+}
+
+/* Sidebar styling */
+.sidebar {
+  background-color: var(--light-bg);
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar .nav-link {
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+}
+
+.sidebar .nav-link:hover {
+  background-color: white;
+  color: var(--secondary-color);
+}
+
+.sidebar .nav-link.active {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+/* Figure captions */
+.figure-caption {
+  font-style: italic;
+  color: #6c757d;
+  font-size: 0.9em;
+  margin-top: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+  
+  .table {
+    font-size: 0.9em;
+  }
+  
+  .callout {
+    padding: 0.75rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar, .sidebar {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt;
+  }
+  
+  .callout {
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+}
+
+/* Custom utility classes */
+.text-center {
+  text-align: center;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.highlight {
+  background-color: #fff3cd;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.metric-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  margin: 0.5rem;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
