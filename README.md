@@ -60,7 +60,7 @@ This project explores how job seekers can position themselves effectively given 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/project-from-scratch.git
+git clone https://github.com/samarthya/ad688-scratch
 cd project-from-scratch
 ```
 

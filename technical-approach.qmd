@@ -101,4 +101,4 @@ format:
 
 ---
 
-*For implementation details and code examples, visit our [GitHub repository](https://github.com/your-username/project-from-scratch)*
+*For implementation details and code examples, visit our [GitHub repository](https://github.com/samarthya/ad688-scratch)*

@@ -94,4 +94,3 @@ cd dashboards && python career_dashboard.py
 The project is now ready for data ingestion and analysis development. You can begin working with your Lightcast dataset to generate insights about salary trends, AI career premiums, and regional compensation patterns.
 
 **Website URL**: http://localhost:4200/
-**Project Location**: `/home/samarthya/sourcebox/github.com/project-from-scratch/`

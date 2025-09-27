@@ -83,4 +83,4 @@ format:
 
 ---
 
-*Technical implementation details available in project [GitHub repository](https://github.com/your-username/project-from-scratch)*
+*Technical implementation details available in project [GitHub repository](https://github.com/samarthya/ad688-scratch)*

@@ -1,0 +1,50 @@
+/*-- scss:defaults --*/
+// Custom variables
+$primary: #2c3e50;
+$secondary: #3498db;
+$accent: #e74c3c;
+$light: #ecf0f1;
+$body-bg: #ffffff;
+$body-color: #2c3e50;
+$font-family-sans-serif: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+/*-- scss:rules --*/
+// Custom CSS rules
+.callout {
+  border-left: 4px solid $secondary;
+  background-color: #f8f9fa;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.callout-important {
+  border-left-color: $accent;
+  background-color: #fdf2f2;
+}
+
+.callout-note {
+  border-left-color: $secondary;
+  background-color: #f0f7ff;
+}
+
+.callout-warning {
+  border-left-color: #f39c12;
+  background-color: #fffbf0;
+}
+
+.metric-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+  margin: 0.5rem;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: $secondary;
+  margin-bottom: 0.5rem;
+}

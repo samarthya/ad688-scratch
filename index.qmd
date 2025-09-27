@@ -92,4 +92,4 @@ Our analysis is based on:
 
 ---
 
-*This research is conducted as part of a data science capstone project. All analysis code and datasets are available in our [GitHub repository](https://github.com/your-username/project-from-scratch).*
+*This research is conducted as part of a data science capstone project. All analysis code and datasets are available in our [GitHub repository](https://github.com/samarthya/ad688-scratch).*

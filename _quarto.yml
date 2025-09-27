@@ -28,7 +28,7 @@ website:
         text: Career Roadmap
     right:
       - icon: github
-        href: https://github.com/samarthya/project-from-scratch
+        href: https://github.com/samarthya/ad688-scratch
         aria-label: GitHub
 
   sidebar:
