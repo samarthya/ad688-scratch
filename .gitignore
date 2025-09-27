@@ -3,3 +3,5 @@ venv/
 .quarto
 data/
 **/__pycache__
+/.quarto/
+**/*.quarto_ipynb
