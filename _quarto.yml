@@ -1,0 +1,86 @@
+project:
+  type: website
+  title: "Job Market Trends and Salary Analysis"
+  output-dir: docs
+
+website:
+  title: "Career Analytics: Job Market Trends & Compensation Analysis"
+  description: "Data-driven insights for career planning in the evolving job market"
+  
+  navbar:
+    title: "Career Analytics"
+    left:
+      - href: index.qmd
+        text: Home
+      - href: data-analysis.qmd
+        text: Data Analysis
+      - href: notebooks/job_market_skill_analysis.ipynb
+        text: Skills Analysis
+      - href: salary-analysis.qmd
+        text: Salary Analysis
+      - href: regional-trends.qmd
+        text: Regional Trends
+      - href: ai-vs-traditional.qmd
+        text: AI vs Traditional
+      - href: remote-work.qmd
+        text: Remote Work
+      - href: career-roadmap.qmd
+        text: Career Roadmap
+    right:
+      - icon: github
+        href: https://github.com/samarthya/project-from-scratch
+        aria-label: GitHub
+
+  sidebar:
+    style: "docked"
+    search: true
+    contents:
+      - section: "Introduction"
+        contents:
+          - index.qmd
+          - data-methodology.qmd
+      - section: "Data Cleaning & Exploration" 
+        contents:
+          - data-analysis.qmd
+      - section: "Exploratory Data Analysis (EDA)"
+        contents:
+          - salary-analysis.qmd
+          - regional-trends.qmd
+          - ai-vs-traditional.qmd
+          - remote-work.qmd
+      - section: "Skill Gap Analysis"
+        contents:
+          - notebooks/job_market_skill_analysis.ipynb
+          - skills-analysis.qmd
+      - section: "ML & NLP Methods"
+        contents:
+          - technical-approach.qmd
+      - section: "Career Planning"
+        contents:
+          - career-roadmap.qmd
+
+format:
+  html:
+    theme: 
+      - cosmo
+      - custom.scss
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    highlight-style: github
+    code-fold: true
+    code-tools: true
+    fig-width: 10
+    fig-height: 6
+    fig-dpi: 300
+    
+bibliography: references.bib
+csl: csl/econometrica.csl
+cite-method: citeproc
+
+execute:
+  freeze: auto
+  cache: true
+  warning: false
+  message: false
