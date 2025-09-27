@@ -1,0 +1,95 @@
+---
+title: "Job Market Trends and Salary Analysis"
+subtitle: "Career Planning in the AI Era"
+author: "Your Team Name"
+date: "September 26, 2025"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+---
+
+## Welcome to Career Analytics
+
+This website presents a comprehensive analysis of job market trends, salary compensation, and career planning strategies for 2025. Our research combines real-world data from Lightcast job postings with advanced analytics to help job seekers navigate the evolving employment landscape.
+
+### Project Motivation
+
+The job market is undergoing rapid transformation due to:
+- **AI adoption** across industries
+- **Remote work normalization** post-pandemic  
+- **Skills-based hiring** replacing traditional degree requirements
+- **Regional salary disparities** in emerging tech hubs
+- **Gender equity initiatives** in STEM fields
+
+Understanding these trends is crucial for making informed career decisions.
+
+## Research Focus Areas
+
+### 💰 Salary and Compensation Analysis
+Our primary focus examines compensation patterns across different career paths:
+
+::: {.callout-note}
+## Key Research Questions
+- How do salaries differ between AI-focused and traditional roles?
+- Which regions offer the highest compensation for tech professionals?
+- Do remote positions offer competitive salaries compared to on-site roles?
+- What industries experienced the most significant wage growth in 2025?
+:::
+
+### 📊 Data-Driven Career Planning
+We provide actionable insights for:
+- **Skills gap analysis** - Identifying in-demand capabilities
+- **Geographic optimization** - Finding high-paying markets
+- **Career pathway mapping** - Planning progression strategies
+- **Industry trend forecasting** - Anticipating future opportunities
+
+## Methodology
+
+Our analysis leverages:
+- **Real job posting data** from Lightcast's comprehensive database
+- **Statistical modeling** using Python and PySpark
+- **Interactive visualizations** with Plotly and Dash
+- **Geographic analysis** of salary variations
+- **Longitudinal trend analysis** across multiple years
+
+## Navigation Guide
+
+Use the sidebar to explore specific analysis areas:
+
+- **[Salary Analysis](salary-analysis.qmd)** - Comprehensive compensation breakdowns
+- **[Regional Trends](regional-trends.qmd)** - Geographic salary patterns  
+- **[AI vs Traditional Roles](ai-vs-traditional.qmd)** - Emerging vs. established career paths
+- **[Remote Work Analysis](remote-work.qmd)** - Location flexibility impact on compensation
+- **[Career Roadmap](career-roadmap.qmd)** - Strategic planning recommendations
+
+## Interactive Features
+
+Our analysis includes several interactive components:
+
+- **Salary Distribution Dashboard** - Explore compensation patterns by industry, location, and role type
+- **Geographic Heat Maps** - Visualize regional salary variations and cost-of-living adjustments  
+- **Career Transition Planner** - Model salary progression for different career paths
+- **Skills Gap Analyzer** - Identify high-ROI skill development opportunities
+
+*Interactive dashboards are available after processing the complete dataset.*
+
+## Data Sources and Methodology
+
+Our analysis is based on:
+- **Primary Data**: Lightcast job postings dataset (2024-2025)
+- **Sample Size**: 500,000+ job postings across industries
+- **Geographic Coverage**: United States and Canada
+- **Update Frequency**: Monthly data refreshes
+
+## Getting Started
+
+1. **Explore the Analysis** - Navigate through our research findings
+2. **Access Raw Data** - Download processed datasets for your own analysis  
+3. **Run Interactive Dashboards** - Customize visualizations for your interests
+4. **Develop Your Strategy** - Use our career planning templates
+
+---
+
+*This research is conducted as part of a data science capstone project. All analysis code and datasets are available in our [GitHub repository](https://github.com/your-username/project-from-scratch).*

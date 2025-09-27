@@ -1,0 +1,5 @@
+.venv
+venv/
+.quarto
+data/
+**/__pycache__
