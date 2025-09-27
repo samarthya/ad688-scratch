@@ -110,9 +110,9 @@ If you use this analysis in your research, please cite:
 ```bibtex
 @misc{jobmarket2025,
   title={Job Market Trends and Salary Analysis: Career Planning in the AI Era},
-  author={[Your Team Names]},
+  author={"Saurabh Sharma"},
   year={2025},
-  url={https://your-username.github.io/project-from-scratch/}
+  url={https://github.io/samarthya/ad688scratch/}
 }
 ```
 
