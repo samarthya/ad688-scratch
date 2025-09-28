@@ -1,6 +1,6 @@
 # Technology Job Market: Salary Disparalysis
 
-A comprehensive data tigation into salary disparities within the technology industry using large-scale job market data (72K+ records) from Lightcast.
+A comprehensive investigation into salary disparities within the technology industry using large-scale job market data (72K+ records) from Lightcast.
 
 ## Research Objective
 
