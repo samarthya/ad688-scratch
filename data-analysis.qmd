@@ -34,7 +34,7 @@ execute:
 
 This analysis provides comprehensive data processing and visualization of the Lightcast job market dataset using PySpark 4.0.1 for big data processing and Plotly 6.3.0 with Kaleido 1.1.0 for interactive and static visualizations.
 
-**📊 Data Source**: Uses real processed job market data from our PySpark pipeline (996 records) instead of synthetic sample data, ensuring authentic insights and analysis.
+**Data Source**: Uses real processed job market data from our PySpark pipeline (996 records) instead of synthetic sample data, ensuring authentic insights and analysis.
 
 ## Data Processing Pipeline
 
@@ -84,12 +84,12 @@ render_mode = configure_plotly_renderer()
 print(f"Plotly renderer configured for: {render_mode} mode")
 
 # Initialize our analyzer using the existing class
-print("🚀 Initializing SparkJobAnalyzer...")
+print("Initializing SparkJobAnalyzer...")
 analyzer = create_spark_analyzer()
 spark = analyzer.spark
 
-print(f"✅ Spark Version: {spark.version}")
-print(f"✅ Analyzer ready with {analyzer.job_data.count():,} records")
+print(f"Spark Version: {spark.version}")
+print(f"Analyzer ready with {analyzer.job_data.count():,} records")
 ```
 
 ### Schema Definition and Data Loading
@@ -105,8 +105,8 @@ print(f"✅ Analyzer ready with {analyzer.job_data.count():,} records")
 # Data is already loaded by SparkJobAnalyzer in the setup step
 df_raw = analyzer.job_data
 
-print(f"✅ Data loaded via SparkJobAnalyzer: {df_raw.count():,} records")
-print("\n📋 Data Schema:")
+print(f"Data loaded via SparkJobAnalyzer: {df_raw.count():,} records")
+print("\nData Schema:")
 df_raw.printSchema()
 
 print("\n📂 Sample Records:")
@@ -114,7 +114,7 @@ df_raw.show(5, truncate=False)
 
 # Get overall statistics using our analyzer
 stats = analyzer.get_overall_statistics()
-print("\n📈 Dataset Statistics:")
+print("\nDataset Statistics:")
 for key, value in stats.items():
     print(f"  {key}: {value:,}")
 ```
@@ -133,7 +133,7 @@ def load_job_data(file_path: str = None):
     if Path(processed_path).exists():
         print(f"Loading processed data from: {processed_path}")
         df = spark.read.parquet(processed_path)
-        print(f"✅ Real processed data loaded: {df.count():,} records")
+        print(f"Real processed data loaded: {df.count():,} records")
         return df
     
     elif file_path and Path(file_path).exists():
@@ -147,8 +147,8 @@ def load_job_data(file_path: str = None):
         return df
     
     else:
-        print("❌ No processed or raw data found!")
-        print("💡 Run the data processing pipeline first to create processed data")
+        print("Error: No processed or raw data found!")
+        print("Tip: Run the data processing pipeline first to create processed data")
         return None
 
 # Using real processed data - no need for synthetic data generation!
@@ -157,14 +157,14 @@ def load_job_data(file_path: str = None):
 df_raw = load_job_data()
 
 if df_raw is not None:
-    print(f"✅ Successfully loaded {df_raw.count():,} records")
-    print("\n📋 Data Schema:")
+    print(f"Successfully loaded {df_raw.count():,} records")
+    print("\nData Schema:")
     df_raw.printSchema()
     
-    print("\n📊 Sample Records:")
+    print("\nSample Records:")
     df_raw.show(5, truncate=False)
 else:
-    print("❌ Failed to load data - check data processing pipeline")
+    print("Error: Failed to load data - check data processing pipeline")
 ```
 
 ## Data Quality Assessment
@@ -232,24 +232,24 @@ print("=== DATA CLEANING (Class-Based) ===")
 if df_raw is not None:
     # Check if data is already processed (has cleaned columns)
     if "SALARY_AVG_IMPUTED" in df_raw.columns:
-        print("✅ Data already processed - using existing cleaned data")
+        print("Data already processed - using existing cleaned data")
         df_processed = df_raw
     else:
-        print("🔧 Applying JobMarketDataProcessor cleaning pipeline...")
+        print("Applying JobMarketDataProcessor cleaning pipeline...")
         
         try:
             # Use our comprehensive processor
             df_processed = processor.clean_job_data()
             
             if df_processed is None:
-                print("⚠️ Processor returned None, using analyzer data")
+                print("Warning: Processor returned None, using analyzer data")
                 df_processed = df_raw
         except AttributeError:
-            print("⚠️ Cleaning method not available, using processed data as-is")
+            print("Warning: Cleaning method not available, using processed data as-is")
             df_processed = df_raw
     
     # Show sample of processed data using our display format
-    print(f"\n📋 Processed Data Sample ({df_processed.count():,} records):")
+    print(f"\nProcessed Data Sample ({df_processed.count():,} records):")
     
     # Select appropriate columns based on what's available
     available_cols = df_processed.columns
@@ -274,7 +274,7 @@ if df_raw is not None:
         print("Showing first few columns:")
         df_processed.select(*available_cols[:5]).show(5, truncate=False)
 else:
-    print("❌ Cannot proceed without data - check data loading")
+    print("Error: Cannot proceed without data - check data loading")
 ```
 
 ## Exploratory Data Analysis
@@ -297,17 +297,17 @@ print(f"Salary Range: ${stats['min_salary']:,} - ${stats['max_salary']:,}")
 print(f"25th-75th Percentile: ${stats['salary_25th']:,} - ${stats['salary_75th']:,}")
 
 # Industry analysis using our analyzer
-print("\n🏢 Top Industries by Median Salary:")
+print("\nTop Industries by Median Salary:")
 industry_analysis = analyzer.get_industry_analysis(top_n=8)
 print(industry_analysis.to_string(index=False))
 
 # Experience level analysis
-print("\n🎓 Experience Level Distribution:")
+print("\nExperience Level Distribution:")
 experience_analysis = analyzer.get_experience_analysis()
 print(experience_analysis.to_string(index=False))
 
 # Geographic analysis
-print("\n🌍 Top Geographic Markets:")
+print("\nTop Geographic Markets:")
 geographic_analysis = analyzer.get_geographic_analysis(top_n=8)
 print(geographic_analysis.to_string(index=False))
 
@@ -318,7 +318,7 @@ print(skills_analysis.to_string(index=False))
 
 # Convert sample to pandas for plotting (smaller sample for performance)
 df_sample = df_processed.sample(fraction=0.05).toPandas()
-print(f"\n📋 Sample data prepared: {len(df_sample):,} records for visualization")
+print(f"\nSample data prepared: {len(df_sample):,} records for visualization")
 ```
 
 ## Interactive Visualizations
@@ -783,7 +783,7 @@ print(f"Comprehensive report saved: {report_path}")
 # Cache the processed DataFrame
 if df_processed is not None:
     df_processed.cache()
-    print(f"\n✅ Analysis complete with {df_processed.count():,} records cached")
+    print(f"\nAnalysis complete with {df_processed.count():,} records cached")
 ```
 
 ## Summary and Architecture Benefits
@@ -792,18 +792,18 @@ if df_processed is not None:
 
 This analysis demonstrates our **"Don't Reinvent the Wheel"** principle using a robust class-based architecture:
 
-**🔄 Key Classes Utilized:**
+**Key Classes Utilized:**
 1. **SparkJobAnalyzer**: SQL-based analysis engine replacing manual DataFrame operations
 2. **JobMarketDataProcessor**: Comprehensive data processing and quality assessment  
 3. **SalaryVisualizer**: Consistent visualization utilities with graceful fallbacks
 
-**🎨 UML Architecture Benefits:**
+**UML Architecture Benefits:**
 - **Single Responsibility**: Each class handles specific domain concerns
 - **Dependency Inversion**: Analysis depends on abstractions, not concrete implementations
 - **Interface Segregation**: Clean method interfaces for specific analysis needs
 - **Reusability**: Same classes used across Quarto documents and notebooks
 
-### 📊 Analysis Results
+### Analysis Results
 
 **Key Findings from Real Data Analysis:**
 - **Industry Leaders**: {industry_analysis.iloc[0]['Industry']} leads with ${industry_analysis.iloc[0]['Median Salary']:,} median salary
@@ -811,14 +811,14 @@ This analysis demonstrates our **"Don't Reinvent the Wheel"** principle using a 
 - **Geographic Distribution**: {geographic_analysis.iloc[0]['Location']} offers ${geographic_analysis.iloc[0]['Median Salary']:,} median
 - **Experience Progression**: {len(experience_analysis)} distinct experience levels analyzed
 
-### 🚀 Next Steps
+### Next Steps
 
-1. **🔄 Extend Class Methods**: Add new analysis methods to existing classes
-2. **📈 Dashboard Integration**: Use class results in interactive dashboards  
-3. **📋 Automated Reporting**: Schedule class-based analysis pipelines
-4. **🔍 Advanced Modeling**: Implement ML models using our data infrastructure
+1. **Extend Class Methods**: Add new analysis methods to existing classes
+2. **Dashboard Integration**: Use class results in interactive dashboards  
+3. **Automated Reporting**: Schedule class-based analysis pipelines
+4. **Advanced Modeling**: Implement ML models using our data infrastructure
 
-### 🎨 Design Pattern Success
+### Design Pattern Success
 
 **Before (Manual Functions):** 300+ lines of duplicated data processing code  
 **After (Class-Based):** Reusable methods with consistent interfaces and error handling

@@ -57,7 +57,7 @@ Our primary focus investigates compensation inequities and systematic disparitie
 - How do geographic disparities compare to cost-of-living adjustments?
 :::
 
-### 📊 Data-Driven Career Planning
+### Data-Driven Career Planning
 
 We provide actionable insights for:
 
@@ -92,7 +92,7 @@ Explore our comprehensive salary disparity investigation through interactive vis
 
 ::: {.panel-tabset}
 
-## 💰 Salary Analysis Dashboard
+## Salary Analysis Dashboard
 
 <iframe src="figures/salary_disparity_analysis.html" width="100%" height="650px" frameborder="0"></iframe>
 
@@ -103,7 +103,7 @@ Explore our comprehensive salary disparity investigation through interactive vis
 - **Distribution Insights**: Salary ranges and statistical breakdowns
 - **Company Impact**: Size-based compensation variations
 
-## 📈 Executive Overview
+## Executive Overview
 
 <iframe src="figures/executive_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
 
@@ -114,11 +114,11 @@ Explore our comprehensive salary disparity investigation through interactive vis
 - **Strategic Recommendations**: Data-driven career guidance
 - **Performance Metrics**: Key disparity indicators
 
-## 📊 Interactive Analysis
+## Interactive Analysis
 
 ::: {.callout-note}
 ## 🔗 Interactive Jupyter Notebook Analysis
-**[📊 Open Full Interactive Analysis →](notebooks/job_market_skill_analysis.html){target="_blank"}**
+**[Open Full Interactive Analysis →](notebooks/job_market_skill_analysis.html){target="_blank"}**
 
 *Click the link above to access the complete interactive analysis in a new window.*
 :::
@@ -151,21 +151,21 @@ Our disparity analysis employs:
 
 Explore our salary disparity research:
 
-- **[📊 Salary Analysis](salary-analysis.qmd)** - Detailed compensation disparity investigation
-- **[📈 Skills Analysis](notebooks/job_market_skill_analysis.ipynb)** - Interactive Jupyter analysis
+- **[Salary Analysis](salary-analysis.qmd)** - Detailed compensation disparity investigation
+- **[Skills Analysis](notebooks/job_market_skill_analysis.ipynb)** - Interactive Jupyter analysis
 - **[🗺️ Regional Trends](regional-trends.qmd)** - Geographic salary variations
 - **[🏠 Remote Work Impact](remote-work.qmd)** - Location flexibility effects
-- **[📋 Data Processing](data-analysis.qmd)** - Technical methodology and data pipeline
+- **[Data Processing](data-analysis.qmd)** - Technical methodology and data pipeline
 
 ## Key Insights for Action
 
-### 🎯 For Job Seekers
+### For Job Seekers
 - **Understand disparity patterns** to negotiate fairly
 - **Target companies** with equitable compensation practices  
 - **Leverage geographic arbitrage** opportunities
 - **Invest in high-ROI skills** to minimize gaps
 
-### 🏢 For Organizations
+### For Organizations
 - **Audit salary structures** for systematic inequities
 - **Implement transparent** progression frameworks
 - **Address education bias** in compensation decisions

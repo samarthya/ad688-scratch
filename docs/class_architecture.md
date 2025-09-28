@@ -160,22 +160,22 @@ classDiagram
     SparkJobAnalyzer : SQL-based analysis engine
     SparkJobAnalyzer : Replaces pandas operations
     SparkJobAnalyzer : with PySpark SQL queries
-    SparkJobAnalyzer : Status: Implemented
+    SparkJobAnalyzer : Status Implemented
     
     SalaryVisualizer : Lightweight visualization
     SalaryVisualizer : Compatible with existing code
     SalaryVisualizer : Falls back gracefully
-    SalaryVisualizer : Status: Implemented
+    SalaryVisualizer : Status Implemented
     
     JobMarketDataProcessor : Comprehensive processor
     JobMarketDataProcessor : Data quality assessment
     JobMarketDataProcessor : Feature engineering
-    JobMarketDataProcessor : Status: Needs salary pipeline
+    JobMarketDataProcessor : Status Needs salary pipeline
     
     LightcastSchema : Raw 131-column format
-    LightcastSchema : SALARY_FROM/TO → salary_avg_imputed
-    LightcastSchema : NAICS2_NAME → industry_clean
-    LightcastSchema : Status: Documented
+    LightcastSchema : SALARY_FROM/TO to salary_avg_imputed
+    LightcastSchema : NAICS2_NAME to industry_clean
+    LightcastSchema : Status Documented
 ```
 
 ## Key Relationships
