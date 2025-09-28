@@ -111,11 +111,11 @@ COLUMN_MAPPING = {
     'COMPANY': 'company',
     'LOCATION': 'location',
     
-    # Salary Data (Key Challenge - Multiple Sources)
-    'SALARY_FROM': 'salary_min',      # ~44% coverage
-    'SALARY_TO': 'salary_max',        # ~44% coverage  
-    'SALARY': 'salary_single',        # ~41% coverage
-    'ORIGINAL_PAY_PERIOD': 'pay_period',
+    # Salary Data (Key Challenge - Multiple Sources + Standardization)
+    'SALARY_FROM': 'salary_min',      # Coverage varies by industry
+    'SALARY_TO': 'salary_max',        # Coverage varies by industry  
+    'SALARY': 'salary_single',        # Direct salary when available
+    'ORIGINAL_PAY_PERIOD': 'pay_period',  # CRITICAL: hourly/monthly/yearly standardization
     
     # Industry & Experience
     'NAICS2_NAME': 'industry',        # 2-digit NAICS classification
@@ -143,18 +143,83 @@ DERIVED_COLUMNS = [
 
 **Salary Processing Strategy**:
 ```python
-# Multi-source salary imputation logic
+# Multi-source salary imputation with pay period standardization
 def calculate_salary_avg_imputed(row):
+    # Step 1: Get raw salary value using priority hierarchy
+    raw_salary = None
+    
     if pd.notna(row['SALARY']):
-        return row['SALARY']  # Use direct salary if available
+        raw_salary = row['SALARY']
     elif pd.notna(row['SALARY_FROM']) and pd.notna(row['SALARY_TO']):
-        return (row['SALARY_FROM'] + row['SALARY_TO']) / 2  # Average of range
+        raw_salary = (row['SALARY_FROM'] + row['SALARY_TO']) / 2
     elif pd.notna(row['SALARY_FROM']):
-        return row['SALARY_FROM'] * 1.15  # Estimate from minimum
+        raw_salary = row['SALARY_FROM'] * 1.125  # Estimate midpoint
     elif pd.notna(row['SALARY_TO']):
-        return row['SALARY_TO'] * 0.87   # Estimate from maximum
+        raw_salary = row['SALARY_TO'] * 0.889    # Estimate midpoint
     else:
-        return None  # Requires imputation based on industry/experience
+        return None  # Requires hierarchical imputation
+    
+    # Step 2: Standardize to annual salary using ORIGINAL_PAY_PERIOD
+    pay_period = str(row.get('ORIGINAL_PAY_PERIOD', 'yearly')).lower()
+    
+    annual_multipliers = {
+        'yearly': 1,
+        'annual': 1,
+        'year': 1,
+        'monthly': 12,
+        'month': 12,
+        'weekly': 52,
+        'week': 52,
+        'daily': 365,
+        'day': 365,
+        'hourly': 2080,  # 40 hours/week * 52 weeks
+        'hour': 2080
+    }
+    
+    # Find matching multiplier (partial match for flexibility)
+    multiplier = 1  # Default to yearly
+    for period_key, mult in annual_multipliers.items():
+        if period_key in pay_period:
+            multiplier = mult
+            break
+    
+    annual_salary = raw_salary * multiplier
+    
+    # Step 3: Validate reasonable salary range (10K - 1M annually)
+    if 10000 <= annual_salary <= 1000000:
+        return annual_salary
+    else:
+        return None  # Invalid salary, requires imputation
+
+# Hierarchical imputation for missing salary data
+def impute_missing_salaries(df):
+    """Apply multi-level imputation strategy for salary_avg_imputed column"""
+    
+    # Level 1: Industry + Experience level medians
+    industry_exp_medians = df.groupby(['industry_clean', 'experience_level'])['salary_avg_imputed'].median()
+    
+    # Level 2: Industry-only medians (fallback)
+    industry_medians = df.groupby('industry_clean')['salary_avg_imputed'].median()
+    
+    # Level 3: Overall median (final fallback)
+    overall_median = df['salary_avg_imputed'].median()
+    
+    # Apply imputation hierarchy
+    null_mask = df['salary_avg_imputed'].isnull()
+    
+    # Try industry + experience first
+    for idx in df[null_mask].index:
+        industry = df.loc[idx, 'industry_clean'] 
+        exp_level = df.loc[idx, 'experience_level']
+        
+        if (industry, exp_level) in industry_exp_medians:
+            df.loc[idx, 'salary_avg_imputed'] = industry_exp_medians[(industry, exp_level)]
+        elif industry in industry_medians:
+            df.loc[idx, 'salary_avg_imputed'] = industry_medians[industry]
+        else:
+            df.loc[idx, 'salary_avg_imputed'] = overall_median
+    
+    return df
 ```
 
 ```python
