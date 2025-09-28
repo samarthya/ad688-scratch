@@ -2,23 +2,58 @@
 
 ## Setup Instructions
 
-### 1. Python Environment Setup
+### 1. Prerequisites
+
+#### Java Installation (Required for PySpark)
+
+**Linux/Ubuntu:**
+```bash
+# Install OpenJDK 11 or 17 (recommended for PySpark 4.0.1)
+sudo apt update
+sudo apt install openjdk-11-jdk
+
+# Verify installation
+java -version
+```
+
+**macOS:**
+```bash
+# Using Homebrew
+brew install openjdk@11
+
+# Add to PATH (add to ~/.bashrc or ~/.zshrc)
+export PATH="/opt/homebrew/opt/openjdk@11/bin:$PATH"
+```
+
+**Windows:**
+- Download and install OpenJDK from [Adoptium](https://adoptium.net/)
+- Add Java to system PATH
+
+### 2. Python Environment Setup
 
 ```bash
 # Create virtual environment
-python -m venv career_analytics_env
+python -m venv .venv
 
 # Activate environment (Linux/Mac)
-source career_analytics_env/bin/activate
+source .venv/bin/activate
 
 # Activate environment (Windows)
-career_analytics_env\Scripts\activate
+.venv\Scripts\activate
 
-# Install dependencies
+# Upgrade pip
+pip install --upgrade pip
+
+# Install dependencies (includes PySpark 4.0.1)
 pip install -r requirements.txt
 ```
 
-### 2. Quarto Installation
+**Important for PySpark:**
+- Virtual environment name should be `.venv` (not `venv`) for consistency
+- Ensure Java is available in PATH before installing PySpark
+- If you encounter "Connection refused" errors, see troubleshooting section below
+
+### 3. Quarto Installation
 
 Install Quarto from: https://quarto.org/docs/get-started/
 
@@ -27,10 +62,21 @@ Install Quarto from: https://quarto.org/docs/get-started/
 quarto --version
 ```
 
-### 3. Data Setup
+### 4. Verify PySpark Installation
+
+```bash
+# Test PySpark in your virtual environment
+python -c "import pyspark; print(f'PySpark version: {pyspark.__version__}')"
+
+# Test Spark session creation
+python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.master('local[2]').appName('test').config('spark.ui.enabled', 'false').getOrCreate(); print('Spark session created successfully'); spark.stop()"
+```
+
+### 5. Data Setup
 
 Place your Lightcast dataset in:
-```
+
+```bash
 data/raw/lightcast_job_postings.csv
 ```
 
@@ -39,8 +85,15 @@ Expected columns:
 - posted_date, industry, experience_level, remote_allowed
 - required_skills, education_required
 
-### 4. Initial Data Processing
+### 6. Initial Data Processing
 
+**Option 1: Using PySpark (Recommended for large datasets)**
+```bash
+# Use the developer validation notebook
+jupyter lab notebooks/job_market_analysis_simple.ipynb
+```
+
+**Option 2: Direct processing script**
 ```bash
 # Process raw data
 python src/data/preprocess_data.py
@@ -49,7 +102,12 @@ python src/data/preprocess_data.py
 ls data/processed/
 ```
 
-### 5. Generate Reports
+**For PySpark Processing:**
+- The project uses PySpark 4.0.1 for scalable data processing
+- Start with `notebooks/job_market_analysis_simple.ipynb` for data validation
+- The notebook includes automatic Spark configuration for local environments
+
+### 7. Generate Reports
 
 ```bash
 # Render Quarto website
@@ -59,7 +117,7 @@ quarto render
 quarto preview
 ```
 
-### 6. Run Interactive Dashboard
+### 8. Run Interactive Dashboard
 
 ```bash
 # Start dashboard server
@@ -67,7 +125,7 @@ cd dashboards
 python career_dashboard.py
 ```
 
-Access at: http://127.0.0.1:8050
+Access at: http://127.0.0.1:4200
 
 ## Project Structure
 
@@ -93,13 +151,21 @@ project-from-scratch/
 
 ## Key Commands
 
-| Task | Command |
-|------|---------|
-| Process data | `python src/data/preprocess_data.py` |
+| Task | Command                                        |
+|------|---------                                       |
+| **Data Processing** | |
+| Validate raw data (PySpark) | `jupyter lab notebooks/job_market_analysis_simple.ipynb` |
+| Process data (traditional) | `python src/data/preprocess_data.py` |
+| **Development** | |
+| Install packages | `pip install -r requirements.txt` |
+| Test PySpark | `python -c "import pyspark; print(pyspark.__version__)"` |
+| **Publishing** | |
 | Render website | `quarto render` |
 | Preview site | `quarto preview` |
 | Run dashboard | `python dashboards/career_dashboard.py` |
-| Install packages | `pip install -r requirements.txt` |
+| **Troubleshooting** | |
+| Clear Quarto cache | `quarto clear` |
+| Reset Jupyter kernel | Kernel → Restart & Clear Output |
 
 ## Development Workflow
 
@@ -112,12 +178,58 @@ project-from-scratch/
 
 ## Troubleshooting
 
+### PySpark Issues
+
+#### "Connection refused" Error
+This is the most common PySpark issue in virtual environments:
+
+**Symptoms:**
+```
+ConnectionRefusedError: [Errno 111] Connection refused
+```
+
+**Solutions:**
+1. **Use the provided notebook configuration:**
+   - Open `notebooks/job_market_analysis_simple.ipynb`
+   - The notebook includes automatic Spark configuration for local environments
+   - Run the configuration cells to set up Spark properly
+
+2. **Manual Spark configuration:**
+   ```python
+   from pyspark.sql import SparkSession
+   
+   spark = SparkSession.builder \
+       .appName("JobMarketLocal") \
+       .master("local[2]") \
+       .config("spark.ui.enabled", "false") \
+       .config("spark.driver.memory", "1g") \
+       .getOrCreate()
+   ```
+
+3. **Environment variables:**
+   ```bash
+   export SPARK_LOCAL_IP=127.0.0.1
+   export PYSPARK_SUBMIT_ARGS='--master local[2] --conf spark.ui.enabled=false pyspark-shell'
+   ```
+
+#### Java Issues
+- **Error**: `JAVA_HOME not set`
+  - **Solution**: Install Java and set JAVA_HOME environment variable
+  - **Linux**: `export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64`
+  - **macOS**: `export JAVA_HOME=$(/usr/libexec/java_home)`
+
+#### Memory Issues
+- **Error**: `OutOfMemoryError` or heap space errors
+  - **Solution**: Reduce Spark driver memory or use sampling
+  - **Configuration**: `.config("spark.driver.memory", "1g")`
+
 ### Common Issues
 
 1. **Missing Data**: Ensure `lightcast_job_postings.csv` is in `data/raw/`
 2. **Package Errors**: Verify virtual environment is activated
 3. **Quarto Errors**: Check YAML syntax in `.qmd` files
 4. **Dashboard Issues**: Confirm all dependencies installed
+5. **PySpark Errors**: See PySpark troubleshooting section above
 
 ### Getting Help
 
