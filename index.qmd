@@ -37,7 +37,7 @@ Our primary research focus examines compensation inequities across multiple dime
 ### Key Findings Preview
 
 ::: {.callout-important}
-## 🎯 Key Disparity Findings from 72,000+ Job Postings
+## Key Disparity Findings from 72,000+ Job Postings
 
 - **233% Experience Gap** - Entry-level to Executive salary disparity
 - **177% Education Premium** - Advanced vs. Basic education compensation gap  
@@ -45,10 +45,10 @@ Our primary research focus examines compensation inequities across multiple dime
 - **Geographic Variations** - Regional compensation inequities up to 67%
 :::
 
-## 📈 Interactive Key Findings Dashboard
+## Interactive Key Findings Dashboard
 
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
-<h3 style="margin-top: 0; color: white;">🎯 Critical Salary Disparities Identified</h3>
+<h3 style="margin-top: 0; color: white;">Critical Salary Disparities Identified</h3>
 <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
 <div style="margin: 10px;"><strong>233%</strong><br>Experience Gap</div>
 <div style="margin: 10px;"><strong>177%</strong><br>Education Premium</div>
@@ -59,28 +59,28 @@ Our primary research focus examines compensation inequities across multiple dime
 
 ::: {.panel-tabset}
 
-## 📊 Experience Gap: 233%
+## Experience Gap: 233%
 
 <div style="border: 2px solid #3498db; border-radius: 8px; padding: 10px;">
 <iframe src="figures/key_finding_experience_gap.html" width="100%" height="450px" frameborder="0" onclick="window.open('salary-analysis.qmd#experience-progression-analysis', '_blank')"></iframe>
 **[→ View Detailed Analysis](salary-analysis.qmd#experience-progression-analysis){target="_blank"}**
 </div>
 
-## 🎓 Education Premium: 177%
+## Education Premium: 177%
 
 <div style="border: 2px solid #9b59b6; border-radius: 8px; padding: 10px;">
 <iframe src="figures/key_finding_education_premium.html" width="100%" height="450px" frameborder="0"></iframe>
 **[→ View Detailed Analysis](salary-analysis.qmd#geographic-salary-analysis){target="_blank"}**
 </div>
 
-## 🏢 Company Size Gap: 40%
+## Company Size Gap: 40%
 
 <div style="border: 2px solid #27ae60; border-radius: 8px; padding: 10px;">
 <iframe src="figures/key_finding_company_size.html" width="100%" height="450px" frameborder="0"></iframe>
 **[→ View Detailed Analysis](salary-analysis.qmd#executive-summary){target="_blank"}**
 </div>
 
-## 🚀 Complete Dashboard
+## Complete Dashboard
 
 <div style="border: 2px solid #e74c3c; border-radius: 8px; padding: 10px;">
 <iframe src="figures/key_findings_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
@@ -163,7 +163,7 @@ Explore our comprehensive salary disparity investigation through interactive vis
 ## Interactive Analysis
 
 ::: {.callout-note}
-## 🔗 Interactive Jupyter Notebook Analysis
+## Interactive Jupyter Notebook Analysis
 **[Open Full Interactive Analysis →](notebooks/job_market_skill_analysis.html){target="_blank"}**
 
 *Click the link above to access the complete interactive analysis in a new window.*
@@ -199,8 +199,8 @@ Explore our salary disparity research:
 
 - **[Salary Analysis](salary-analysis.qmd)** - Detailed compensation disparity investigation
 - **[Skills Analysis](notebooks/job_market_skill_analysis.ipynb)** - Interactive Jupyter analysis
-- **[🗺️ Regional Trends](regional-trends.qmd)** - Geographic salary variations
-- **[🏠 Remote Work Impact](remote-work.qmd)** - Location flexibility effects
+- **[Regional Trends](regional-trends.qmd)** - Geographic salary variations
+- **[Remote Work Impact](remote-work.qmd)** - Location flexibility effects
 - **[Data Processing](data-analysis.qmd)** - Technical methodology and data pipeline
 
 ## Key Insights for Action
