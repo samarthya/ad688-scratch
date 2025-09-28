@@ -1,100 +1,101 @@
-# Job Market Trends and Salary Analysis
+# Technology Job Market: Salary Disparity Analysis
 
-A comprehensive data science project analyzing job market trends, salary compensation, and career planning insights using Python, PySpark, and Pandas.
+A comprehensive data science investigation into **salary disparities** within the technology industry, focusing on compensation inequities across experience levels, education, company sizes, and geographic regions.
 
-## Project Overview
+## 🚨 Research Objective
 
-This project explores how job seekers can position themselves effectively given changes in hiring trends, salaries, AI adoption, remote work, and gender-based employment patterns. The analysis is designed to be both practical and exploratory, helping students apply data science, analytics, and visualization skills to their own career planning.
+This project investigates **systematic salary disparities** in the technology job market to promote equitable compensation practices and inform career planning decisions. We analyze compensation gaps across multiple demographic and professional dimensions.
 
-## Research Questions
+## 🎯 Primary Research Focus: Salary Disparities
 
-### Primary Focus: Salary and Compensation Trends
-- How do salaries differ across AI vs. non-AI careers?
-- What regions offer the highest-paying jobs in AI-related and traditional careers?
-- Are remote jobs better paying than in-office roles?
-- What industries saw the biggest wage growth in 2025?
+### Key Disparity Investigations
+- **Experience Level Gaps**: 197% salary disparity between entry-level and leadership positions
+- **Education Premium Inequities**: 64.9% compensation variation across degree levels  
+- **Company Size Effects**: 24.3% systematic salary gaps between organization sizes
+- **Geographic Inequities**: Regional salary variations beyond cost-of-living adjustments
+- **Demographic Factors**: Cross-sectional analysis of wage gap contributors
 
-### Additional Areas of Investigation
-- Gender-based employment patterns and salary disparities
-- Skills gap analysis and demand forecasting
-- Career progression pathways in emerging vs. traditional fields
-- Geographic mobility and salary optimization strategies
+### Research Questions
+- What drives the massive salary progression gaps in technology?
+- Do education premiums reflect actual value contribution?
+- How do company sizes systematically affect compensation?
+- Which geographic regions show the largest pay disparities?
+- What interventions can address these systematic inequities?
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-- **Documentation & Reporting**: Quarto Markdown, GitHub Pages
-- **Data Processing**: Python, PySpark, Pandas, NumPy
-- **Visualization**: Matplotlib, Seaborn, Plotly, Dash
-- **Data Source**: Lightcast job postings dataset
-- **Bibliography Management**: BibTeX with Econometrica citation style
-- **Development Environment**: VS Code, Jupyter Notebooks
+- **Data Processing**: PySpark 4.0.1, Pandas, NumPy for large-scale analysis
+- **Visualization**: Plotly, Kaleido 1.1.0 for interactive web visualizations  
+- **Documentation**: Quarto website with embedded interactive dashboards
+- **Statistical Analysis**: Python scipy, statistical modeling
+- **Development**: Jupyter Notebooks, VS Code, Git version control
 
-## Project Structure
+## 📁 Project Structure (Cleaned & Focused)
 
 ```
-├── data/
-│   ├── raw/                 # Original datasets (Lightcast job postings)
-│   ├── processed/           # Cleaned and transformed data
-│   └── external/            # Additional reference datasets
+├── notebooks/
+│   └── job_market_skill_analysis.ipynb  # Main disparity analysis
 ├── src/
-│   ├── data/               # Data processing and cleaning scripts
-│   ├── analysis/           # Statistical analysis and modeling
-│   └── visualization/      # Chart and dashboard creation
-├── notebooks/              # Jupyter notebooks for exploratory analysis
-├── reports/               # Generated analysis reports
-├── dashboards/            # Interactive dashboard applications
-├── docs/                  # Generated website output
-├── csl/                   # Citation style files
-└── references.bib         # Bibliography database
+│   └── visualization/                    # Reusable plotting utilities
+├── figures/                              # Generated interactive visualizations
+├── _output/                              # Quarto website output
+├── data/
+│   ├── processed/                        # Clean datasets and exports
+│   └── raw/                              # Original data sources
+├── index.qmd                             # Main research homepage
+├── salary-analysis.qmd                   # Detailed disparity findings
+├── regional-trends.qmd                   # Geographic analysis
+├── remote-work.qmd                       # Work arrangement impacts
+└── _quarto.yml                           # Website configuration
 ```
 
-## Getting Started
+### 🔧 Key Components
+- **Interactive Dashboards**: Plotly visualizations with web embedding
+- **Salary Disparity Analysis**: Core research in Jupyter notebook
+- **Visualization Utilities**: Reusable components from `src/visualization/`
+- **Clean Data Pipeline**: PySpark processing with structured outputs
+
+## 🚀 Getting Started
 
 ### Prerequisites
+- **Python 3.9+** with PySpark support
+- **Quarto CLI** for website generation  
+- **Git** for version control
 
-- Python 3.8+
-- Quarto CLI
-- Git
-
-### Installation
-
-1. Clone the repository:
+### 🔧 Quick Setup
+1. **Clone and Setup**:
 ```bash
 git clone https://github.com/samarthya/ad688-scratch
 cd project-from-scratch
-```
-
-2. Install Python dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-3. Install Quarto extensions:
+2. **Run the Analysis**:
 ```bash
-quarto install extension quarto-ext/lightbox
+# Start Jupyter and open the main notebook
+jupyter notebook notebooks/job_market_skill_analysis.ipynb
+
+# Or view the website
+quarto preview --port 4200
 ```
 
-### Data Setup
+3. **Access Interactive Dashboards**:
+   - **Main Analysis**: `http://localhost:4200`
+   - **Salary Disparity Dashboard**: `figures/salary_disparity_analysis.html`
+   - **Executive Summary**: `figures/executive_dashboard.html`
 
-1. Place the Lightcast dataset in `data/raw/lightcast_job_postings.csv`
-2. Run initial data processing:
-```bash
-python src/data/preprocess_data.py
-```
+### 📊 Key Findings Available
+- **197% Experience Gap**: Entry vs Leadership salary disparity
+- **Interactive Visualizations**: Embedded Plotly dashboards
+- **Statistical Analysis**: Quantified inequality measurements
+- **Actionable Insights**: Recommendations for organizations and job seekers
 
-### Building the Website
+## 📈 Research Deliverables
 
-```bash
-quarto render
-quarto preview
-```
-
-## Deliverables
-
-1. **Team-Based Career Report**: Structured research report analyzing job market trends
-2. **Interactive Data Dashboards**: Python-based visualizations integrated with GitHub Pages
-3. **Personal Career Strategy Plans**: Individual 3-step career action plans
-4. **Final Presentation Website**: Complete Quarto-based research portfolio
+1. **🎯 Salary Disparity Report**: Comprehensive inequity investigation
+2. **📊 Interactive Dashboards**: Web-embedded Plotly visualizations  
+3. **📝 Research Website**: Quarto-based presentation with findings
+4. **⚙️ Reproducible Analysis**: Complete Jupyter notebook workflow
 
 ## Contributing
 
@@ -108,11 +109,12 @@ quarto preview
 If you use this analysis in your research, please cite:
 
 ```bibtex
-@misc{jobmarket2025,
-  title={Job Market Trends and Salary Analysis: Career Planning in the AI Era},
-  author={"Saurabh Sharma"},
+@misc{salarydisparity2025,
+  title={Technology Job Market: Salary Disparity Analysis},
+  author={Data Analytics Team},
   year={2025},
-  url={https://github.io/samarthya/ad688scratch/}
+  url={https://github.com/samarthya/ad688-scratch},
+  note={Investigating compensation inequities in the technology industry}
 }
 ```
 

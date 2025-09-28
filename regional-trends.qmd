@@ -1,8 +1,14 @@
 ---
-title: "Regional Salary Trends"
-subtitle: "Geographic Analysis of Compensation Patterns"
-author: "Career Analytics Team"
-date: "September 26, 2025"
+title: "Regional Salary Trends Analysis"
+subtitle: "Geographic Compensation Patterns in Technology Roles"
+author:
+  - name: Saurabh Sharma
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+date: today
 format:
   html:
     toc: true

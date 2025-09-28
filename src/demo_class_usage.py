@@ -9,7 +9,7 @@ Classes Used:
 - JobMarketDataProcessor: Data processing and cleaning
 - SalaryVisualizer: Visualization utilities
 
-Author: Job Market Analysis Team
+Author: Saurabh Sharma
 Date: September 27, 2025
 """
 

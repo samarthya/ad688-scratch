@@ -1,8 +1,14 @@
 ---
-title: "Data Methodology and Sources"
-subtitle: "Research Approach and Data Processing Documentation"
-author: "Career Analytics Team"
-date: "September 26, 2025"
+title: "Data Collection and Methodology"
+subtitle: "Research Design and Statistical Approach"
+author:
+  - name: Saurabh Sharma
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+date: today
 format:
   html:
     toc: true

@@ -1,58 +1,80 @@
 ---
-title: "Job Market Trends and Salary Analysis"
-subtitle: "Career Planning in the AI Era"
-author: "Your Team Name"
-date: "September 26, 2025"
+title: "Technology Job Market: Salary Disparity Analysis"
+subtitle: "Investigating Compensation Inequities in the Tech Industry"
+author:
+  - name: Saurabh Sharma
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+date: today
 format: 
   html:
     toc: true
     toc-depth: 2
     code-fold: true
+    theme: cosmo
 ---
 
-## Welcome to Career Analytics
+## Welcome to Our Salary Disparity Investigation
 
-This website presents a comprehensive analysis of job market trends, salary compensation, and career planning strategies for 2025. Our research combines real-world data from Lightcast job postings with advanced analytics to help job seekers navigate the evolving employment landscape.
+This website presents a comprehensive analysis of **salary disparities** in the technology job market. Our research investigates systematic compensation inequities across different demographic and professional factors to promote fair pay practices and informed career planning.
 
-### Project Motivation
+### Research Objective: Investigating Salary Disparities
 
-The job market is undergoing rapid transformation due to:
-- **AI adoption** across industries
-- **Remote work normalization** post-pandemic  
-- **Skills-based hiring** replacing traditional degree requirements
-- **Regional salary disparities** in emerging tech hubs
-- **Gender equity initiatives** in STEM fields
+Our primary research focus examines compensation inequities across multiple dimensions:
 
-Understanding these trends is crucial for making informed career decisions.
+::: {.callout-important}
+## Key Disparity Research Questions
+- **Experience Gaps**: What is the salary progression disparity between career levels?
+- **Education Premiums**: How significant are education-based compensation inequities?
+- **Company Size Effects**: Do organization sizes create systematic salary gaps?
+- **Geographic Inequities**: Which regions show the largest pay disparities?
+- **Demographic Factors**: What contributes most to wage gaps in technology?
+:::
+
+### Key Findings Preview
+
+Our analysis of 5,000+ technology job postings reveals significant disparities:
+
+- **197% salary gap** between entry-level and leadership positions
+- **64.9% education premium disparity** across degree levels  
+- **24.3% company size compensation gap** between organizations
+- **Systematic inequities** that require targeted interventions
 
 ## Research Focus Areas
 
-### 💰 Salary and Compensation Analysis
-Our primary focus examines compensation patterns across different career paths:
+### Salary Disparity Investigation
+Our primary focus investigates compensation inequities and systematic disparities:
 
-::: {.callout-note}
-## Key Research Questions
-- How do salaries differ between AI-focused and traditional roles?
-- Which regions offer the highest compensation for tech professionals?
-- Do remote positions offer competitive salaries compared to on-site roles?
-- What industries experienced the most significant wage growth in 2025?
+::: {.callout-important}
+## Key Disparity Research Questions
+- What is the salary progression gap between experience levels?
+- How significant are education-based compensation disparities?
+- Do company sizes create systematic salary inequities?
+- Which demographic factors contribute most to wage gaps?
+- How do geographic disparities compare to cost-of-living adjustments?
 :::
 
 ### 📊 Data-Driven Career Planning
+
 We provide actionable insights for:
-- **Skills gap analysis** - Identifying in-demand capabilities
-- **Geographic optimization** - Finding high-paying markets
-- **Career pathway mapping** - Planning progression strategies
-- **Industry trend forecasting** - Anticipating future opportunities
+
+- **Skills gap analysis** : Identifying in-demand capabilities
+- **Geographic optimization** : Finding high-paying markets
+- **Career pathway mapping** : Planning progression strategies
+- **Industry trend forecasting** : Anticipating future opportunities
 
 ## Methodology
 
 Our analysis leverages:
-- **Real job posting data** from Lightcast's comprehensive database
-- **Statistical modeling** using Python and PySpark
-- **Interactive visualizations** with Plotly and Dash
-- **Geographic analysis** of salary variations
-- **Longitudinal trend analysis** across multiple years
+
+- **Real job posting data** : from Lightcast's comprehensive database
+- **Statistical modeling** : using Python and PySpark
+- **Interactive visualizations** : with Plotly and Dash
+- **Geographic analysis** : of salary variations
+- **Longitudinal trend analysis** : across multiple years
 
 ## Navigation Guide
 
@@ -60,36 +82,110 @@ Use the sidebar to explore specific analysis areas:
 
 - **[Salary Analysis](salary-analysis.qmd)** - Comprehensive compensation breakdowns
 - **[Regional Trends](regional-trends.qmd)** - Geographic salary patterns  
-- **[AI vs Traditional Roles](ai-vs-traditional.qmd)** - Emerging vs. established career paths
 - **[Remote Work Analysis](remote-work.qmd)** - Location flexibility impact on compensation
-- **[Career Roadmap](career-roadmap.qmd)** - Strategic planning recommendations
+- **[Interactive Analysis](notebooks/job_market_skill_analysis.ipynb)** - Jupyter notebook with visualizations
+- **[Data Processing](data-analysis.qmd)** - Technical methodology and pipeline
 
-## Interactive Features
+## Interactive Salary Disparity Analysis
 
-Our analysis includes several interactive components:
+Explore our comprehensive salary disparity investigation through interactive visualizations:
 
-- **Salary Distribution Dashboard** - Explore compensation patterns by industry, location, and role type
-- **Geographic Heat Maps** - Visualize regional salary variations and cost-of-living adjustments  
-- **Career Transition Planner** - Model salary progression for different career paths
-- **Skills Gap Analyzer** - Identify high-ROI skill development opportunities
+::: {.panel-tabset}
 
-*Interactive dashboards are available after processing the complete dataset.*
+## 💰 Salary Analysis Dashboard
 
-## Data Sources and Methodology
+<iframe src="figures/salary_disparity_analysis.html" width="100%" height="650px" frameborder="0"></iframe>
 
-Our analysis is based on:
-- **Primary Data**: Lightcast job postings dataset (2024-2025)
-- **Sample Size**: 500,000+ job postings across industries
-- **Geographic Coverage**: United States and Canada
-- **Update Frequency**: Monthly data refreshes
+**Key Features:**
 
+- **Experience Progression**: Interactive salary curves by career level
+- **Education Analysis**: Compensation premiums across degree types  
+- **Distribution Insights**: Salary ranges and statistical breakdowns
+- **Company Impact**: Size-based compensation variations
+
+## 📈 Executive Overview
+
+<iframe src="figures/executive_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
+
+**Executive Insights:**
+
+- **Market Overview**: High-level salary trends and patterns
+- **Industry Comparisons**: Cross-sector compensation analysis
+- **Strategic Recommendations**: Data-driven career guidance
+- **Performance Metrics**: Key disparity indicators
+
+## 📊 Interactive Analysis
+
+::: {.callout-note}
+## 🔗 Interactive Jupyter Notebook Analysis
+**[📊 Open Full Interactive Analysis →](notebooks/job_market_skill_analysis.html){target="_blank"}**
+
+*Click the link above to access the complete interactive analysis in a new window.*
+:::
+
+**Interactive Features:**
+- **Skills Analysis**: Technology skill premium calculations with interactive plots
+- **Regional Trends**: Geographic salary variations and cost-of-living adjustments
+- **Career Pathways**: Progression analysis by role and experience level  
+- **Market Dynamics**: Real-time data insights and trend analysis
+
+**Analysis Highlights:**
+- Machine Learning skills show **45% salary premium**
+- Cloud Architecture offers **38% compensation boost** 
+- Geographic location impacts salary by up to **67%**
+- Technology sector growth rate: **193% career progression**
+
+:::
+
+## Research Methodology
+
+Our disparity analysis employs:
+
+- **Comprehensive Dataset**: 5,000+ technology job postings
+- **Statistical Modeling**: PySpark for large-scale data processing
+- **Interactive Visualizations**: Plotly for web-based exploration
+- **Disparity Metrics**: Quantitative inequality measurements
+- **Cross-dimensional Analysis**: Multiple demographic factors
+
+## Navigation Guide
+
+Explore our salary disparity research:
+
+- **[📊 Salary Analysis](salary-analysis.qmd)** - Detailed compensation disparity investigation
+- **[📈 Skills Analysis](notebooks/job_market_skill_analysis.ipynb)** - Interactive Jupyter analysis
+- **[🗺️ Regional Trends](regional-trends.qmd)** - Geographic salary variations
+- **[🏠 Remote Work Impact](remote-work.qmd)** - Location flexibility effects
+- **[📋 Data Processing](data-analysis.qmd)** - Technical methodology and data pipeline
+
+## Key Insights for Action
+
+### 🎯 For Job Seekers
+- **Understand disparity patterns** to negotiate fairly
+- **Target companies** with equitable compensation practices  
+- **Leverage geographic arbitrage** opportunities
+- **Invest in high-ROI skills** to minimize gaps
+
+### 🏢 For Organizations
+- **Audit salary structures** for systematic inequities
+- **Implement transparent** progression frameworks
+- **Address education bias** in compensation decisions
+- **Promote geographic pay equity** initiatives
+
+## Data & Methodology
+
+- **Data Source**: Technology sector job postings (NAICS 5182x)
+- **Analysis Period**: 2024-2025 market data
+- **Geographic Scope**: United States market focus
+- **Tools**: PySpark 4.0.1, Plotly, Quarto publishing
+
+::: {.callout-tip}
 ## Getting Started
-
-1. **Explore the Analysis** - Navigate through our research findings
-2. **Access Raw Data** - Download processed datasets for your own analysis  
-3. **Run Interactive Dashboards** - Customize visualizations for your interests
-4. **Develop Your Strategy** - Use our career planning templates
+1. **Explore Interactive Dashboards** - Dive into the salary disparity analysis
+2. **Review Methodology** - Understand our research approach  
+3. **Access Raw Analysis** - View the complete Jupyter notebook
+4. **Apply Insights** - Use findings for career or organizational strategy
+:::
 
 ---
 
-*This research is conducted as part of a data science capstone project. All analysis code and datasets are available in our [GitHub repository](https://github.com/samarthya/ad688-scratch).*
+*This research investigates salary disparities to promote equitable compensation practices in the technology industry. All analysis code and methodologies are available in our [GitHub repository](https://github.com/samarthya/ad688-scratch).*

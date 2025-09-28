@@ -1,8 +1,14 @@
 ---
 title: "Remote Work Impact on Compensation"
-subtitle: "Analyzing Location Flexibility and Salary Implications"  
-author: "Career Analytics Team"
-date: "September 26, 2025"
+subtitle: "Analyzing Geographic Salary Variations in the Digital Age"
+author:
+  - name: Saurabh Sharma
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+date: today
 format:
   html:
     toc: true
@@ -95,4 +101,4 @@ For maximizing remote compensation:
 
 ---
 
-*Next: [Career Roadmap Planning](career-roadmap.qmd)*
+*Continue Reading: [Salary Analysis](salary-analysis.qmd) | [Regional Trends](regional-trends.qmd) | [Home](index.qmd)*

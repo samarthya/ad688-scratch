@@ -1,12 +1,75 @@
-.venv
+# Python
+.venv/
 venv/
-.quarto
-data/
-**/__pycache__
-/.quarto/
-**/*.quarto_ipynb
-docs/
-_output/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.Python
+*.so
+
+# Jupyter
+.ipynb_checkpoints/
 .jupyter_cache/
-figures/
+
+# Quarto
+.quarto/
+_quarto-env.json
+**/*.quarto_ipynb
+_output/
 _freeze/
+*.qmd.html
+
+# LaTeX temporary files
+*.aux
+*.log
+*.toc
+*.tex
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Documentation build outputs
+docs/
+figures/
+_site/
+
+# Data files (often large and sensitive)
+data/
+*.csv
+*.parquet
+*.json
+!data_schema.json
+
+# Spark
+spark-warehouse/
+metastore_db/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Generated HTML files
+*.html
+!index.html
+
+# Generated files from processing
+*_files/
+DEPLOYMENT_SUMMARY_files/
+
+/.quarto/

@@ -1,0 +1,148 @@
+/* Simple navigation and tab styling - no SCSS compilation needed */
+
+/* Dashboard tabs styling */
+.panel-tabset .nav-tabs {
+  border-bottom: 2px solid #007bff;
+  margin-bottom: 1.5rem;
+}
+
+.panel-tabset .nav-tabs .nav-link {
+  color: #495057;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  margin-right: 0.25rem;
+}
+
+.panel-tabset .nav-tabs .nav-link:hover {
+  color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.panel-tabset .nav-tabs .nav-link.active {
+  color: #ffffff;
+  background-color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+/* Dashboard iframe styling */
+.panel-tabset iframe {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Tab content area */
+.panel-tabset .tab-content {
+  padding: 1rem 0;
+}
+
+/* Comprehensive TOC readability improvements */
+#TOC .nav-link,
+.toc .nav-link,
+.sidebar-right .nav-link,
+nav[role="doc-toc"] .nav-link,
+.quarto-margin-sidebar .nav-link,
+#quarto-margin-sidebar .nav-link {
+  color: #2c3e50 !important;
+  font-weight: 500 !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+#TOC .nav-link:hover,
+.toc .nav-link:hover,
+.sidebar-right .nav-link:hover,
+nav[role="doc-toc"] .nav-link:hover,
+.quarto-margin-sidebar .nav-link:hover,
+#quarto-margin-sidebar .nav-link:hover {
+  color: #1a252f !important;
+  background-color: #e8f4f8 !important;
+  text-decoration: none !important;
+  border-radius: 4px !important;
+}
+
+#TOC .nav-link.active,
+.toc .nav-link.active,
+.sidebar-right .nav-link.active,
+nav[role="doc-toc"] .nav-link.active,
+.quarto-margin-sidebar .nav-link.active,
+#quarto-margin-sidebar .nav-link.active {
+  color: #ffffff !important;
+  background-color: #007bff !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+}
+
+/* Ensure sidebar container has proper background */
+#quarto-margin-sidebar,
+.quarto-margin-sidebar,
+.sidebar-right {
+  background-color: #ffffff !important;
+}
+
+/* Enhanced callout styling for better visibility */
+.callout {
+  border-left: 4px solid #007bff;
+  background-color: #f8f9fa;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.callout-note {
+  border-left-color: #17a2b8;
+  background-color: #e7f3ff;
+}
+
+.callout-important {
+  border-left-color: #dc3545;
+  background-color: #fff0f0;
+}
+
+/* Table styling for better readability */
+table {
+  margin: 1rem 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table th, table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Print-friendly styles for PDF/DOCX export */
+@media print {
+  .panel-tabset .tab-content {
+    display: block !important;
+  }
+  
+  .panel-tabset .nav-tabs {
+    display: none;
+  }
+  
+  .panel-tabset .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+  }
+  
+  .callout {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  table {
+    break-inside: avoid;
+  }
+}
