@@ -156,6 +156,7 @@ project-from-scratch/
 | **Data Processing** | |
 | Validate raw data (PySpark) | `jupyter lab notebooks/job_market_analysis_simple.ipynb` |
 | Process data (traditional) | `python src/data/preprocess_data.py` |
+| Generate key findings charts | `python create_key_findings.py` |
 | **Development** | |
 | Install packages | `pip install -r requirements.txt` |
 | Test PySpark | `python -c "import pyspark; print(pyspark.__version__)"` |

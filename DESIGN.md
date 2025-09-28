@@ -702,6 +702,18 @@ visualizer = SalaryVisualizer(df)
 salary_analysis = visualizer.get_industry_salary_analysis()
 ```
 
+### Pattern 4: Key Findings Generation
+
+```python
+# For generating website key findings graphics
+from create_key_findings import create_key_findings_graphics
+
+# Creates interactive charts for homepage embedding
+stats = create_key_findings_graphics()
+# Outputs: figures/key_finding_*.html files
+# Returns: {'experience_gap': 233.0, 'education_gap': 177.3, 'company_size_gap': 39.5}
+```
+
 ### Pattern 4: Custom SQL Analysis
 
 ```python

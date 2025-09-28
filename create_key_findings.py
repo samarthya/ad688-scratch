@@ -1,3 +1,38 @@
+"""
+Key Findings Visualization Generator
+
+This module creates interactive visualizations for the key salary disparity findings
+used in the technology job market analysis. It generates focused charts that highlight
+critical compensation gaps across experience levels, education, and company sizes.
+
+The visualizations are designed for embedding in the Quarto website and provide
+clickable graphics that link to detailed analysis sections.
+
+Key Features:
+- Experience gap analysis (233% disparity)
+- Education premium calculations (177% gap)
+- Company size compensation differences (40% gap)
+- Combined dashboard with all metrics
+- Responsive HTML outputs for web integration
+
+Dependencies:
+- pandas: Data manipulation and analysis
+- plotly: Interactive visualization library
+- Lightcast job postings dataset (data/raw/lightcast_job_postings.csv)
+
+Output Files:
+- figures/key_finding_experience_gap.html
+- figures/key_finding_education_premium.html
+- figures/key_finding_company_size.html
+- figures/key_findings_dashboard.html
+
+Usage:
+    python create_key_findings.py
+
+Author: Saurabh Sharma, Boston University
+Date: September 2025
+"""
+
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -8,7 +43,60 @@ import os
 sys.path.append('src')
 
 def create_key_findings_graphics():
-    """Create focused graphics for key findings to link from index page"""
+    """
+    Create interactive visualizations highlighting key salary disparity findings.
+    
+    This function processes the Lightcast job postings dataset to generate focused
+    charts that reveal critical compensation gaps in the technology job market.
+    Each visualization is designed for web embedding and includes statistical
+    calculations with professional styling.
+    
+    Data Processing:
+    1. Loads raw Lightcast job postings (72,000+ records)
+    2. Cleans salary data by removing currency symbols and converting to numeric
+    3. Creates proxy categories for experience, education, and company size
+    4. Calculates statistical disparities and percentage gaps
+    
+    Generated Visualizations:
+    - Experience Gap Chart: Shows 233% salary disparity across career levels
+    - Education Premium Chart: Displays 177% compensation gap by education proxy
+    - Company Size Chart: Reveals 40% pay difference by organization size
+    - Combined Dashboard: Interactive overview of all key metrics
+    
+    Technical Details:
+    - Uses salary quartiles as experience level proxy (Entry → Executive)
+    - Education levels inferred from salary tertiles (High School → Advanced)
+    - Company sizes determined by job posting frequency (Small → Large)
+    - All charts include hover interactivity and professional color schemes
+    
+    Output Files:
+    All charts are saved as standalone HTML files in the figures/ directory:
+    - key_finding_experience_gap.html (600x400px bar chart)
+    - key_finding_education_premium.html (600x400px bar chart)  
+    - key_finding_company_size.html (600x400px bar chart)
+    - key_findings_dashboard.html (1000x600px combined dashboard)
+    
+    Returns:
+        dict: Dictionary containing calculated disparity percentages:
+            - 'experience_gap': Float percentage of entry-to-executive gap
+            - 'education_gap': Float percentage of education premium disparity
+            - 'company_size_gap': Float percentage of size-based compensation gap
+    
+    Raises:
+        FileNotFoundError: If data/raw/lightcast_job_postings.csv is not found
+        ValueError: If required columns (SALARY_TO, COMPANY_NAME) are missing
+        KeyError: If salary data columns cannot be processed
+    
+    Example:
+        >>> stats = create_key_findings_graphics()
+        >>> print(f"Experience gap: {stats['experience_gap']:.0f}%")
+        Experience gap: 233%
+    
+    Note:
+        This function is typically called during the website build process
+        to generate up-to-date visualizations based on the latest data.
+        The output files are referenced by index.qmd for web display.
+    """
     
     # Load and clean data
     df = pd.read_csv('data/raw/lightcast_job_postings.csv')

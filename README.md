@@ -34,6 +34,7 @@ This project investigates systematic salary disparities in the technology job ma
 - `data/raw/lightcast_job_postings.csv` - Source dataset (72K+ records, 131 columns)
 - `src/` - Reusable analysis classes and visualization utilities
 - `notebooks/` - Exploratory analysis and feature engineering
+- `create_key_findings.py` - Key disparity visualization generator (233% experience gap, 177% education premium, 40% company size gap)
 
 > **Detailed structure and data pipeline**: See [Technical Design](DESIGN.md)
 
@@ -44,6 +45,9 @@ This project investigates systematic salary disparities in the technology job ma
 git clone https://github.com/samarthya/ad688-scratch
 cd project-from-scratch
 pip install -r requirements.txt
+
+# Generate key findings visualizations
+python create_key_findings.py
 
 # View research website
 quarto preview --port 4200
