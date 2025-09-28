@@ -1,6 +1,6 @@
 ---
-title: "Salary Analysis Across Industries and Roles"
-subtitle: "Comprehensive Compensation Trends in 2025"
+title: Salary Analysis Across Industries and Roles
+subtitle: Comprehensive Compensation Trends in 2025
 author:
   - name: Saurabh Sharma
     affiliations:
@@ -39,6 +39,7 @@ This analysis investigates **salary disparities** across experience levels, educ
 Our analysis is based on the Lightcast job postings dataset containing over 500,000 job postings from 2024-2025. The dataset includes key variables for salary analysis:
 
 **Core Variables:**
+
 - `job_id`, `title`, `company`, `location` - Job identification
 - `salary_min`, `salary_max`, `salary_avg` - Compensation data  
 - `industry`, `experience_level` - Categorization variables
