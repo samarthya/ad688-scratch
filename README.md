@@ -1,101 +1,64 @@
-# Technology Job Market: Salary Disparity Analysis
+# Technology Job Market: Salary Disparalysis
 
-A comprehensive data science investigation into **salary disparities** within the technology industry, focusing on compensation inequities across experience levels, education, company sizes, and geographic regions.
+A comprehensive data tigation into salary disparities within the technology industry using large-scale job market data (72K+ records) from Lightcast.
 
-## 🚨 Research Objective
+## Research Objective
 
-This project investigates **systematic salary disparities** in the technology job market to promote equitable compensation practices and inform career planning decisions. We analyze compensation gaps across multiple demographic and professional dimensions.
+This project investigates systematic salary disparities in the technology job market to promote equitable compensation practices and inform career planning decisions.
 
-## 🎯 Primary Research Focus: Salary Disparities
+### Key Research Areas
+- Experience level compensation gaps (197% disparity found)
+- Education premium inequities across degree levels
+- Company size effects on compensation
+- Geographic salary variations
+- AI-related role compensation patterns
 
-### Key Disparity Investigations
-- **Experience Level Gaps**: 197% salary disparity between entry-level and leadership positions
-- **Education Premium Inequities**: 64.9% compensation variation across degree levels  
-- **Company Size Effects**: 24.3% systematic salary gaps between organization sizes
-- **Geographic Inequities**: Regional salary variations beyond cost-of-living adjustments
-- **Demographic Factors**: Cross-sectional analysis of wage gap contributors
+> **Detailed findings and methodology**: See [Analysis Results](salary-analysis.qmd) and [Technical Design](DESIGN.md)
 
-### Research Questions
-- What drives the massive salary progression gaps in technology?
-- Do education premiums reflect actual value contribution?
-- How do company sizes systematically affect compensation?
-- Which geographic regions show the largest pay disparities?
-- What interventions can address these systematic inequities?
+## Architecture Overview
 
-## 🛠️ Technology Stack
+**Core Technologies**: PySpark 4.0.1 (big data processing), Plotly (interactive visualizations), Quarto (research publication)
 
-- **Data Processing**: PySpark 4.0.1, Pandas, NumPy for large-scale analysis
-- **Visualization**: Plotly, Kaleido 1.1.0 for interactive web visualizations  
-- **Documentation**: Quarto website with embedded interactive dashboards
-- **Statistical Analysis**: Python scipy, statistical modeling
-- **Development**: Jupyter Notebooks, VS Code, Git version control
+**Data Pipeline**: Raw Lightcast CSV (131 columns) → Spark processing → Multi-format output (Parquet/CSV)
 
-## 📁 Project Structure (Cleaned & Focused)
+> **Complete technical specifications**: See [System Architecture](DESIGN.md) and [Class Design](docs/class_architecture.md)
 
-```
-├── notebooks/
-│   └── job_market_skill_analysis.ipynb  # Main disparity analysis
-├── src/
-│   └── visualization/                    # Reusable plotting utilities
-├── figures/                              # Generated interactive visualizations
-├── _output/                              # Quarto website output
-├── data/
-│   ├── processed/                        # Clean datasets and exports
-│   └── raw/                              # Original data sources
-├── index.qmd                             # Main research homepage
-├── salary-analysis.qmd                   # Detailed disparity findings
-├── regional-trends.qmd                   # Geographic analysis
-├── remote-work.qmd                       # Work arrangement impacts
-└── _quarto.yml                           # Website configuration
-```
+## Project Organization
 
-### 🔧 Key Components
-- **Interactive Dashboards**: Plotly visualizations with web embedding
-- **Salary Disparity Analysis**: Core research in Jupyter notebook
-- **Visualization Utilities**: Reusable components from `src/visualization/`
-- **Clean Data Pipeline**: PySpark processing with structured outputs
+**Research Deliverables**
+- `salary-analysis.qmd` - Core disparity analysis with interactive dashboards
+- `regional-trends.qmd` - Geographic compensation analysis
+- `remote-work.qmd` - Work arrangement impact studies
 
-## 🚀 Getting Started
+**Data & Code**
+- `data/raw/lightcast_job_postings.csv` - Source dataset (72K+ records, 131 columns)
+- `src/` - Reusable analysis classes and visualization utilities
+- `notebooks/` - Exploratory analysis and feature engineering
 
-### Prerequisites
-- **Python 3.9+** with PySpark support
-- **Quarto CLI** for website generation  
-- **Git** for version control
+> **Detailed structure and data pipeline**: See [Technical Design](DESIGN.md)
 
-### 🔧 Quick Setup
-1. **Clone and Setup**:
+## Quick Start
+
 ```bash
+# Setup
 git clone https://github.com/samarthya/ad688-scratch
 cd project-from-scratch
 pip install -r requirements.txt
-```
 
-2. **Run the Analysis**:
-```bash
-# Start Jupyter and open the main notebook
-jupyter notebook notebooks/job_market_skill_analysis.ipynb
-
-# Or view the website
+# View research website
 quarto preview --port 4200
+
+# Or explore analysis notebooks  
+jupyter notebook notebooks/job_market_skill_analysis.ipynb
 ```
 
-3. **Access Interactive Dashboards**:
-   - **Main Analysis**: `http://localhost:4200`
-   - **Salary Disparity Dashboard**: `figures/salary_disparity_analysis.html`
-   - **Executive Summary**: `figures/executive_dashboard.html`
+**Key Outputs**: Interactive dashboards at `figures/salary_disparity_analysis.html` and research findings in `salary-analysis.qmd`
 
-### 📊 Key Findings Available
-- **197% Experience Gap**: Entry vs Leadership salary disparity
-- **Interactive Visualizations**: Embedded Plotly dashboards
-- **Statistical Analysis**: Quantified inequality measurements
-- **Actionable Insights**: Recommendations for organizations and job seekers
+## Documentation Structure
 
-## 📈 Research Deliverables
-
-1. **🎯 Salary Disparity Report**: Comprehensive inequity investigation
-2. **📊 Interactive Dashboards**: Web-embedded Plotly visualizations  
-3. **📝 Research Website**: Quarto-based presentation with findings
-4. **⚙️ Reproducible Analysis**: Complete Jupyter notebook workflow
+- **[Technical Design](DESIGN.md)** - Complete system architecture, data pipeline, and implementation guide
+- **[Class Architecture](docs/class_architecture.md)** - UML diagrams and visual class relationships  
+- **[Analysis Results](salary-analysis.qmd)** - Research findings with interactive visualizations
 
 ## Contributing
 

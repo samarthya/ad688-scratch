@@ -1,34 +1,34 @@
-# Job Market Analytics: System Design & Data Pipeline Architecture
+# Technical Design & Implementation Guide
+
+**Authoritative technical reference** for the job market analytics system architecture, data pipeline, and implementation patterns.
+
+> **Project overview**: See [README.md](README.md)  
+> **Visual class relationships**: See [UML Diagram](docs/class_architecture.md)
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Architecture Philosophy](#architecture-philosophy)
-3. [Source Code Organization](#source-code-organization)
-4. [Data Processing Pipeline](#data-processing-pipeline)
-5. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
-6. [Data Loading Strategy](#data-loading-strategy)
-7. [Data Cleaning & Quality Assurance](#data-cleaning--quality-assurance)
-8. [Data Imputation & Feature Engineering](#data-imputation--feature-engineering)
-9. [Storage Strategy](#storage-strategy)
-10. [Performance Optimizations](#performance-optimizations)
-11. [Usage Patterns](#usage-patterns)
+
+1. [System Architecture](#system-architecture)
+2. [Data Processing Pipeline](#data-processing-pipeline)
+3. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
+4. [Column Mapping & Transformation Strategy](#column-mapping--transformation-strategy)
+5. [Data Loading & Storage Strategy](#data-loading--storage-strategy)
+6. [Quality Assurance & Validation](#quality-assurance--validation)
+7. [Performance Optimizations](#performance-optimizations)
+8. [Implementation Status & Usage Patterns](#implementation-status--usage-patterns)
 
 ---
 
-## Overview
+## System Architecture
 
-This project implements a comprehensive job market analytics system designed to process, analyze, and visualize large-scale job posting data from the Lightcast dataset. The system follows a **big data processing paradigm** using Apache Spark for scalable data processing and multiple storage formats for different use cases.
+**Current Dataset**: Lightcast job postings (72K+ records, 131 columns)  
+**Processing Engine**: Apache Spark 4.0.1 with PySpark  
+**Output Formats**: Parquet (performance), CSV (compatibility), Interactive dashboards (Plotly)
 
-### Key Design Principles
-- **Scalability**: Built with PySpark to handle datasets from thousands to millions of records
-- **Performance**: Optimized data pipeline with columnar storage (Parquet) and intelligent caching
-- **Flexibility**: Multiple data formats and analysis approaches for different use cases
-- **Quality**: Comprehensive data validation, cleaning, and imputation strategies
-- **Maintainability**: Clear separation of concerns with specialized classes for different responsibilities
-
----
-
-## Architecture Philosophy
+### Design Principles
+- **Big Data First**: PySpark handles datasets from thousands to millions of records
+- **Multi-Format Storage**: Parquet for performance, CSV for compatibility
+- **Class-Based Modularity**: Specialized classes for processing, analysis, and visualization
+- **Quality Assurance**: Comprehensive validation, cleaning, and imputation pipeline
 
 ### Big Data First Approach
 The system is designed with **Apache Spark** as the core processing engine, enabling:
@@ -96,10 +96,70 @@ graph TD
 
 ### Processing Stages
 
-#### Stage 1: Data Ingestion
+#### Stage 1: Data Ingestion & Column Mapping
+
+**Raw Lightcast Dataset Schema**: 131 columns containing comprehensive job market data
+
+**Core Column Mapping (Raw → Processed)**:
 ```python
-# Load with predefined Lightcast schema
-df = spark.read.option("header", "true").schema(lightcast_schema).csv(file_path)
+# Column mapping from Lightcast raw data to analysis-ready format
+COLUMN_MAPPING = {
+    # Core Identification
+    'ID': 'job_id',
+    'TITLE': 'title', 
+    'TITLE_CLEAN': 'title_clean',
+    'COMPANY': 'company',
+    'LOCATION': 'location',
+    
+    # Salary Data (Key Challenge - Multiple Sources)
+    'SALARY_FROM': 'salary_min',      # ~44% coverage
+    'SALARY_TO': 'salary_max',        # ~44% coverage  
+    'SALARY': 'salary_single',        # ~41% coverage
+    'ORIGINAL_PAY_PERIOD': 'pay_period',
+    
+    # Industry & Experience
+    'NAICS2_NAME': 'industry',        # 2-digit NAICS classification
+    'MIN_YEARS_EXPERIENCE': 'experience_min',
+    'MAX_YEARS_EXPERIENCE': 'experience_max',
+    
+    # Skills & Requirements
+    'SKILLS_NAME': 'required_skills',
+    'EDUCATION_LEVELS_NAME': 'education_required',
+    
+    # Work Arrangements
+    'REMOTE_TYPE_NAME': 'remote_type',
+    'EMPLOYMENT_TYPE_NAME': 'employment_type'
+}
+
+# Derived columns created during processing
+DERIVED_COLUMNS = [
+    'salary_avg_imputed',    # Smart salary calculation with imputation
+    'ai_related',           # AI/ML role classification
+    'remote_allowed',       # Boolean remote work flag
+    'experience_level',     # Standardized experience categories
+    'industry_clean'        # Cleaned industry names
+]
+```
+
+**Salary Processing Strategy**:
+```python
+# Multi-source salary imputation logic
+def calculate_salary_avg_imputed(row):
+    if pd.notna(row['SALARY']):
+        return row['SALARY']  # Use direct salary if available
+    elif pd.notna(row['SALARY_FROM']) and pd.notna(row['SALARY_TO']):
+        return (row['SALARY_FROM'] + row['SALARY_TO']) / 2  # Average of range
+    elif pd.notna(row['SALARY_FROM']):
+        return row['SALARY_FROM'] * 1.15  # Estimate from minimum
+    elif pd.notna(row['SALARY_TO']):
+        return row['SALARY_TO'] * 0.87   # Estimate from maximum
+    else:
+        return None  # Requires imputation based on industry/experience
+```
+
+```python
+# Load with Lightcast-specific processing
+df = spark.read.option("header", "true").option("inferSchema", "true").csv(file_path)
 ```
 
 #### Stage 2: Data Quality Assessment
@@ -358,41 +418,49 @@ df = df.withColumn("state", trim(split(col("LOCATION"), ",").getItem(1)))
 ## Storage Strategy
 
 ### Multi-Format Export Pipeline
+
 The processed data is saved in **three complementary formats**:
 
 #### 1. Parquet Format (Primary)
+
 ```python
 # Optimized for Spark processing
 df.write.mode("overwrite").option("compression", "snappy").parquet(parquet_path)
 ```
 **Benefits**:
+
 - **5-10x faster** loading for Spark operations
 - **Columnar storage** optimizes analytical queries
 - **Schema preservation** maintains exact data types
 - **Compression** reduces storage by 60-80%
 
 #### 2. CSV Format (Compatibility)
+
 ```python
 # Sample and clean versions for broad compatibility
 clean_df.toPandas().to_csv(csv_path, index=False)
 ```
 **Benefits**:
+
 - **Universal compatibility** with any analytics tool
 - **Human readable** for manual inspection
 - **Small sample sizes** for quick prototyping
 
 #### 3. Relational Tables (Analysis)
+
 ```python
 # Normalized tables for advanced analytics
 create_relational_tables(processed_df, "data/processed/relational_tables/")
 ```
 **Tables Created**:
+
 - `companies.parquet`: Company dimension with size classifications
 - `locations.parquet`: Geographic dimension with state/city breakdown  
 - `industries.parquet`: Industry dimension with standardized categories
 - `job_postings_fact.parquet`: Main fact table with all metrics
 
 ### Storage Performance Impact
+
 | Operation | CSV | Parquet | Performance Gain |
 |-----------|-----|---------|------------------|
 | **Full Dataset Load** | 30 sec | 3 sec | **10x faster** |
@@ -405,6 +473,7 @@ create_relational_tables(processed_df, "data/processed/relational_tables/")
 ## Performance Optimizations
 
 ### Spark Configuration
+
 ```python
 spark = SparkSession.builder \
     .config("spark.sql.adaptive.enabled", "true") \
@@ -415,11 +484,13 @@ spark = SparkSession.builder \
 ```
 
 ### Memory Management
+
 - **DataFrame Caching**: Cache frequently accessed datasets in memory
 - **Partition Optimization**: Automatic partition sizing for optimal performance
 - **Adaptive Query Execution**: Dynamic optimization based on data characteristics
 
 ### Query Optimization Strategies
+
 1. **Predicate Pushdown**: Filter operations pushed to storage layer
 2. **Column Pruning**: Only load required columns for analysis
 3. **Broadcast Joins**: Small dimension tables broadcasted for faster joins
@@ -430,6 +501,7 @@ spark = SparkSession.builder \
 ## Usage Patterns
 
 ### Pattern 1: Quick Analysis (Production-Ready)
+
 ```python
 # For notebook/interactive analysis with automatic fallback
 from src.data.spark_analyzer import create_spark_analyzer
@@ -443,6 +515,7 @@ industry_analysis = analyzer.get_industry_analysis(top_n=10)
 ```
 
 ### Pattern 1b: Custom Data Source
+
 ```python
 # For specific data source (useful for testing different data states)
 analyzer = create_spark_analyzer("data/raw/lightcast_job_postings.csv")
@@ -451,6 +524,7 @@ analyzer = create_spark_analyzer("data/raw/lightcast_job_postings.csv")
 ```
 
 ### Pattern 2: Full Processing Pipeline
+
 ```python
 # For complete data processing
 from src.data.enhanced_processor import JobMarketDataProcessor
@@ -461,16 +535,19 @@ processor.save_processed_data(processed_df)
 ```
 
 ### Pattern 3: Visualization Workflow
+
 ```python
 # For creating visualizations
 from src.visualization.simple_plots import SalaryVisualizer
 import pandas as pd
+
 df = pd.read_csv("data/processed/clean_job_data.csv")
 visualizer = SalaryVisualizer(df)
 salary_analysis = visualizer.get_industry_salary_analysis()
 ```
 
 ### Pattern 4: Custom SQL Analysis
+
 ```python
 # For advanced SQL-based analysis with validation
 try:
@@ -493,6 +570,7 @@ except Exception as e:
 ```
 
 ### Pattern 5: Error Handling & Recovery
+
 ```python
 # Robust data loading with error handling
 from pathlib import Path
@@ -525,6 +603,7 @@ if analyzer:
 The `job_market_processed.parquet` file was created through the **production-ready processing pipeline**:
 
 ### Data Pipeline Flow
+
 ```
 Raw Lightcast CSV → Validation → Cleaning → Feature Engineering → Multi-Format Export
      ↓                 ↓           ↓              ↓                    ↓
@@ -533,9 +612,11 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
 ```
 
 ### Execution Path
+
 1. **Raw Data Source**: `data/raw/lightcast_job_postings.csv` (Original Lightcast dataset)
 2. **Processing Engine**: `src/data/full_dataset_processor.py` or `enhanced_processor.py`
 3. **Pipeline Execution**:
+
    ```python
    # Complete processing pipeline
    python src/data/full_dataset_processor.py
@@ -555,6 +636,7 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
    ```
 
 ### Processing Steps Applied
+
 1. ✅ **Raw data ingestion** with Lightcast schema validation
 2. ✅ **Comprehensive data quality assessment** (null analysis, duplicates, outliers)
 3. ✅ **Data cleaning pipeline** (text standardization, categorical mapping)
@@ -564,6 +646,7 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
 7. ✅ **Multi-format export** with optimized Parquet storage
 
 ### Current System Benefits
+
 - **🔄 Automatic Fallback**: System works even if only raw data exists
 - **✅ Data Validation**: Every load includes quality validation
 - **⚡ Performance Tiers**: 3-tier loading (Parquet→CSV→Raw) for optimal speed
@@ -571,6 +654,7 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
 - **📊 Quality Reporting**: Detailed statistics on data completeness and consistency
 
 ### Result Files Created
+
 ```
 data/processed/
 ├── job_market_processed.parquet/     # 🚀 Primary (fastest loading)
@@ -582,6 +666,7 @@ data/processed/
 ```
 
 ### Performance Impact
+
 | Operation | Raw CSV | Processed Parquet | Improvement |
 |-----------|---------|-------------------|-------------|
 | **Data Loading** | ~45 sec | ~3 sec | **15x faster** |

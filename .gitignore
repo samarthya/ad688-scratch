@@ -31,7 +31,6 @@ _freeze/
 *.synctex.gz
 
 # Documentation build outputs
-docs/
 figures/
 _site/
 
