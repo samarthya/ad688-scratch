@@ -62,9 +62,7 @@ website:
 format:
   html:
     theme: flatly
-    css: 
-      - styles.css
-      - navigation.css
+    css: styles.css
     toc: true
     toc-depth: 3
     number-sections: true
