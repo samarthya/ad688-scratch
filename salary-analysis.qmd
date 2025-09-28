@@ -135,17 +135,17 @@ def load_job_data():
     try:
         df = pd.read_csv('data/processed/clean_job_data.csv')
         if len(df) == 0:
-            print("⚠️ Processed data file is empty, falling back to raw data")
+            print("WARNING: Processed data file is empty, falling back to raw data")
             raise FileNotFoundError("Empty processed file")
-        print(f"✅ Loaded {len(df):,} job postings from processed dataset")
+        print(f"SUCCESS: Loaded {len(df):,} job postings from processed dataset")
         return df
     except (FileNotFoundError, pd.errors.EmptyDataError):
         try:
             df = pd.read_csv('data/processed/job_market_sample.csv')
             if len(df) == 0:
-                print("⚠️ Sample data file is empty, falling back to raw data")
+                print("WARNING: Sample data file is empty, falling back to raw data")
                 raise FileNotFoundError("Empty sample file")
-            print(f"✅ Using sample dataset: {len(df):,} job postings")
+            print(f"SUCCESS: Using sample dataset: {len(df):,} job postings")
             return df
         except (FileNotFoundError, pd.errors.EmptyDataError):
             try:
@@ -182,10 +182,10 @@ def load_job_data():
                     tech_mask = df['title'].str.lower().str.contains('|'.join(tech_keywords), na=False)
                     df['sector'] = np.where(tech_mask, 'Technology', 'Non-Technology')
                 
-                print(f"✅ Using raw data sample: {len(df):,} job postings")
+                print(f"SUCCESS: Using raw data sample: {len(df):,} job postings")
                 return df
             except Exception as e:
-                print(f"❌ All data loading failed, creating synthetic data: {e}")
+                print(f"ERROR: All data loading failed, creating synthetic data: {e}")
                 # Create synthetic data as final fallback
                 np.random.seed(42)
                 n_samples = 5000
@@ -216,7 +216,7 @@ def load_job_data():
                     })
                 
                 df = pd.DataFrame(job_data)
-                print(f"✅ Generated synthetic dataset: {len(df):,} job postings")
+                print(f"SUCCESS: Generated synthetic dataset: {len(df):,} job postings")
                 return df
 ```
 
@@ -393,14 +393,14 @@ sns.set_palette("husl")
 try:
     df = pd.read_csv('data/processed/clean_job_data.csv')
     if len(df) == 0:
-        print("⚠️ Processed data file is empty, falling back to raw data")
+        print("WARNING: Processed data file is empty, falling back to raw data")
         raise FileNotFoundError("Empty processed file")
     print(f"Loaded {len(df):,} job postings from our processed dataset")
 except (FileNotFoundError, pd.errors.EmptyDataError):
     try:
         df = pd.read_csv('data/processed/job_market_sample.csv')
         if len(df) == 0:
-            print("⚠️ Sample data file is empty, falling back to raw data")
+            print("WARNING: Sample data file is empty, falling back to raw data")
             raise FileNotFoundError("Empty sample file")
         print(f"Using sample dataset: {len(df):,} job postings")
     except (FileNotFoundError, pd.errors.EmptyDataError):
@@ -423,7 +423,7 @@ except (FileNotFoundError, pd.errors.EmptyDataError):
                 df['salary_avg'] = df['salary_avg'].fillna(df['salary_avg'].median())
             else:
                 df['salary_avg'] = 75000  # Default salary
-            print(f"✅ Using raw data sample: {len(df):,} job postings")
+            print(f"SUCCESS: Using raw data sample: {len(df):,} job postings")
         except FileNotFoundError:
             # Create synthetic data based on our analysis patterns
             np.random.seed(42)

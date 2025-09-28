@@ -105,7 +105,7 @@ print(f"Data loaded via SparkJobAnalyzer: {df_raw.count():,} records")
 print("\nData Schema:")
 df_raw.printSchema()
 
-print("\n📂 Sample Records:")
+print("\nFILES: Sample Records:")
 df_raw.show(5, truncate=False)
 
 # Get overall statistics using our analyzer
@@ -314,7 +314,7 @@ geographic_analysis = analyzer.get_geographic_analysis(top_n=8)
 print(geographic_analysis.to_string(index=False))
 
 # Skills analysis
-print("\n💻 Skills Premium Analysis:")
+print("\nTECH: Skills Premium Analysis:")
 skills_analysis = analyzer.get_skills_analysis(top_n=6)
 print(skills_analysis.to_string(index=False))
 

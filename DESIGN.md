@@ -308,10 +308,10 @@ Finance Industry - Data Analyst in expensive metros:
 | Healthcare | Part-time | Hybrid | Entry | $28/hr ($58K) | 150+ jobs |
 
 **Key Improvements**:
-- ✅ **20-40% more accurate** salary estimates for contract vs full-time roles
-- ✅ **Captures remote work premiums/discounts** (5-15% typical variation)
-- ✅ **Industry-specific employment patterns** (e.g., tech contract rates vs finance full-time)
-- ✅ **Realistic fallback hierarchy** when specific combinations have low data
+- SUCCESS: **20-40% more accurate** salary estimates for contract vs full-time roles
+- SUCCESS: **Captures remote work premiums/discounts** (5-15% typical variation)
+- SUCCESS: **Industry-specific employment patterns** (e.g., tech contract rates vs finance full-time)
+- SUCCESS: **Realistic fallback hierarchy** when specific combinations have low data
 
 ```python
 # Load with Lightcast-specific processing
@@ -437,9 +437,9 @@ def load_full_dataset(self, data_path: str) -> DataFrame:
 ### Loading Performance Comparison
 | Data Source | Load Time | Processing Level | Query Performance | Data Quality |
 |-------------|-----------|------------------|-------------------|---------------|
-| **Parquet** | ~3-5 sec | Fully processed | **Fastest** (columnar) | ✅ Optimal |
-| **Processed CSV** | ~15-30 sec | Cleaned & standardized | Good (row-based) | ✅ High |
-| **Raw Lightcast** | ~30-60 sec | Raw data | Moderate (requires processing) | ⚠️ Variable |
+| **Parquet** | ~3-5 sec | Fully processed | **Fastest** (columnar) | SUCCESS: Optimal |
+| **Processed CSV** | ~15-30 sec | Cleaned & standardized | Good (row-based) | SUCCESS: High |
+| **Raw Lightcast** | ~30-60 sec | Raw data | Moderate (requires processing) | WARNING: Variable |
 
 ### Schema Management
 - **Predefined schema**: Explicit type definitions prevent inference overhead
@@ -466,10 +466,10 @@ def _validate_dataset(self, df: DataFrame) -> None:
 ```
 
 **Validation Checks**:
-- ✅ **Empty dataset detection**: Prevents analysis on zero records
-- ✅ **Required column validation**: Ensures critical fields exist
-- ⚠️ **Data quality warnings**: Alerts for high null percentages or invalid ranges
-- 📊 **Quality metrics**: Reports completeness and consistency statistics
+- SUCCESS: **Empty dataset detection**: Prevents analysis on zero records
+- SUCCESS: **Required column validation**: Ensures critical fields exist
+- WARNING: **Data quality warnings**: Alerts for high null percentages or invalid ranges
+- DATA: **Quality metrics**: Reports completeness and consistency statistics
 
 ---
 
@@ -747,14 +747,14 @@ def safe_create_analyzer():
     try:
         return create_spark_analyzer()
     except FileNotFoundError as e:
-        print("❌ No data sources found!")
+        print("ERROR: No data sources found!")
         print("Required files:")
         print("  - data/processed/job_market_processed.parquet/ (preferred)")
         print("  - data/processed/clean_job_data.csv (fallback)")  
         print("  - data/raw/lightcast_job_postings.csv (final fallback)")
         return None
     except Exception as e:
-        print(f"⚠️  Data quality issue: {e}")
+        print(f"WARNING:  Data quality issue: {e}")
         print("Consider re-running data processing pipeline")
         return None
 
@@ -805,32 +805,32 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
 
 ### Processing Steps Applied
 
-1. ✅ **Raw data ingestion** with Lightcast schema validation
-2. ✅ **Comprehensive data quality assessment** (null analysis, duplicates, outliers)
-3. ✅ **Data cleaning pipeline** (text standardization, categorical mapping)
-4. ✅ **Hierarchical missing value imputation** (industry → experience → global medians)
-5. ✅ **Advanced feature engineering** (AI role classification, remote work detection)
-6. ✅ **Data validation** (salary range validation, consistency checks)
-7. ✅ **Multi-format export** with optimized Parquet storage
+1. SUCCESS: **Raw data ingestion** with Lightcast schema validation
+2. SUCCESS: **Comprehensive data quality assessment** (null analysis, duplicates, outliers)
+3. SUCCESS: **Data cleaning pipeline** (text standardization, categorical mapping)
+4. SUCCESS: **Hierarchical missing value imputation** (industry → experience → global medians)
+5. SUCCESS: **Advanced feature engineering** (AI role classification, remote work detection)
+6. SUCCESS: **Data validation** (salary range validation, consistency checks)
+7. SUCCESS: **Multi-format export** with optimized Parquet storage
 
 ### Current System Benefits
 
-- **🔄 Automatic Fallback**: System works even if only raw data exists
-- **✅ Data Validation**: Every load includes quality validation
-- **⚡ Performance Tiers**: 3-tier loading (Parquet→CSV→Raw) for optimal speed
-- **🛡️ Error Handling**: Clear error messages for missing/corrupted data
-- **📊 Quality Reporting**: Detailed statistics on data completeness and consistency
+- **PROCESSING: Automatic Fallback**: System works even if only raw data exists
+- **SUCCESS: Data Validation**: Every load includes quality validation
+- **FAST: Performance Tiers**: 3-tier loading (Parquet→CSV→Raw) for optimal speed
+- **SECURITY: Error Handling**: Clear error messages for missing/corrupted data
+- **DATA: Quality Reporting**: Detailed statistics on data completeness and consistency
 
 ### Result Files Created
 
 ```
 data/processed/
-├── job_market_processed.parquet/     # 🚀 Primary (fastest loading)
+├── job_market_processed.parquet/     # STARTING: Primary (fastest loading)
 │   ├── part-00000-*.snappy.parquet  # Compressed columnar data
 │   └── _SUCCESS                      # Processing completion marker
-├── clean_job_data.csv               # 🔄 Fallback (broad compatibility)  
-├── data_schema.json                 # 📋 Schema documentation
-└── processing_report.md             # 📈 Quality metrics & statistics
+├── clean_job_data.csv               # PROCESSING: Fallback (broad compatibility)  
+├── data_schema.json                 # LIST: Schema documentation
+└── processing_report.md             # ANALYSIS: Quality metrics & statistics
 ```
 
 ### Performance Impact
