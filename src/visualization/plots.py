@@ -327,6 +327,179 @@ class SalaryVisualizer:
         )
         
         return fig
+    
+    def get_top_paying_industries(self, top_n: int = 10) -> pd.DataFrame:
+        """
+        Get top-paying industries with detailed statistics.
+        
+        Args:
+            top_n: Number of top industries to return
+            
+        Returns:
+            DataFrame with industry analysis results
+        """
+        # Determine industry column
+        industry_col = None
+        for col in ['INDUSTRY_CLEAN', 'industry', 'INDUSTRY']:
+            if col in self.df.columns:
+                industry_col = col
+                break
+        
+        if not industry_col:
+            raise ValueError("No industry column found in dataset")
+        
+        # Calculate industry statistics
+        industry_stats = (
+            self.df.groupby(industry_col)['salary_avg']
+            .agg(['median', 'mean', 'count', 'std'])
+            .round(0)
+            .reset_index()
+        )
+        
+        # Add additional metrics if available
+        if 'ai_related' in self.df.columns:
+            ai_premiums = {}
+            for industry in industry_stats[industry_col]:
+                industry_data = self.df[self.df[industry_col] == industry]
+                ai_median = industry_data[industry_data['ai_related'] == True]['salary_avg'].median()
+                non_ai_median = industry_data[industry_data['ai_related'] == False]['salary_avg'].median()
+                
+                if pd.notna(ai_median) and pd.notna(non_ai_median) and non_ai_median > 0:
+                    premium = ((ai_median - non_ai_median) / non_ai_median * 100)
+                    ai_premiums[industry] = f"+{premium:.0f}%" if premium > 0 else f"{premium:.0f}%"
+                else:
+                    ai_premiums[industry] = "N/A"
+            
+            industry_stats['ai_premium'] = industry_stats[industry_col].map(ai_premiums)
+        
+        # Calculate remote work percentage if available
+        if 'is_remote' in self.df.columns:
+            remote_pcts = {}
+            for industry in industry_stats[industry_col]:
+                industry_data = self.df[self.df[industry_col] == industry]
+                remote_pct = industry_data['is_remote'].mean() * 100
+                remote_pcts[industry] = f"{remote_pct:.0f}%"
+            
+            industry_stats['remote_percentage'] = industry_stats[industry_col].map(remote_pcts)
+        
+        # Return top N by median salary
+        return industry_stats.nlargest(top_n, 'median')
+    
+    def get_overall_statistics(self) -> dict:
+        """
+        Calculate overall salary statistics for the dataset.
+        
+        Returns:
+            Dictionary with key salary statistics
+        """
+        stats = {
+            'median': self.df['salary_avg'].median(),
+            'mean': self.df['salary_avg'].mean(),
+            'std': self.df['salary_avg'].std(),
+            'min': self.df['salary_avg'].min(),
+            'max': self.df['salary_avg'].max(),
+            'q25': self.df['salary_avg'].quantile(0.25),
+            'q75': self.df['salary_avg'].quantile(0.75),
+            'count': len(self.df)
+        }
+        
+        # Add percentage ranges
+        stats['range_95_min'] = self.df['salary_avg'].quantile(0.025)
+        stats['range_95_max'] = self.df['salary_avg'].quantile(0.975)
+        
+        return stats
+    
+    def get_experience_progression(self) -> pd.DataFrame:
+        """
+        Analyze salary progression by experience level.
+        
+        Returns:
+            DataFrame with experience level analysis
+        """
+        # Determine experience column
+        exp_col = None
+        for col in ['EXPERIENCE_LEVEL_CLEAN', 'experience_level', 'EXPERIENCE_LEVEL']:
+            if col in self.df.columns:
+                exp_col = col
+                break
+        
+        if not exp_col:
+            # Create experience levels based on salary if no column exists
+            self.df['experience_inferred'] = pd.cut(
+                self.df['salary_avg'],
+                bins=[0, 80000, 120000, 160000, float('inf')],
+                labels=['Entry (0-2y)', 'Mid (3-7y)', 'Senior (8-15y)', 'Executive (15+y)']
+            )
+            exp_col = 'experience_inferred'
+        
+        # Calculate experience statistics
+        exp_stats = (
+            self.df.groupby(exp_col)['salary_avg']
+            .agg(['median', 'mean', 'count', 'std'])
+            .round(0)
+            .reset_index()
+        )
+        
+        return exp_stats
+    
+    def get_education_premium_analysis(self) -> pd.DataFrame:
+        """
+        Analyze education level premiums.
+        
+        Returns:
+            DataFrame with education premium analysis
+        """
+        # Determine education column or infer from job titles
+        edu_col = None
+        for col in ['EDUCATION_REQUIRED', 'education_level', 'EDUCATION']:
+            if col in self.df.columns:
+                edu_col = col
+                break
+        
+        if not edu_col:
+            # Infer education from job titles if available
+            title_col = None
+            for col in ['TITLE', 'job_title', 'title']:
+                if col in self.df.columns:
+                    title_col = col
+                    break
+            
+            if title_col:
+                education_keywords = {
+                    'PhD/Advanced': ['phd', 'doctorate', 'postdoc', 'researcher', 'scientist'],
+                    'Masters': ['mba', 'masters', 'ms ', 'ma ', 'graduate', 'senior', 'lead'],
+                    'Bachelors': ['bachelor', 'bs ', 'ba ', 'college', 'university', 'engineer', 'developer'],
+                    'High School': ['high school', 'hs', 'entry', 'junior', 'associate']
+                }
+                
+                self.df['education_inferred'] = 'Bachelors'  # Default
+                for edu_level, keywords in education_keywords.items():
+                    mask = self.df[title_col].str.lower().str.contains('|'.join(keywords), na=False)
+                    self.df.loc[mask, 'education_inferred'] = edu_level
+                
+                edu_col = 'education_inferred'
+        
+        if edu_col:
+            # Calculate education statistics
+            edu_stats = (
+                self.df.groupby(edu_col)['salary_avg']
+                .agg(['median', 'mean', 'count', 'std'])
+                .round(0)
+                .reset_index()
+            )
+            
+            # Calculate premiums relative to bachelor's
+            baseline = edu_stats[edu_stats[edu_col].str.contains('Bachelor', na=False)]['median']
+            if len(baseline) > 0:
+                baseline_salary = baseline.iloc[0]
+                edu_stats['premium_pct'] = ((edu_stats['median'] - baseline_salary) / baseline_salary * 100).round(1)
+            else:
+                baseline_salary = edu_stats['median'].min()
+                edu_stats['premium_pct'] = ((edu_stats['median'] - baseline_salary) / baseline_salary * 100).round(1)
+            
+            return edu_stats
+        
+        return pd.DataFrame()  # Return empty if no education data
 
 
 def create_dashboard_layout(df: pd.DataFrame) -> Dict:
