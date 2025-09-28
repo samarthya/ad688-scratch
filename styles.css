@@ -256,7 +256,7 @@ code {
 }
 
 .navbar-nav .nav-link {
-  color: #2c3e50 !important;
+  color: #ffffff !important;
 }
 
 .navbar-nav .nav-link:hover {
@@ -269,7 +269,6 @@ code {
 .toc-actions .nav-link,
 nav[role="doc-toc"] .nav-link,
 #toc-title + .nav .nav-link,
-.nav-pills .nav-link,
 .toc .nav-link,
 div[role="navigation"] .nav-link {
   color: #2c3e50 !important;
@@ -278,13 +277,22 @@ div[role="navigation"] .nav-link {
   border: none !important;
 }
 
+/* Panel-tabset specific styling - Override the general nav-pills rule */
+.panel-tabset .nav-pills .nav-link {
+  color: #495057 !important;
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 0.375rem !important;
+  margin-right: 0.25rem !important;
+  font-weight: 500 !important;
+}
+
 /* TOC hover states */
 .sidebar-toc .toc-item:hover,
 #TOC .nav-link:hover,
 .toc-actions .nav-link:hover,
 nav[role="doc-toc"] .nav-link:hover,
 #toc-title + .nav .nav-link:hover,
-.nav-pills .nav-link:hover,
 .toc .nav-link:hover,
 div[role="navigation"] .nav-link:hover {
   color: #1a252f !important;
@@ -292,17 +300,32 @@ div[role="navigation"] .nav-link:hover {
   text-decoration: none;
 }
 
+/* Panel-tabset hover and active states */
+.panel-tabset .nav-pills .nav-link:hover {
+  color: #0d6efd !important;
+  background-color: #e7f1ff !important;
+  border-color: #0d6efd !important;
+  text-decoration: none !important;
+}
+
 /* Active TOC item styling */
 .sidebar-toc .toc-item.active,
 #TOC .nav-link.active,
 nav[role="doc-toc"] .nav-link.active,
 .toc-active,
-.nav-pills .nav-link.active,
 .toc .nav-link.active,
 div[role="navigation"] .nav-link.active {
   color: #ffffff !important;
   background-color: #3498db !important;
   font-weight: 600;
+}
+
+/* Panel-tabset active state */
+.panel-tabset .nav-pills .nav-link.active {
+  color: #ffffff !important;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  font-weight: 600 !important;
 }
 
 /* TOC section styling */

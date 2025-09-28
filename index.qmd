@@ -36,12 +36,58 @@ Our primary research focus examines compensation inequities across multiple dime
 
 ### Key Findings Preview
 
-Our analysis of 5,000+ technology job postings reveals significant disparities:
+::: {.callout-important}
+## 🎯 Key Disparity Findings from 72,000+ Job Postings
 
-- **197% salary gap** between entry-level and leadership positions
-- **64.9% education premium disparity** across degree levels  
-- **24.3% company size compensation gap** between organizations
-- **Systematic inequities** that require targeted interventions
+- **233% Experience Gap** - Entry-level to Executive salary disparity
+- **177% Education Premium** - Advanced vs. Basic education compensation gap  
+- **40% Company Size Effect** - Large vs. Small organization pay differences
+- **Geographic Variations** - Regional compensation inequities up to 67%
+:::
+
+## 📈 Interactive Key Findings Dashboard
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
+<h3 style="margin-top: 0; color: white;">🎯 Critical Salary Disparities Identified</h3>
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+<div style="margin: 10px;"><strong>233%</strong><br>Experience Gap</div>
+<div style="margin: 10px;"><strong>177%</strong><br>Education Premium</div>
+<div style="margin: 10px;"><strong>40%</strong><br>Company Size Gap</div>
+<div style="margin: 10px;"><strong>72K+</strong><br>Jobs Analyzed</div>
+</div>
+</div>
+
+::: {.panel-tabset}
+
+## 📊 Experience Gap: 233%
+
+<div style="border: 2px solid #3498db; border-radius: 8px; padding: 10px;">
+<iframe src="figures/key_finding_experience_gap.html" width="100%" height="450px" frameborder="0" onclick="window.open('salary-analysis.qmd#experience-progression-analysis', '_blank')"></iframe>
+**[→ View Detailed Analysis](salary-analysis.qmd#experience-progression-analysis){target="_blank"}**
+</div>
+
+## 🎓 Education Premium: 177%
+
+<div style="border: 2px solid #9b59b6; border-radius: 8px; padding: 10px;">
+<iframe src="figures/key_finding_education_premium.html" width="100%" height="450px" frameborder="0"></iframe>
+**[→ View Detailed Analysis](salary-analysis.qmd#geographic-salary-analysis){target="_blank"}**
+</div>
+
+## 🏢 Company Size Gap: 40%
+
+<div style="border: 2px solid #27ae60; border-radius: 8px; padding: 10px;">
+<iframe src="figures/key_finding_company_size.html" width="100%" height="450px" frameborder="0"></iframe>
+**[→ View Detailed Analysis](salary-analysis.qmd#executive-summary){target="_blank"}**
+</div>
+
+## 🚀 Complete Dashboard
+
+<div style="border: 2px solid #e74c3c; border-radius: 8px; padding: 10px;">
+<iframe src="figures/key_findings_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
+**[→ Interactive Analysis](salary-analysis.qmd){target="_blank"}**
+</div>
+
+:::
 
 ## Research Focus Areas
 

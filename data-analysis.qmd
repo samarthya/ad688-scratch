@@ -95,10 +95,6 @@ print(f"Analyzer ready with {analyzer.job_data.count():,} records")
 ### Schema Definition and Data Loading
 
 ```{python}
-#| label: schema-definition
-#| code-summary: "Define schema for Lightcast dataset and load data"
-
-```{python}
 #| label: data-loading
 #| code-summary: "Load data using our SparkJobAnalyzer class"
 
@@ -118,6 +114,12 @@ print("\nDataset Statistics:")
 for key, value in stats.items():
     print(f"  {key}: {value:,}")
 ```
+
+### Data Loading Function
+
+```{python}
+#| label: load-job-data
+#| code-summary: "Data loading utility function"
 
 def load_job_data(file_path: str = None):
     """
