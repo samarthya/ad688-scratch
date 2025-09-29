@@ -71,7 +71,7 @@ src/
 ├── visualization/                # Visualization utilities
 │   ├── simple_plots.py           # Matplotlib/Seaborn visualizations  
 │   └── plots.py                  # Advanced plotting utilities
-├── analysis/                     # Analysis modules (placeholder)
+├── config/                       # Configuration and mapping utilities
 └── demo_class_usage.py           # Usage examples
 ```
 
@@ -358,7 +358,7 @@ df = spark.read.option("header", "true").option("inferSchema", "true").csv(file_
 
 ## Class Architecture & Responsibilities
 
-### 1. SparkJobAnalyzer (`spark_analyzer.py`)
+### 1. SparkJobAnalyzer (`src/data/spark_analyzer.py`)
 
 **Purpose**: Core Spark-based analysis engine for SQL-driven analytics
 
@@ -382,7 +382,7 @@ class SparkJobAnalyzer:
 - **Pandas integration**: Converts results to Pandas for visualization compatibility
 - **Performance optimized**: Adaptive query execution and Arrow optimization
 
-### 2. JobMarketDataProcessor (`enhanced_processor.py`)
+### 2. JobMarketDataProcessor (`src/data/enhanced_processor.py`)
 
 **Purpose**: Advanced data processing with comprehensive cleaning and validation
 

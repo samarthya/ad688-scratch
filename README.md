@@ -97,7 +97,7 @@ quarto preview --no-browser
 └── Documentation
     ├── README.md                 # This file - project overview and setup
     ├── DESIGN.md                 # Technical architecture and implementation  
-    └── ANALYSIS_GUIDE.md         # How to interpret results and methodology
+    └── SETUP.md                  # Environment configuration and setup
 ```
 
 ---
@@ -207,7 +207,7 @@ The insights are based on real market data and suitable for career planning and 
 **Author**: Saurabh Sharma (Boston University)
 **Repository**: [GitHub - ad688-scratch](https://github.com/samarthya/ad688-scratch)  
 **Technical Documentation**: See `DESIGN.md` for detailed implementation guide
-**Analysis Methodology**: See `ANALYSIS_GUIDE.md` for interpretation help
+**Analysis Methodology**: See `salary-analysis.qmd` for detailed methodology and interpretation
 
 ---
 
