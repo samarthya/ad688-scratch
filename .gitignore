@@ -9,6 +9,8 @@ __pycache__/
 .Python
 *.so
 
+site_libs/
+
 # Jupyter
 .ipynb_checkpoints/
 .jupyter_cache/

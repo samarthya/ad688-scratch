@@ -84,6 +84,91 @@ src/
 
 ---
 
+## Information Flow Architecture
+
+### End-to-End Data Journey
+
+The system follows a structured information flow optimized for salary disparity analysis:
+
+```mermaid
+graph TB
+    subgraph "Data Sources"
+        A[Raw Lightcast CSV<br/>72K+ job postings]
+        A1[Additional Data Sources<br/>Future extensibility]
+    end
+    
+    subgraph "Data Ingestion Layer"
+        B[SparkJobAnalyzer<br/>Schema validation & loading]
+        B --> B1[Column mapping & standardization]
+        B1 --> B2[Data quality assessment]
+    end
+    
+    subgraph "Processing Layer"
+        C[JobMarketDataProcessor<br/>Enhanced cleaning pipeline]
+        C --> C1[Company name standardization<br/>'Undefined' for nulls]
+        C1 --> C2[Salary data cleaning & imputation]
+        C2 --> C3[Feature engineering<br/>Disparity metrics]
+    end
+    
+    subgraph "Analysis Layer"
+        D[Statistical Analysis<br/>Salary disparity calculations]
+        D --> D1[Experience-based disparities]
+        D1 --> D2[Company size impact]
+        D2 --> D3[Geographic variations]
+        D3 --> D4[Education premium analysis]
+    end
+    
+    subgraph "Visualization Layer"
+        E[SalaryDisparityChartConfig<br/>Standardized chart styling]
+        E --> E1[QuartoChartExporter<br/>Multi-format output]
+        E1 --> E2[Interactive Plotly charts]
+        E2 --> E3[Static PNG/SVG exports]
+    end
+    
+    subgraph "Output Layer"
+        F[Quarto Website<br/>_output/ directory]
+        F --> F1[HTML dashboards]
+        F1 --> F2[PDF reports]
+        F2 --> F3[Interactive notebooks]
+    end
+    
+    A --> B
+    A1 --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    
+    style A fill:#E74C3C,color:#fff
+    style C1 fill:#F39C12,color:#fff
+    style D fill:#27AE60,color:#fff
+    style E fill:#8E44AD,color:#fff
+    style F fill:#3498DB,color:#fff
+```
+
+### Critical Information Checkpoints
+
+#### 1. **Data Quality Gates**
+- **Checkpoint A**: Raw data validation (schema, completeness)
+- **Checkpoint B**: Post-cleaning validation (null handling, outliers)
+- **Checkpoint C**: Feature engineering validation (derived metrics)
+
+#### 2. **Salary Disparity Focus Points**
+- **Company Name Handling**: Null/empty → "Undefined" (standardized)
+- **Salary Outlier Detection**: Remove unrealistic values (< $20K, > $500K)
+- **Experience Level Mapping**: Consistent categorization across sources
+- **Geographic Standardization**: State codes, city name normalization
+
+#### 3. **Information Propagation**
+```
+Raw Data → Cleaned Data → Analytics → Visualizations → Reports
+   ↓            ↓            ↓            ↓            ↓
+Quality      Completeness  Accuracy    Readability  Insights
+Validation   Verification  Validation  Optimization Validation
+```
+
+---
+
 ## Data Processing Pipeline
 
 ### High-Level Flow

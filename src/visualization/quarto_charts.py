@@ -1,9 +1,9 @@
 """
-Centralized Visualization Export Module
+Centralized Visualization Export Module - Salary Disparity Focus
 
 This module provides standardized chart generation and export functionality
-for consistent integration with Quarto documents. All charts are saved to
-disk for easy reference and inclusion in HTML/PDF/DOCX outputs.
+for consistent integration with Quarto documents. All charts focus on salary
+disparity analysis and are optimized for readability.
 """
 
 import plotly.graph_objects as go
@@ -13,11 +13,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import json
+from .chart_config import SalaryDisparityChartConfig
 
 class QuartoChartExporter:
     """
-    Centralized chart generation and export for Quarto integration.
-    Saves all charts as HTML, PNG, and SVG for flexible use.
+    Salary Disparity-Focused Chart Generation for Quarto Integration.
+    
+    All charts emphasize salary disparities across experience, company size,
+    education, and geographic factors. Charts are optimized for readability
+    and professional presentation.
     """
     
     def __init__(self, output_dir="figures"):
@@ -25,28 +29,35 @@ class QuartoChartExporter:
         self.output_dir.mkdir(exist_ok=True)
         self.chart_registry = []
         
-    def create_experience_salary_chart(self, data, title="Experience vs Salary Analysis"):
-        """Create standardized experience-salary progression chart"""
+    def create_experience_salary_chart(self, data, title="Salary Disparity by Experience Level"):
+        """Create salary disparity chart showing experience-based compensation gaps"""
         
-        fig = px.bar(
+        # Use the new standardized configuration
+        fig = SalaryDisparityChartConfig.create_readable_bar_chart(
             data, 
-            x='Experience Level', 
-            y='Median Salary',
-            title=title,
-            labels={'Median Salary': 'Median Salary ($)'}
+            x_col='Experience Level', 
+            y_col='Median Salary',
+            title=title
         )
         
-        fig.update_layout(
-            title_font_size=16,
-            xaxis_title_font_size=14,
-            yaxis_title_font_size=14,
-            showlegend=False
-        )
+        # Add disparity-focused annotations
+        if len(data) >= 2:
+            min_salary = data['Median Salary'].min()
+            max_salary = data['Median Salary'].max()
+            disparity_ratio = max_salary / min_salary if min_salary > 0 else 0
+            
+            fig.add_annotation(
+                text=f"<b>Experience Gap:</b> {disparity_ratio:.1f}x salary difference<br>Entry to Senior level",
+                showarrow=False,
+                xref="paper", yref="paper",
+                x=0.02, y=0.98, xanchor='left', yanchor='top',
+                font=dict(size=14, color='#2E2E2E'),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="#8E44AD",
+                borderwidth=2
+            )
         
-        # Format salary axis
-        fig.update_layout(yaxis_tickformat="$,.0f")
-        
-        return self._export_chart(fig, "experience_salary_analysis")
+        return self._export_chart(fig, "experience_salary_disparity")
     
     def create_industry_salary_chart(self, data, title="Industry Salary Comparison"):
         """Create standardized industry salary comparison chart"""
