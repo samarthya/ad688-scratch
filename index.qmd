@@ -1,6 +1,6 @@
 ---
-title: "Technology Job Market: Salary Disparity Analysis"
-subtitle: "Investigating Compensation Inequities in the Tech Industry"
+title: "Tech Career Intelligence: Data-Driven Job Market Analysis"
+subtitle: "Your Guide to Making Informed Career Decisions with Real Market Data"
 author:
   - name: Saurabh Sharma
     affiliations:
@@ -17,33 +17,57 @@ format:
     theme: cosmo
 ---
 
-## Welcome to Our Salary Disparity Investigation
+## Your Career Questions, Answered with Data
 
-This website presents a comprehensive analysis of **salary disparities** in the technology job market. Our research investigates systematic compensation inequities across different demographic and professional factors to promote fair pay practices and informed career planning.
+Welcome to your comprehensive guide for navigating the technology job market. This analysis answers the critical questions every student and professional faces when planning their career path.
 
-### Research Objective: Investigating Salary Disparities
+### What This Analysis Tells You
 
-Our primary research focus examines compensation inequities across multiple dimensions:
+Instead of guessing about career decisions, get data-driven answers to your most important questions:
 
-::: {.callout-important}
-## Key Disparity Research Questions
-- **Experience Gaps**: What is the salary progression disparity between career levels?
-- **Education Premiums**: How significant are education-based compensation inequities?
-- **Company Size Effects**: Do organization sizes create systematic salary gaps?
-- **Geographic Inequities**: Which regions show the largest pay disparities?
-- **Demographic Factors**: What contributes most to wage gaps in technology?
+::: {.callout-note}
+## The Career Questions We Answer
+
+**"How much should I expect to earn?"**
+- Starting salaries by experience level and education
+- Realistic salary progression timelines
+- Industry and location-specific compensation ranges
+
+**"Is my career on the right track?"**
+- Experience-based salary benchmarks
+- Skills that drive highest compensation
+- Career progression milestones and timelines
+
+**"Should I get a Master's degree or PhD?"**
+- Return on investment for different education levels
+- Education premium vs. experience premium
+- Alternative pathways: certifications vs. formal degrees
+
+**"How has remote work changed everything?"**
+- Remote vs. on-site salary comparisons
+- Geographic arbitrage opportunities
+- Work-life balance impact on compensation
+
+**"Where should I work to maximize my earning potential?"**
+- Highest-paying metropolitan areas
+- Cost-of-living adjusted salary analysis
+- Industry concentration by region
 :::
 
-### Key Findings Preview
+### Key Insights from 72,000+ Job Postings
 
-::: {.callout-important}
-## Key Disparity Findings from 72,000+ Job Postings
+::: {.callout-tip}
+## Data-Driven Career Intelligence
 
-- **233% Experience Gap** - Entry-level to Executive salary disparity
-- **177% Education Premium** - Advanced vs. Basic education compensation gap  
-- **40% Company Size Effect** - Large vs. Small organization pay differences
-- **Geographic Variations** - Regional compensation inequities up to 67%
+- **3.3x Salary Growth**: Entry-level to Executive progression potential
+- **25% Education Premium**: Advanced degree ROI quantified  
+- **40% Company Size Impact**: Startup vs. Enterprise compensation differences
+- **75% Remote Availability**: Location-flexible opportunities in tech
 :::
+
+## Interactive Career Intelligence Dashboard
+
+*Click each section to explore the data behind your career decisions*
 
 ## Interactive Key Findings Dashboard
 
@@ -59,149 +83,119 @@ Our primary research focus examines compensation inequities across multiple dime
 
 ::: {.panel-tabset}
 
-## Experience Gap: 233%
+## Career Progression: "How much will I earn as I grow?"
 
-<div style="border: 2px solid #3498db; border-radius: 8px; padding: 10px;">
-<iframe src="figures/key_finding_experience_gap.html" width="100%" height="450px" frameborder="0" onclick="window.open('salary-analysis.qmd#experience-progression-analysis', '_blank')"></iframe>
-**[→ View Detailed Analysis](salary-analysis.qmd#experience-progression-analysis){target="_blank"}**
-</div>
+{{< include figures/validated_experience_salary.html >}}
 
-## Education Premium: 177%
+<h4>Answers: "What's my earning potential over time?"</h4>
 
-<div style="border: 2px solid #9b59b6; border-radius: 8px; padding: 10px;">
-<iframe src="figures/key_finding_education_premium.html" width="100%" height="450px" frameborder="0"></iframe>
-**[→ View Detailed Analysis](salary-analysis.qmd#geographic-salary-analysis){target="_blank"}**
-</div>
+## Education ROI: "Is graduate school worth it?"
 
-## Company Size Gap: 40%
+{{< include figures/key_finding_education_premium.html >}}
 
-<div style="border: 2px solid #27ae60; border-radius: 8px; padding: 10px;">
+<h4>Answers: "Should I invest in more education?"</h4>
+
+## Company Strategy: \"Startup or Enterprise?\"
+
+<div style="border: 2px solid #27ae60; border-radius: 8px; padding: 15px; background: #f4fff8;">
+<h4>Answers: "Where should I work for best compensation?"</h4>
 <iframe src="figures/key_finding_company_size.html" width="100%" height="450px" frameborder="0"></iframe>
-**[→ View Detailed Analysis](salary-analysis.qmd#executive-summary){target="_blank"}**
+<p><strong>Key Insight:</strong> Large companies pay 40% more on average, but startups offer equity upside. Consider total compensation packages.</p>
+**[→ View Detailed Analysis](salary-analysis.qmd#company-size-analysis){target="_blank"}**
 </div>
 
-## Complete Dashboard
+## Complete Intelligence: "Show me everything"
 
-<div style="border: 2px solid #e74c3c; border-radius: 8px; padding: 10px;">
+<div style="border: 2px solid #e74c3c; border-radius: 8px; padding: 15px; background: #fff8f8;">
+<h4>Complete Career Intelligence Dashboard</h4>
 <iframe src="figures/key_findings_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
+<p><strong>Key Insight:</strong> Comprehensive view of market trends, geographic opportunities, and strategic career planning data.</p>
 **[→ Interactive Analysis](salary-analysis.qmd){target="_blank"}**
 </div>
 
 :::
 
-## Research Focus Areas
+## Your Career Navigation Guide
 
-### Salary Disparity Investigation
-Our primary focus investigates compensation inequities and systematic disparities:
+This analysis is organized to answer your questions in the order you'd naturally ask them:
 
-::: {.callout-important}
-## Key Disparity Research Questions
-- What is the salary progression gap between experience levels?
-- How significant are education-based compensation disparities?
-- Do company sizes create systematic salary inequities?
-- Which demographic factors contribute most to wage gaps?
-- How do geographic disparities compare to cost-of-living adjustments?
+### Start Here: Core Questions
+- **[Salary Analysis](salary-analysis.qmd)** - "What should I expect to earn?" 
+  - Experience-based compensation benchmarks
+  - Education ROI calculations
+  - Industry-specific salary ranges
+
+### Geographic Intelligence  
+- **[Regional Analysis](regional-trends.qmd)** - "Where should I work?"
+  - Highest-paying metropolitan areas
+  - Cost-of-living adjusted salaries
+  - Regional industry concentrations
+
+### Modern Work Flexibility
+- **[Remote Work Impact](remote-work.qmd)** - "How has remote work changed everything?"
+  - Remote vs on-site salary comparisons
+  - Geographic arbitrage opportunities
+  - Work-life balance considerations
+
+### Deep Dive Analysis
+- **[Interactive Analysis](notebooks/job_market_skill_analysis.ipynb)** - "Show me the data science"
+  - Machine learning models and predictions
+  - Statistical validation and methodology
+  - Interactive charts and exploration tools
+
+---
+
+## How to Use This Intelligence
+
+### For Students Planning Careers:
+1. **Start with [Salary Analysis](salary-analysis.qmd)** to set realistic expectations
+2. **Check [Regional Analysis](regional-trends.qmd)** for location strategy  
+3. **Review [Remote Work](remote-work.qmd)** for modern workplace trends
+4. **Use benchmarks for internship and job negotiations**
+
+### For Job Seekers:
+1. **Benchmark current compensation** against market data
+2. **Identify high-value skills** from analysis insights
+3. **Optimize job search strategy** with geographic and remote work data
+4. **Prepare for salary negotiations** with specific market intelligence
+
+### For Career Changers:
+1. **Assess transition impact** on compensation expectations
+2. **Plan skill development** based on market demand analysis
+3. **Evaluate education investments** with ROI calculations
+4. **Consider geographic moves** for career optimization
+
+---
+
+## Data Foundation
+
+**72,000+ Job Postings Analyzed** from Lightcast's comprehensive database
+
+**Analysis Methods:**
+- Statistical modeling with Python and PySpark
+- Interactive visualizations with Plotly
+- Geographic salary analysis across metropolitan areas
+- Machine learning for trend prediction and classification
+
+**Data Reliability:**
+- Real job market data, not survey estimates
+- Comprehensive coverage across technology roles
+- Regular updates reflecting current market conditions
+- Statistical validation and confidence intervals
+
+---
+
+::: {.callout-tip}
+## Ready to Start? 
+
+**New to the analysis?** Begin with [Salary Analysis](salary-analysis.qmd) to understand compensation fundamentals.
+
+**Planning location strategy?** Jump to [Regional Analysis](regional-trends.qmd) for geographic intelligence.
+
+**Need detailed methodology?** Visit [Interactive Analysis](notebooks/job_market_skill_analysis.ipynb) for complete technical details.
 :::
 
-### Data-Driven Career Planning
-
-We provide actionable insights for:
-
-- **Skills gap analysis** : Identifying in-demand capabilities
-- **Geographic optimization** : Finding high-paying markets
-- **Career pathway mapping** : Planning progression strategies
-- **Industry trend forecasting** : Anticipating future opportunities
-
-## Methodology
-
-Our analysis leverages:
-
-- **Real job posting data** : from Lightcast's comprehensive database
-- **Statistical modeling** : using Python and PySpark
-- **Interactive visualizations** : with Plotly and Dash
-- **Geographic analysis** : of salary variations
-- **Longitudinal trend analysis** : across multiple years
-
-## Navigation Guide
-
-Use the sidebar to explore specific analysis areas:
-
-- **[Salary Analysis](salary-analysis.qmd)** - Comprehensive compensation breakdowns
-- **[Regional Trends](regional-trends.qmd)** - Geographic salary patterns  
-- **[Remote Work Analysis](remote-work.qmd)** - Location flexibility impact on compensation
-- **[Interactive Analysis](notebooks/job_market_skill_analysis.ipynb)** - Jupyter notebook with visualizations
-- **[Data Processing](data-analysis.qmd)** - Technical methodology and pipeline
-
-## Interactive Salary Disparity Analysis
-
-Explore our comprehensive salary disparity investigation through interactive visualizations:
-
-::: {.panel-tabset}
-
-## Salary Analysis Dashboard
-
-<iframe src="figures/salary_disparity_analysis.html" width="100%" height="650px" frameborder="0"></iframe>
-
-**Key Features:**
-
-- **Experience Progression**: Interactive salary curves by career level
-- **Education Analysis**: Compensation premiums across degree types  
-- **Distribution Insights**: Salary ranges and statistical breakdowns
-- **Company Impact**: Size-based compensation variations
-
-## Executive Overview
-
-<iframe src="figures/executive_dashboard.html" width="100%" height="650px" frameborder="0"></iframe>
-
-**Executive Insights:**
-
-- **Market Overview**: High-level salary trends and patterns
-- **Industry Comparisons**: Cross-sector compensation analysis
-- **Strategic Recommendations**: Data-driven career guidance
-- **Performance Metrics**: Key disparity indicators
-
-## Interactive Analysis
-
-::: {.callout-note}
-## Interactive Jupyter Notebook Analysis
-**[Open Full Interactive Analysis →](notebooks/job_market_skill_analysis.html){target="_blank"}**
-
-*Click the link above to access the complete interactive analysis in a new window.*
-:::
-
-**Interactive Features:**
-- **Skills Analysis**: Technology skill premium calculations with interactive plots
-- **Regional Trends**: Geographic salary variations and cost-of-living adjustments
-- **Career Pathways**: Progression analysis by role and experience level  
-- **Market Dynamics**: Real-time data insights and trend analysis
-
-**Analysis Highlights:**
-- Machine Learning skills show **45% salary premium**
-- Cloud Architecture offers **38% compensation boost** 
-- Geographic location impacts salary by up to **67%**
-- Technology sector growth rate: **193% career progression**
-
-:::
-
-## Research Methodology
-
-Our disparity analysis employs:
-
-- **Comprehensive Dataset**: 5,000+ technology job postings
-- **Statistical Modeling**: PySpark for large-scale data processing
-- **Interactive Visualizations**: Plotly for web-based exploration
-- **Disparity Metrics**: Quantitative inequality measurements
-- **Cross-dimensional Analysis**: Multiple demographic factors
-
-## Navigation Guide
-
-Explore our salary disparity research:
-
-- **[Salary Analysis](salary-analysis.qmd)** - Detailed compensation disparity investigation
-- **[Skills Analysis](notebooks/job_market_skill_analysis.ipynb)** - Interactive Jupyter analysis
-- **[Regional Trends](regional-trends.qmd)** - Geographic salary variations
-- **[Remote Work Impact](remote-work.qmd)** - Location flexibility effects
-- **[Data Processing](data-analysis.qmd)** - Technical methodology and data pipeline
+*Make informed career decisions with real market data, not guesswork.*
 
 ## Key Insights for Action
 

@@ -2,14 +2,13 @@
 
 **Authoritative technical reference** for the job market analytics system architecture, data pipeline, and implementation patterns.
 
-> **Project overview**: See [README.md](README.md)  
-> **Visual class relationships**: See [UML Diagram](docs/class_architecture.md)
+> **Project overview**: See [README.md](README.md)
 
 ## Table of Contents
 
 1. [System Architecture](#system-architecture)
 2. [Data Processing Pipeline](#data-processing-pipeline)
-3. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
+3. [Class Architecture & UML Diagram](#class-architecture--uml-diagram)
 4. [Column Mapping & Transformation Strategy](#column-mapping--transformation-strategy)
 5. [Data Loading & Storage Strategy](#data-loading--storage-strategy)
 6. [Quality Assurance & Validation](#quality-assurance--validation)

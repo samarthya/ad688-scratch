@@ -825,7 +825,7 @@ This analysis demonstrates our **"Don't Reinvent the Wheel"** principle using a 
 **Before (Manual Functions):** 300+ lines of duplicated data processing code  
 **After (Class-Based):** Reusable methods with consistent interfaces and error handling
 
-**Architecture Documentation:** See `docs/class_architecture.md` for complete UML diagram
+**Architecture Documentation:** See `docs/CLASS_ARCHITECTURE.md` for complete UML diagram
 
 ---
 

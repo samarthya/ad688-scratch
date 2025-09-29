@@ -18,24 +18,22 @@ project:
     navigate: true
 
 website:
-  title: "Salary Disparity Analysis: Technology Job Market"
-  description: "Investigating compensation inequities in the technology industry"
+  title: "Tech Career Intelligence: Data-Driven Job Market Guide"
+  description: Your comprehensive guide to making informed career decisions with real market data
   
   navbar:
-    title: "Salary Disparity Research"
+    title: "Career Intelligence"
     left:
       - href: index.qmd
-        text: Home
-      - href: notebooks/ml_feature_engineering_lab.ipynb
-        text: Interactive Analysis
+        text: "Home"
       - href: salary-analysis.qmd
-        text: Salary Research
-      - href: data-analysis.qmd
-        text: Data Processing
+        text: "Salary Analysis"
       - href: regional-trends.qmd
-        text: Geographic Analysis
+        text: "Regional Intelligence"
       - href: remote-work.qmd
-        text: Remote Work Impact
+        text: "Remote Work"
+      - href: notebooks/job_market_skill_analysis.ipynb
+        text: "Deep Analysis"
     right:
       - icon: github
         href: https://github.com/samarthya/ad688-scratch
@@ -45,18 +43,18 @@ website:
     style: "docked"
     search: true
     contents:
-      - section: "Research Overview"
+      - section: "Career Intelligence Hub"
         contents:
           - index.qmd
           - data-methodology.qmd
-      - section: "Salary Disparity Analysis" 
+      - section: "Core Analysis" 
         contents:
-          - notebooks/job_market_skill_analysis.ipynb
           - salary-analysis.qmd
-      - section: "Supporting Analysis"
-        contents:
           - regional-trends.qmd
           - remote-work.qmd
+      - section: "Technical Deep Dive"
+        contents:
+          - notebooks/job_market_skill_analysis.ipynb
           - data-analysis.qmd
 
 format:

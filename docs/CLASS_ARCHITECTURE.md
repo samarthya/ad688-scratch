@@ -2,6 +2,7 @@
 
 Visual representation of the job market analysis system's class relationships and data flow.
 
+match path="/home/samarthya/sourcebox/github.com/project-from-scratch/docs/CLASS_ARCHITECTURE.md" line=5>
 > **System overview and design philosophy**: See [Technical Design](../DESIGN.md)  
 > **Implementation details and usage patterns**: See individual class documentation in `src/`
 
@@ -60,13 +61,28 @@ classDiagram
     %% Visualization Classes
     class SalaryVisualizer {
         -DataFrame df
+        -List color_palette
         +__init__(df: DataFrame)
-        +get_industry_salary_analysis(top_n: int) DataFrame
-        +get_experience_salary_analysis() DataFrame
-        +get_education_premium_analysis() DataFrame
+        +plot_salary_distribution(group_by: str, bins: int, interactive: bool) Figure
+        +plot_salary_by_category(category: str, top_n: int, horizontal: bool) Figure
+        +plot_ai_salary_comparison() Figure
+        +plot_experience_salary_trend() Figure
+        +plot_geographic_heatmap(metric: str) Figure
+        +create_correlation_matrix() Figure
+        +plot_remote_salary_analysis() Figure
+        +get_top_paying_industries(top_n: int) DataFrame
         +get_overall_statistics() Dict
-        +get_geographic_salary_analysis(top_n: int) DataFrame
-        +get_experience_progression_analysis() Dict
+        +get_experience_progression() DataFrame
+        +get_education_premium_analysis() DataFrame
+        +create_executive_dashboard_suite(output_dir: str) Dict
+        +create_key_findings_graphics(output_dir: str) Dict
+        -_prepare_executive_data() Dict
+        -_create_market_overview_page(data: Dict, output_dir: str) void
+        -_create_remote_work_page(data: Dict, output_dir: str) void
+        -_create_occupation_trends_page(data: Dict, output_dir: str) void
+        -_create_salary_insights_page(data: Dict, output_dir: str) void
+        -_create_navigation_index_page(output_dir: str) void
+        -_create_key_findings_dashboard(exp_stats: DataFrame, edu_stats: DataFrame, size_stats: DataFrame, experience_gap: float, edu_gap: float, size_gap: float, output_dir: str) void
     }
 
     %% Data Schema Classes (Actual Lightcast Structure)
@@ -162,10 +178,11 @@ classDiagram
     SparkJobAnalyzer : with PySpark SQL queries
     SparkJobAnalyzer : Status Implemented
     
-    SalaryVisualizer : Lightweight visualization
-    SalaryVisualizer : Compatible with existing code
-    SalaryVisualizer : Falls back gracefully
-    SalaryVisualizer : Status Implemented
+    SalaryVisualizer : Comprehensive visualization suite
+    SalaryVisualizer : Executive dashboards integrated
+    SalaryVisualizer : Key findings charts integrated
+    SalaryVisualizer : Interactive Plotly visualizations
+    SalaryVisualizer : Status Fully Integrated
     
     JobMarketDataProcessor : Comprehensive processor
     JobMarketDataProcessor : Data quality assessment
@@ -177,4 +194,45 @@ classDiagram
     LightcastSchema : NAICS2_NAME to industry_clean
     LightcastSchema : Status Documented
 ```
+
+## Recent Architecture Improvements
+
+### Executive Dashboard Integration (September 2025)
+- **Before**: Standalone `create_enhanced_executive_dashboards.py` script outside `src/`
+- **After**: Integrated as `create_executive_dashboard_suite()` method in `SalaryVisualizer` class
+- **Benefits**: Clean architecture, reusable components, consistent with class-based design
+
+### Key Findings Integration (September 2025)  
+- **Before**: Standalone `create_key_findings.py` script outside `src/`
+- **After**: Integrated as `create_key_findings_graphics()` method in `SalaryVisualizer` class
+- **Benefits**: Single source of truth, maintainable codebase, follows established patterns
+
+### Architecture Principles Applied
+1. **Single Responsibility**: Each class has a focused purpose
+2. **Composition over Inheritance**: Classes use other classes rather than extending them
+3. **Interface Segregation**: Clean method signatures with clear inputs/outputs
+4. **Dependency Injection**: Spark sessions and DataFrames passed to constructors
+5. **No Standalone Scripts**: All functionality integrated into appropriate classes
+
+### Updated SalaryVisualizer Capabilities
+
+The `SalaryVisualizer` class now serves as the comprehensive visualization hub:
+
+```python
+# Executive dashboards (4 focused pages + navigation)
+result = visualizer.create_executive_dashboard_suite()
+
+# Key findings charts (experience, education, company size gaps)
+findings = visualizer.create_key_findings_graphics()
+
+# Standard visualizations (existing functionality)
+plots = visualizer.plot_salary_distribution()
+```
+
+**Key Integration Benefits:**
+- ✅ **Clean Architecture**: No standalone scripts outside `src/`
+- ✅ **Reusable**: Methods callable from any Python script or notebook
+- ✅ **Maintainable**: Single class handles all visualization needs
+- ✅ **Consistent**: Follows same patterns as existing methods
+- ✅ **Extensible**: Easy to add new visualization methods
 

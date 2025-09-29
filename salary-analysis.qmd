@@ -611,7 +611,8 @@ except Exception as e:
     print(f"- PhD/Professional degrees command highest premiums but fewer positions")
 ```
 
-### 💼 Company Size & Industry Effects  
+### Company Size & Industry Effects 
+ 
 **Dynamic analysis of organizational factors using our job data**
 
 ```{python}
