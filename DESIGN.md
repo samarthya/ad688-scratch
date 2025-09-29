@@ -24,20 +24,24 @@
 **Output Formats**: Parquet (performance), CSV (compatibility), Interactive dashboards (Plotly)
 
 ### Design Principles
+
 - **Big Data First**: PySpark handles datasets from thousands to millions of records
 - **Multi-Format Storage**: Parquet for performance, CSV for compatibility
 - **Class-Based Modularity**: Specialized classes for processing, analysis, and visualization
 - **Quality Assurance**: Comprehensive validation, cleaning, and imputation pipeline
 
 ### Big Data First Approach
+
 The system is designed with **Apache Spark** as the core processing engine, enabling:
+
 - **Distributed processing** for large datasets
 - **SQL-based analysis** for complex analytical queries
 - **Memory optimization** through DataFrame caching and partitioning
 - **Multiple data source support** (CSV, Parquet, JSON)
 
 ### Multi-Format Storage Strategy
-```
+
+```bash
 Raw Data (CSV) → Processing (Spark) → Multi-Format Output
                                     ├── Parquet (Performance)
                                     ├── CSV (Compatibility) 
@@ -45,7 +49,9 @@ Raw Data (CSV) → Processing (Spark) → Multi-Format Output
 ```
 
 ### Class-Based Modular Design
+
 Each major functionality is encapsulated in specialized classes:
+
 - **Data Loading**: `SparkJobAnalyzer`
 - **Data Processing**: `JobMarketDataProcessor` & `AdvancedJobDataProcessor`
 - **Visualization**: `SalaryVisualizer`
@@ -55,7 +61,7 @@ Each major functionality is encapsulated in specialized classes:
 
 ## Source Code Organization
 
-```
+```bash
 src/
 ├── data/                         # Data processing modules
 │   ├── spark_analyzer.py         # Core Spark-based analysis engine
@@ -70,6 +76,7 @@ src/
 ```
 
 ### Design Rationale
+
 - **Separation of Concerns**: Each module has a single, well-defined responsibility
 - **Technology Layering**: Clear separation between data processing (Spark) and visualization (Pandas/Matplotlib)
 - **Progressive Complexity**: From simple preprocessing to advanced analytics
@@ -80,6 +87,7 @@ src/
 ## Data Processing Pipeline
 
 ### High-Level Flow
+
 ```mermaid
 graph TD
     A[Raw Lightcast CSV] --> B[Schema Validation]
@@ -100,6 +108,7 @@ graph TD
 **Raw Lightcast Dataset Schema**: 131 columns containing comprehensive job market data
 
 **Core Column Mapping (Raw → Processed)**:
+
 ```python
 # Column mapping from Lightcast raw data to analysis-ready format
 COLUMN_MAPPING = {
@@ -273,6 +282,7 @@ def impute_missing_salaries(df):
 This enhanced approach produces **significantly more accurate salary estimates** by recognizing real market patterns:
 
 #### **Employment Type Effects on Salary**:
+
 ```python
 # Example salary variations by employment type (same role, same industry):
 
@@ -287,6 +297,7 @@ Technology Industry - Software Engineer:
 ```
 
 #### **Remote Work Impact on Compensation**:
+
 ```python
 # Geographic salary adjustments by remote policy:
 
@@ -318,23 +329,27 @@ df = spark.read.option("header", "true").option("inferSchema", "true").csv(file_
 ```
 
 #### Stage 2: Data Quality Assessment
+
 - **Null value analysis** across all columns
 - **Duplicate detection** based on key fields (title, company, location, date)
 - **Data type validation** and conversion
 - **Outlier detection** for salary ranges
 
 #### Stage 3: Data Cleaning & Standardization
+
 - **Text normalization**: Consistent casing, trimming whitespace
 - **Categorical standardization**: Industry names, experience levels
 - **Location parsing**: Extract city, state information
 - **Date formatting**: Standardize posting dates
 
 #### Stage 4: Missing Value Imputation
+
 - **Hierarchical imputation strategy**: Industry → Experience Level → Global median
 - **Salary range validation**: Ensure min ≤ avg ≤ max constraints
 - **Smart defaults**: Location-based and role-based imputation
 
 #### Stage 5: Feature Engineering
+
 - **Derived columns**: `salary_avg_imputed`, `is_ai_role`, `remote_allowed_clean`
 - **Classification features**: AI/ML role detection based on title patterns
 - **Geographic features**: State/city extraction and standardization
@@ -344,9 +359,11 @@ df = spark.read.option("header", "true").option("inferSchema", "true").csv(file_
 ## Class Architecture & Responsibilities
 
 ### 1. SparkJobAnalyzer (`spark_analyzer.py`)
+
 **Purpose**: Core Spark-based analysis engine for SQL-driven analytics
 
 **Key Responsibilities**:
+
 ```python
 class SparkJobAnalyzer:
     def __init__(self, spark_session: Optional[SparkSession] = None)
@@ -366,9 +383,11 @@ class SparkJobAnalyzer:
 - **Performance optimized**: Adaptive query execution and Arrow optimization
 
 ### 2. JobMarketDataProcessor (`enhanced_processor.py`)
+
 **Purpose**: Advanced data processing with comprehensive cleaning and validation
 
 **Key Responsibilities**:
+
 ```python
 class JobMarketDataProcessor:
     def __init__(self, app_name: str = "JobMarketAnalysis")
@@ -380,15 +399,18 @@ class JobMarketDataProcessor:
 ```
 
 **Design Features**:
+
 - **Comprehensive schema definition**: Full Lightcast field specification
 - **Multi-strategy imputation**: Hierarchical missing value handling
 - **Quality metrics**: Detailed data quality assessment and reporting
 - **Feature engineering**: AI role detection, location parsing, salary validation
 
 ### 3. SalaryVisualizer (`simple_plots.py`)
+
 **Purpose**: Pandas-based visualization for processed data analysis
 
 **Key Responsibilities**:
+
 ```python
 class SalaryVisualizer:
     def __init__(self, df: pd.DataFrame)
@@ -399,6 +421,7 @@ class SalaryVisualizer:
 ```
 
 **Design Features**:
+
 - **Pandas-native operations**: Fast in-memory analysis for visualization
 - **Statistical analysis**: Comprehensive salary statistics and trends
 - **Visualization ready**: Data formatted for direct plotting with matplotlib/seaborn
@@ -408,6 +431,7 @@ class SalaryVisualizer:
 ## Data Loading Strategy
 
 ### 3-Tier Loading Approach
+
 The system implements a **comprehensive fallback strategy** for production-ready data loading:
 
 ```python
@@ -434,6 +458,7 @@ def load_full_dataset(self, data_path: str) -> DataFrame:
 ```
 
 ### Loading Performance Comparison
+
 | Data Source | Load Time | Processing Level | Query Performance | Data Quality |
 |-------------|-----------|------------------|-------------------|---------------|
 | **Parquet** | ~3-5 sec | Fully processed | **Fastest** (columnar) | SUCCESS: Optimal |
@@ -441,12 +466,14 @@ def load_full_dataset(self, data_path: str) -> DataFrame:
 | **Raw Lightcast** | ~30-60 sec | Raw data | Moderate (requires processing) | WARNING: Variable |
 
 ### Schema Management
+
 - **Predefined schema**: Explicit type definitions prevent inference overhead
 - **Schema evolution**: Parquet preserves exact data types across sessions
 - **Multi-schema support**: Handles both processed and raw Lightcast column names
 - **Validation**: Automatic schema compliance checking during load
 
 ### Data Validation Framework
+
 Every dataset load includes comprehensive validation:
 
 ```python
@@ -465,6 +492,7 @@ def _validate_dataset(self, df: DataFrame) -> None:
 ```
 
 **Validation Checks**:
+
 - SUCCESS: **Empty dataset detection**: Prevents analysis on zero records
 - SUCCESS: **Required column validation**: Ensures critical fields exist
 - WARNING: **Data quality warnings**: Alerts for high null percentages or invalid ranges
@@ -475,6 +503,7 @@ def _validate_dataset(self, df: DataFrame) -> None:
 ## Data Cleaning & Quality Assurance
 
 ### Quality Assessment Framework
+
 The system performs comprehensive data quality analysis:
 
 ```python
@@ -492,12 +521,14 @@ def assess_data_quality(self, df: DataFrame) -> Dict:
 ### Data Cleaning Pipeline
 
 #### 1. Duplicate Removal
+
 ```python
 # Remove duplicates based on business logic
 df_clean = df.dropDuplicates(["TITLE", "COMPANY", "LOCATION", "POSTED"])
 ```
 
 #### 2. Text Standardization
+
 ```python
 # Standardize categorical fields
 df = df.withColumn("INDUSTRY_CLEAN", 
@@ -507,6 +538,7 @@ df = df.withColumn("INDUSTRY_CLEAN",
 ```
 
 #### 3. Salary Validation
+
 ```python
 # Ensure salary range consistency
 df = df.withColumn("salary_valid",
@@ -516,6 +548,7 @@ df = df.withColumn("salary_valid",
 ```
 
 ### Quality Metrics
+
 - **Completeness**: % of non-null values per column
 - **Consistency**: Salary range validation, date format compliance
 - **Accuracy**: Industry/location standardization success rate
@@ -526,6 +559,7 @@ df = df.withColumn("salary_valid",
 ## Data Imputation & Feature Engineering
 
 ### Hierarchical Imputation Strategy
+
 For missing salary values, the system uses a **multi-level median imputation**:
 
 ```python
@@ -542,6 +576,7 @@ df = df.withColumn("salary_industry_exp_median",
 ### Feature Engineering Pipeline
 
 #### 1. AI Role Classification
+
 ```python
 df = df.withColumn("is_ai_role",
     when(lower(col("TITLE")).rlike(
@@ -550,6 +585,7 @@ df = df.withColumn("is_ai_role",
 ```
 
 #### 2. Remote Work Detection
+
 ```python
 df = df.withColumn("remote_allowed_clean",
     when(lower(col("REMOTE_ALLOWED")).rlike("(yes|remote|anywhere|wfh)"), 1)
@@ -557,12 +593,14 @@ df = df.withColumn("remote_allowed_clean",
 ```
 
 #### 3. Geographic Feature Extraction
+
 ```python
 df = df.withColumn("city", split(col("LOCATION"), ",").getItem(0))
 df = df.withColumn("state", trim(split(col("LOCATION"), ",").getItem(1)))
 ```
 
 ### Derived Metrics
+
 - **Salary Average Imputed**: `(salary_min + salary_max) / 2` with missing value handling
 - **Company Size Classification**: Based on known company patterns
 - **Industry Technology Score**: AI/Tech role concentration by industry
@@ -822,7 +860,7 @@ Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
 
 ### Result Files Created
 
-```
+```bash
 data/processed/
 ├── job_market_processed.parquet/     # STARTING: Primary (fastest loading)
 │   ├── part-00000-*.snappy.parquet  # Compressed columnar data
