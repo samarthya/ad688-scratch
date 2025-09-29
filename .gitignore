@@ -35,7 +35,7 @@ figures/
 _site/
 
 # Data files (often large and sensitive)
-data/
+
 *.csv
 *.parquet
 *.json
