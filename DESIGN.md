@@ -68,12 +68,39 @@ src/
 │   ├── enhanced_processor.py     # Advanced data processing & cleaning
 │   ├── full_dataset_processor.py # Complete pipeline functions
 │   └── preprocess_data.py        # Initial data preprocessing
-├── visualization/                # Visualization utilities
+├── visualization/                # Visualization & chart generation
 │   ├── simple_plots.py           # Matplotlib/Seaborn visualizations  
-│   └── plots.py                  # Advanced plotting utilities
+│   ├── plots.py                  # Advanced plotting utilities
+│   ├── chart_config.py           # Salary disparity chart styling & configuration
+│   └── quarto_charts.py          # Quarto-integrated chart export system
 ├── config/                       # Configuration and mapping utilities
+├── utilities/                    # Analysis utilities & helper functions
+│   └── get_stats.py              # Quick salary disparity statistics calculator
 └── demo_class_usage.py           # Usage examples
 ```
+
+### Component Roles & Architecture Fit
+
+#### **Utilities Layer** (`src/utilities/`)
+- **`get_stats.py`**: **Quick Statistics Calculator**
+  - **Purpose**: Fast salary disparity analysis for validation & debugging
+  - **Architecture Role**: Analysis validation layer
+  - **Capabilities**: Experience gaps, education premiums, company size impacts
+  - **Usage**: Rapid prototyping, data validation, initial analysis
+  - **Output**: Console statistics with salary gap percentages
+
+#### **Visualization Configuration** (`src/visualization/`)
+- **`chart_config.py`**: **Salary Disparity Chart Standardization**
+  - **Purpose**: Unified styling for readable salary disparity visualizations
+  - **Architecture Role**: Presentation layer configuration
+  - **Features**: Standard layouts, color schemes, font sizes, chart dimensions
+  - **Theme**: Salary disparity focus with professional presentation
+  
+- **`quarto_charts.py`**: **Quarto Integration Engine**
+  - **Purpose**: Chart generation optimized for Quarto website integration
+  - **Architecture Role**: Output layer orchestrator
+  - **Capabilities**: Multi-format export (HTML, PNG, SVG), disparity annotations
+  - **Integration**: Uses `chart_config.py` for styling, exports to `figures/`
 
 ### Design Rationale
 
@@ -116,6 +143,10 @@ graph TB
         D1 --> D2[Company size impact]
         D2 --> D3[Geographic variations]
         D3 --> D4[Education premium analysis]
+        
+        U[get_stats.py<br/>Quick validation & debugging]
+        U --> U1[Rapid gap analysis]
+        U1 --> U2[Console-based statistics]
     end
     
     subgraph "Visualization Layer"
