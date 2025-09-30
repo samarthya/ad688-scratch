@@ -41,17 +41,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        # Create demonstration data with geographic elements
-        np.random.seed(42)
-        locations = ['San Francisco, CA', 'New York, NY', 'Seattle, WA', 'Austin, TX', 
-                    'Boston, MA', 'Chicago, IL', 'Denver, CO', 'Atlanta, GA', 'Portland, OR']
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'location': np.random.choice(locations, 5000),
-            'remote_allowed': np.random.choice([True, False], 5000, p=[0.3, 0.7]),
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer
 visualizer = SalaryVisualizer(df)
@@ -91,16 +82,7 @@ try:
         print(f"\nSalary Range Across Regions: ${salary_range:,.0f}")
         
     else:
-        print("No geographic columns found - using demonstration data")
-        # Fallback geographic data
-        geo_analysis = pd.DataFrame({
-            'Location': ['San Francisco, CA', 'New York, NY', 'Seattle, WA', 'Boston, MA', 
-                        'Austin, TX', 'Chicago, IL', 'Denver, CO', 'Atlanta, GA'],
-            'Median Salary': [165000, 145000, 140000, 125000, 115000, 105000, 98000, 92000],
-            'Job Count': [18500, 22000, 12000, 8500, 9200, 11000, 6500, 7800]
-        })
-        print("Geographic Analysis (Demonstration Data):")
-        print(geo_analysis.to_string(index=False))
+        raise Exception("No geographic columns found - data processing issue")
         
 except Exception as e:
     print(f"Geographic analysis error: {e}")

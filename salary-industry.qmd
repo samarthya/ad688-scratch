@@ -40,15 +40,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        # Create demonstration data
-        import numpy as np
-        np.random.seed(42)
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'industry': np.random.choice(['Technology', 'Healthcare', 'Finance'], 5000),
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer
 visualizer = SalaryVisualizer(df)
@@ -73,15 +66,8 @@ try:
     print("Data source: Our processed job market dataset")
     
 except Exception as e:
-    print(f"Warning: Industry analysis error: {e}")
-    # Fallback with realistic mock data
-    import pandas as pd
-    results_table = pd.DataFrame({
-        'Industry': ['Information', 'Finance and Insurance', 'Professional Services', 
-                    'Healthcare', 'Manufacturing', 'Retail Trade'], 
-        'Median Salary': ['$112,000', '$95,000', '$87,000', '$78,000', '$72,000', '$45,000'],
-        'Job Count': [15420, 8930, 12450, 18760, 9340, 7650]
-    })
+    print(f"ERROR: Industry analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 ```
 
 **Top-Paying Industries (Generated from Real Data):**

@@ -136,7 +136,7 @@ from utilities.get_stats import JobMarketStatistics
 from visualization.simple_plots import SalaryVisualizer
 from visualization.quarto_charts import QuartoChartExporter
 
-# Initialize data processor with proper fallback handling
+# Initialize data processor with proper error handling
 data_processor = JobMarketDataProcessor("JobMarketAnalysis")
 stats_analyzer = JobMarketStatistics()
 chart_exporter = QuartoChartExporter()
@@ -152,17 +152,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"SUCCESS: Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        print(f"Warning: Using demonstration data processing. {e2}")
-        # Create minimal dataset for demonstration
-        import pandas as pd
-        import numpy as np
-        np.random.seed(42)
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'industry': np.random.choice(['Technology', 'Healthcare', 'Finance'], 5000),
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer with loaded data
 visualizer = SalaryVisualizer(df)
@@ -188,15 +179,8 @@ try:
     }
     
 except Exception as e:
-    print(f"Warning: Using fallback statistics: {e}")
-    overall_stats = {
-        'median': "$75,000",
-        'mean': "$85,000",
-        'std': "$35,000", 
-        'range_min': "$35,000",
-        'range_max': "$200,000",
-        'total_jobs': 5000
-    }
+    print(f"ERROR: Statistics calculation failed: {e}")
+    raise e  # Show the actual error for student analysis report
 ```
 
 Our analysis reveals a right-skewed salary distribution typical of professional job markets:
@@ -236,15 +220,8 @@ try:
     print("Data source: Our processed job market dataset")
     
 except Exception as e:
-    print(f"Warning: Industry analysis error: {e}")
-    # Fallback with realistic mock data
-    import pandas as pd
-    results_table = pd.DataFrame({
-        'Industry': ['Information', 'Finance and Insurance', 'Professional Services', 
-                    'Healthcare', 'Manufacturing', 'Retail Trade'], 
-        'Median Salary': ['$112,000', '$95,000', '$87,000', '$78,000', '$72,000', '$45,000'],
-        'Job Count': [15420, 8930, 12450, 18760, 9340, 7650]
-    })
+    print(f"ERROR: Industry analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 ```
 
 **Top-Paying Industries (Generated from Real Data):**
@@ -273,7 +250,8 @@ if 'results_table' in locals():
     print("**Key Insight**: This data is generated using our SalaryVisualizer class")
     print("**Reproducible**: All calculations use class-based methods from src/visualization/")
 else:
-    print("Warning: Industry analysis table not available - check data loading")
+    print(f"ERROR: Industry analysis table not available - data loading failed")
+    raise Exception("Industry analysis table generation failed")
 ```
 
 ::: {.callout-tip}
@@ -329,21 +307,8 @@ try:
     ])
     
 except Exception as e:
-    print(f"Warning: Using fallback experience analysis: {e}")
-    # Simple fallback based on salary ranges
-    salary_col = 'salary_avg'
-    df['experience_level'] = pd.cut(
-        df[salary_col], 
-        bins=[0, 80000, 120000, 160000, float('inf')],
-        labels=['Entry (0-2y)', 'Mid (3-7y)', 'Senior (8-15y)', 'Executive (15+y)']
-    )
-    
-    exp_analysis = df.groupby('experience_level')[salary_col].agg([
-        'count', 'median', 'mean'
-    ]).round(0).reset_index()
-    
-    exp_analysis['Formatted Salary'] = exp_analysis['median'].apply(lambda x: f"${x:,.0f}")
-    exp_analysis.columns = ['Experience Level', 'Job Count', 'Median Salary', 'Mean Salary', 'Formatted Salary']
+    print(f"ERROR: Experience analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 
 print("## Real Data: Salary Progression by Experience Level")
 print("*(Based on our processed job market dataset)*\n")
@@ -503,15 +468,8 @@ try:
     print(f"- Range: **${overall_stats['min_salary']:,.0f}** to **${overall_stats['max_salary']:,.0f}**")
     
 except Exception as e:
-    print(f"## Statistical Distribution Analysis (Fallback): {e}")
-    
-    # Fallback statistical analysis
-    overall_stats = df['salary_avg'].describe()
-    print("**Overall Salary Distribution (Direct Analysis):**")
-    print(f"- Sample Size: **{len(df):,} job postings**")
-    print(f"- Median Salary: **${overall_stats['50%']:,.0f}**")
-    print(f"- Mean Salary: **${overall_stats['mean']:,.0f}**")
-    print(f"- Standard Deviation: **${overall_stats['std']:,.0f}**")
+    print(f"ERROR: Statistical analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 
 # Salary range distribution using our dataset
 salary_ranges = pd.cut(df['salary_avg'], bins=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'])
@@ -641,12 +599,8 @@ try:
         print(f"| {location} | ${salary:,} | {count} | {analysis} |")
         
 except Exception as e:
-    print(f"Geographic analysis using fallback method: {e}")
-    print("| Location | Median Salary | Job Count | Analysis |")
-    print("|----------|---------------|-----------|----------|")
-    print("| California | $145,000 | 1,250 | +45% premium |")
-    print("| New York | $135,000 | 980 | +35% premium |")
-    print("| Texas | $95,000 | 890 | -5% below avg |")
+    print(f"ERROR: Geographic analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 
 print("\n**Key Geographic Insights (Class-Based Analysis):**")
 print(f"- Analysis completed using our SalaryVisualizer.get_geographic_salary_analysis() method")

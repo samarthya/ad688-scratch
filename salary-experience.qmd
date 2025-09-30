@@ -42,15 +42,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        # Create demonstration data
-        import numpy as np
-        np.random.seed(42)
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'industry': np.random.choice(['Technology', 'Healthcare', 'Finance'], 5000),
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer
 visualizer = SalaryVisualizer(df)
@@ -84,21 +77,8 @@ try:
     ])
     
 except Exception as e:
-    print(f"Warning: Using fallback experience analysis: {e}")
-    # Simple fallback based on salary ranges
-    salary_col = 'salary_avg'
-    df['experience_level'] = pd.cut(
-        df[salary_col], 
-        bins=[0, 80000, 120000, 160000, float('inf')],
-        labels=['Entry (0-2y)', 'Mid (3-7y)', 'Senior (8-15y)', 'Executive (15+y)']
-    )
-    
-    exp_analysis = df.groupby('experience_level')[salary_col].agg([
-        'count', 'median', 'mean'
-    ]).round(0).reset_index()
-    
-    exp_analysis['Formatted Salary'] = exp_analysis['median'].apply(lambda x: f"${x:,.0f}")
-    exp_analysis.columns = ['Experience Level', 'Job Count', 'Median Salary', 'Mean Salary', 'Formatted Salary']
+    print(f"ERROR: Experience analysis failed: {e}")
+    raise e  # Show the actual error for student analysis report
 
 print("## Real Data: Salary Progression by Experience Level")
 print("*(Based on our processed job market dataset)*\n")

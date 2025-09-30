@@ -41,17 +41,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        # Create demonstration data with education elements
-        np.random.seed(42)
-        education_levels = ['High School', 'Associate', 'Bachelor', 'Master', 'PhD']
-        skills = ['Python', 'SQL', 'Machine Learning', 'AWS', 'Docker', 'React', 'Java']
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'education_required': np.random.choice(education_levels, 5000, p=[0.1, 0.15, 0.4, 0.3, 0.05]),
-            'skills_required': [np.random.choice(skills, np.random.randint(1, 4)).tolist() for _ in range(5000)],
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager', 'Analyst'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer
 visualizer = SalaryVisualizer(df)
@@ -99,16 +90,7 @@ try:
             print(f"\nEducation Premium Range: {education_premium:.1f}% from lowest to highest education level")
         
     else:
-        print("No education columns found - using demonstration analysis")
-        # Fallback education data based on market research
-        edu_analysis = pd.DataFrame({
-            'Education Level': ['High School', 'Associate Degree', 'Bachelor Degree', 'Master Degree', 'PhD/Doctorate'],
-            'Median Salary': [45000, 58000, 78000, 95000, 125000],
-            'Job Count': [5200, 8900, 35000, 28000, 4500],
-            'Premium vs HS': ['Baseline', '+29%', '+73%', '+111%', '+178%']
-        })
-        print("Education Analysis (Market Research Data):")
-        print(edu_analysis.to_string(index=False))
+        raise Exception("No education columns found - data processing issue")
         
 except Exception as e:
     print(f"Education analysis error: {e}")

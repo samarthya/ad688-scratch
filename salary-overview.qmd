@@ -124,17 +124,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"SUCCESS: Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        print(f"Warning: Using demonstration data processing. {e2}")
-        # Create minimal dataset for demonstration
-        import pandas as pd
-        import numpy as np
-        np.random.seed(42)
-        df = pd.DataFrame({
-            'salary_avg': np.random.normal(85000, 30000, 5000),
-            'industry': np.random.choice(['Technology', 'Healthcare', 'Finance'], 5000),
-            'title': np.random.choice(['Software Engineer', 'Data Scientist', 'Manager'], 5000)
-        })
-        df['salary_avg'] = df['salary_avg'].clip(35000, 250000)
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize visualizer with loaded data
 visualizer = SalaryVisualizer(df)
@@ -164,15 +155,8 @@ try:
     }
     
 except Exception as e:
-    print(f"Warning: Using fallback statistics: {e}")
-    overall_stats = {
-        'median': "$75,000",
-        'mean': "$85,000",
-        'std': "$35,000", 
-        'range_min': "$35,000",
-        'range_max': "$200,000",
-        'total_jobs': 5000
-    }
+    print(f"ERROR: Statistics calculation failed: {e}")
+    raise e  # Show the actual error for student analysis report
 ```
 
 Our analysis reveals a right-skewed salary distribution typical of professional job markets:

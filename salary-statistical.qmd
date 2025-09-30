@@ -45,27 +45,8 @@ except Exception as e:
         df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
         print(f"Using sample dataset: {len(df):,} job postings")
     except Exception as e2:
-        # Create comprehensive demonstration data for statistical analysis
-        np.random.seed(42)
-        n_samples = 10000
-        
-        # Generate realistic salary data with multiple factors
-        experience_years = np.random.exponential(3, n_samples).clip(0, 30)
-        education_effect = np.random.choice([0, 5000, 15000, 25000, 40000], n_samples, p=[0.1, 0.15, 0.4, 0.3, 0.05])
-        location_effect = np.random.choice([0, 10000, 25000, 40000], n_samples, p=[0.4, 0.3, 0.2, 0.1])
-        industry_effect = np.random.choice([0, 8000, 20000, 35000], n_samples, p=[0.3, 0.4, 0.2, 0.1])
-        
-        base_salary = 45000 + (experience_years * 3000) + education_effect + location_effect + industry_effect
-        noise = np.random.normal(0, 8000, n_samples)
-        
-        df = pd.DataFrame({
-            'salary_avg': (base_salary + noise).clip(35000, 300000),
-            'experience_years': experience_years,
-            'education_level': np.random.choice(['HS', 'Associate', 'Bachelor', 'Master', 'PhD'], n_samples),
-            'location': np.random.choice(['Low Cost', 'Medium Cost', 'High Cost', 'Very High Cost'], n_samples),
-            'industry': np.random.choice(['Other', 'Healthcare', 'Technology', 'Finance'], n_samples),
-            'remote_allowed': np.random.choice([True, False], n_samples, p=[0.35, 0.65])
-        })
+        print(f"ERROR: Unable to load any dataset: {e2}")
+        raise e2  # Show the actual error for student analysis report
 
 # Initialize our analysis classes
 visualizer = SalaryVisualizer(df)
@@ -119,11 +100,8 @@ try:
         print("- **Normal-like tails**: Similar to normal distribution")
         
 except Exception as e:
-    print(f"Statistics calculation error: {e}")
-    # Fallback basic statistics
-    basic_stats = df['salary_avg'].describe()
-    print("Basic Statistics (Fallback):")
-    print(basic_stats)
+    print(f"ERROR: Statistics calculation failed: {e}")
+    raise e  # Show the actual error for student analysis report
 
 print(f"\n**Analysis powered by our JobMarketStatistics class**")
 ```
