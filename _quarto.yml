@@ -11,6 +11,7 @@ project:
     - "!ML_LAB_SOLUTION.md"
     - "!PROJECT_STATUS.md"
     - "!SETUP.md"
+    - "!salary-analysis.qmd"  # Exclude old monolithic file
   preview:
     port: 4200
     browser: true
@@ -26,8 +27,20 @@ website:
     left:
       - href: index.qmd
         text: "Home"
-      - href: salary-analysis.qmd
-        text: "Salary Analysis"
+      - text: "Salary Analysis"
+        menu:
+          - href: salary-overview.qmd
+            text: "Overview & Summary"
+          - href: salary-experience.qmd
+            text: "Experience Levels"
+          - href: salary-education.qmd
+            text: "Education & Skills"
+          - href: salary-industry.qmd
+            text: "Industry Analysis"
+          - href: salary-geographic.qmd
+            text: "Geographic Trends"
+          - href: salary-statistical.qmd
+            text: "Statistical Analysis"
       - href: regional-trends.qmd
         text: "Regional Intelligence"
       - href: remote-work.qmd
@@ -47,9 +60,16 @@ website:
         contents:
           - index.qmd
           - data-methodology.qmd
-      - section: "Core Analysis" 
+      - section: "Comprehensive Salary Analysis"
         contents:
-          - salary-analysis.qmd
+          - salary-overview.qmd
+          - salary-experience.qmd
+          - salary-education.qmd
+          - salary-industry.qmd
+          - salary-geographic.qmd
+          - salary-statistical.qmd
+      - section: "Market Intelligence" 
+        contents:
           - regional-trends.qmd
           - remote-work.qmd
       - section: "Technical Deep Dive"
@@ -80,3 +100,7 @@ execute:
   cache: true
   warning: false
   message: false
+  
+python:
+  type: conda
+  environment: .venv

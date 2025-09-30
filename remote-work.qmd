@@ -101,4 +101,4 @@ For maximizing remote compensation:
 
 ---
 
-*Continue Reading: [Salary Analysis](salary-analysis.qmd) | [Regional Trends](regional-trends.qmd) | [Home](index.qmd)*
+*Continue Reading: [Salary Overview](salary-overview.qmd) | [Geographic Analysis](salary-geographic.qmd) | [Regional Trends](regional-trends.qmd) | [Home](index.qmd)*

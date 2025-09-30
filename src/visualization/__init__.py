@@ -1,0 +1,29 @@
+"""
+Visualization Module
+
+This module provides comprehensive visualization capabilities for job market
+data analysis, including interactive charts, static plots, and Quarto-compatible
+exports.
+
+Classes:
+    QuartoChartExporter: Main chart generation for Quarto integration
+    SalaryDisparityChartConfig: Configuration for salary-focused charts
+
+Modules:
+    plots: General plotting utilities
+    simple_plots: Basic chart generation
+    chart_config: Chart styling and configuration
+    quarto_charts: Quarto-specific chart exports
+"""
+
+from .quarto_charts import QuartoChartExporter
+from .chart_config import SalaryDisparityChartConfig
+from . import plots
+from . import simple_plots
+
+__all__ = [
+    "QuartoChartExporter",
+    "SalaryDisparityChartConfig",
+    "plots",
+    "simple_plots",
+]

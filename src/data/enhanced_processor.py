@@ -5,7 +5,7 @@ This module provides advanced data processing capabilities for job market analys
 including sophisticated data cleaning, feature engineering, and PySpark-based
 big data processing for the Lightcast job postings dataset.
 
-Author: Job Market Analysis Team
+Author: Saurabh Sharma
 Version: 2.0.0
 """
 

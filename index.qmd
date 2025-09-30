@@ -101,7 +101,7 @@ Instead of guessing about career decisions, get data-driven answers to your most
 <h4>Answers: "Where should I work for best compensation?"</h4>
 <iframe src="figures/key_finding_company_size.html" width="100%" height="450px" frameborder="0"></iframe>
 <p><strong>Key Insight:</strong> Large companies pay 40% more on average, but startups offer equity upside. Consider total compensation packages.</p>
-**[→ View Detailed Analysis](salary-analysis.qmd#company-size-analysis){target="_blank"}**
+**[→ View Detailed Analysis](salary-industry.qmd#company-size-effects){target="_blank"}**
 </div>
 
 ## Complete Intelligence: "Show me everything"
@@ -136,17 +136,30 @@ Instead of guessing about career decisions, get data-driven answers to your most
 
 This analysis is organized to answer your questions in the order you'd naturally ask them:
 
-### Start Here: Core Questions
-- **[Salary Analysis](salary-analysis.qmd)** - "What should I expect to earn?" 
+### Comprehensive Salary Analysis (New Modular Structure)
+- **[Salary Overview](salary-overview.qmd)** - "What's the big picture?"
+  - Executive summary and key insights
+  - Market overview and data foundation
+- **[Experience Analysis](salary-experience.qmd)** - "How do I progress?"
+  - Career progression patterns and growth trajectories
   - Experience-based compensation benchmarks
-  - Education ROI calculations
-  - Industry-specific salary ranges
+- **[Education & Skills](salary-education.qmd)** - "What should I learn?"
+  - Education ROI and skills premium analysis
+  - Certification impact and alternative pathways
+- **[Industry Analysis](salary-industry.qmd)** - "Which sectors pay best?"
+  - Industry comparisons and company size effects
+  - Skills premium and market demand
+- **[Geographic Analysis](salary-geographic.qmd)** - "Where should I work?"
+  - Regional salary variations and remote work impact
+  - Cost of living adjustments and migration patterns
+- **[Statistical Analysis](salary-statistical.qmd)** - "What do the models show?"
+  - Advanced statistical modeling and predictive insights
+  - Distribution analysis and correlation studies
 
-### Geographic Intelligence  
-- **[Regional Analysis](regional-trends.qmd)** - "Where should I work?"
+### Market Intelligence  
+- **[Regional Analysis](regional-trends.qmd)** - "Regional deep dive"
   - Highest-paying metropolitan areas
-  - Cost-of-living adjusted salaries
-  - Regional industry concentrations
+  - Industry concentrations by region
 
 ### Modern Work Flexibility
 - **[Remote Work Impact](remote-work.qmd)** - "How has remote work changed everything?"
@@ -166,7 +179,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 
 ### For Students Planning Careers:
 
-1. **Start with [Salary Analysis](salary-analysis.qmd)** to set realistic expectations
+1. **Start with [Salary Overview](salary-overview.qmd)** to set realistic expectations
 2. **Check [Regional Analysis](regional-trends.qmd)** for location strategy  
 3. **Review [Remote Work](remote-work.qmd)** for modern workplace trends
 4. **Use benchmarks for internship and job negotiations**
@@ -208,7 +221,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 ::: {.callout-tip}
 ## Ready to Start? 
 
-**New to the analysis?** Begin with [Salary Analysis](salary-analysis.qmd) to understand compensation fundamentals.
+**New to the analysis?** Begin with [Salary Overview](salary-overview.qmd) to understand compensation fundamentals, then explore specific areas like [Experience Analysis](salary-experience.qmd) and [Education Premium](salary-education.qmd).
 
 **Planning location strategy?** Jump to [Regional Analysis](regional-trends.qmd) for geographic intelligence.
 

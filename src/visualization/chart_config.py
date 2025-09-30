@@ -1,18 +1,66 @@
 """
-Improved chart configuration for better readability and salary disparity theme coherence.
-This file provides standardized chart settings focusing on salary disparity visualization.
+Chart Configuration Module for Salary Disparity Analysis
+
+This module provides standardized chart configuration and styling for salary disparity
+visualization. It ensures consistent, professional, and readable charts across all
+analysis outputs with a focus on highlighting salary disparities and compensation gaps.
+
+Classes:
+    SalaryDisparityChartConfig: Main configuration class for chart styling and layout
+
+Key Features:
+    - Standardized layout configurations for improved readability
+    - Salary disparity-focused color schemes
+    - Professional styling templates
+    - Responsive chart dimensions
+    - Currency formatting for salary data
+
+Author: Saurabh Sharma
+Version: 2.0.0
 """
 
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
 
 class SalaryDisparityChartConfig:
-    """Standardized configuration for salary disparity-focused charts."""
+    """
+    Standardized configuration class for salary disparity-focused charts.
+    
+    This class provides static methods for creating consistent, professional
+    chart configurations that emphasize salary disparities and compensation
+    analysis across different demographic and professional categories.
+    
+    Key Methods:
+        get_standard_layout: Returns standard layout configuration
+        get_salary_disparity_colors: Returns salary-focused color palette
+        apply_salary_focus_styling: Applies standardized styling to charts
+        create_readable_bar_chart: Creates optimized bar charts for salary data
+        create_readable_box_plot: Creates optimized box plots for distributions
+    """
     
     @staticmethod
     def get_standard_layout() -> Dict[str, Any]:
-        """Get standard layout configuration for readability."""
+        """
+        Get standard layout configuration optimized for readability and professional presentation.
+        
+        Returns:
+            Dict containing comprehensive layout configuration including:
+            - Optimal dimensions for desktop and mobile viewing
+            - Professional typography settings
+            - Grid and axis configurations
+            - Currency formatting for salary data
+            - Responsive margins and padding
+            
+        Example:
+            layout = SalaryDisparityChartConfig.get_standard_layout()
+            fig.update_layout(**layout)
+        """
         return {
             'height': 900,  # Increased height for better readability
             'width': 1200,  # Standard width
@@ -48,6 +96,20 @@ class SalaryDisparityChartConfig:
     
     @staticmethod
     def get_salary_disparity_colors() -> Dict[str, str]:
+        """
+        Get standardized color palette optimized for salary disparity visualization.
+        
+        Returns:
+            Dict containing color codes for different chart elements:
+            - Primary colors for salary data visualization
+            - Emphasis colors for highlighting disparities
+            - Professional color scheme suitable for business presentations
+            - Accessible colors meeting WCAG guidelines
+            
+        Example:
+            colors = SalaryDisparityChartConfig.get_salary_disparity_colors()
+            fig.update_traces(marker_color=colors['primary'])
+        """
         """Color scheme emphasizing salary disparities."""
         return {
             'low_salary': '#E74C3C',      # Red for low salaries
@@ -117,9 +179,26 @@ class SalaryDisparityChartConfig:
         return fig
     
     @staticmethod
-    def create_readable_bar_chart(data, x_col: str, y_col: str, title: str, 
+    def create_readable_bar_chart(data: Union[Dict, Any], x_col: str, y_col: str, title: str, 
                                 color_col: Optional[str] = None) -> go.Figure:
-        """Create a highly readable bar chart focused on salary disparities."""
+        """
+        Create a highly readable bar chart optimized for salary disparity visualization.
+        
+        Args:
+            data: DataFrame or data structure containing the chart data
+            x_col: Column name for x-axis values
+            y_col: Column name for y-axis values (typically salary data)
+            title: Chart title
+            color_col: Optional column for color coding bars
+            
+        Returns:
+            Plotly Figure object with optimized styling for salary analysis
+            
+        Example:
+            fig = SalaryDisparityChartConfig.create_readable_bar_chart(
+                df, 'Experience Level', 'Average Salary', 'Salary by Experience'
+            )
+        """
         
         colors = SalaryDisparityChartConfig.get_salary_disparity_colors()
         
@@ -136,8 +215,24 @@ class SalaryDisparityChartConfig:
         return fig
     
     @staticmethod
-    def create_readable_box_plot(data, x_col: str, y_col: str, title: str) -> go.Figure:
-        """Create a readable box plot for salary distribution analysis."""
+    def create_readable_box_plot(data: Union[Dict, Any], x_col: str, y_col: str, title: str) -> go.Figure:
+        """
+        Create a readable box plot optimized for salary distribution analysis.
+        
+        Args:
+            data: DataFrame or data structure containing the chart data
+            x_col: Column name for categorical grouping (e.g., experience level)
+            y_col: Column name for salary values
+            title: Chart title
+            
+        Returns:
+            Plotly Figure object optimized for salary distribution visualization
+            
+        Example:
+            fig = SalaryDisparityChartConfig.create_readable_box_plot(
+                df, 'Company Size', 'Salary', 'Salary Distribution by Company Size'
+            )
+        """
         
         colors = SalaryDisparityChartConfig.get_salary_disparity_colors()
         
