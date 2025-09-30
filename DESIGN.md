@@ -66,7 +66,7 @@ Each major functionality is encapsulated in specialized classes:
 
 The Quarto website follows a sophisticated data loading and chart generation pipeline that prioritizes performance while maintaining data integrity and fallback capabilities.
 
-### 🔄 Complete Process Flow Diagram
+### Complete Process Flow Diagram
 
 ```mermaid
 flowchart TD
@@ -126,7 +126,7 @@ flowchart TD
     
     %% Final Website Assembly
     REGISTRY --> INTEGRATE[Quarto Integration]
-    INTEGRATE --> WEBSITE[📊 Live Website with Charts]
+    INTEGRATE --> WEBSITE[Live Website with Charts]
     
     %% Error Handling
     DATACHECK -->|No Data Found| ERROR[Fallback to Mock Data]
@@ -147,7 +147,7 @@ flowchart TD
     class WEBSITE final
 ```
 
-### 📋 Detailed Step-by-Step Process
+### Detailed Step-by-Step Process
 
 #### **Phase 1: Quarto Document Processing**
 
@@ -164,7 +164,7 @@ data_path = "data/processed/job_market_processed.parquet"
 if Path(data_path).exists():
     analyzer = SparkJobAnalyzer()
     df = analyzer.load_full_dataset(data_path)
-    # ✅ FAST: Columnar format, schema preserved, type-safe
+    # FAST: Columnar format, schema preserved, type-safe
 ```
 
 **Priority 2: Processed CSV Fallback**
@@ -173,7 +173,7 @@ if Path(data_path).exists():
 csv_path = "data/processed/clean_job_data.csv"
 if Path(csv_path).exists():
     df = analyzer.load_full_dataset(csv_path)
-    # ✅ COMPATIBLE: Human-readable, broad tool support
+    # COMPATIBLE: Human-readable, broad tool support
 ```
 
 **Priority 3: Raw Data Processing**
@@ -267,7 +267,7 @@ for chart in charts["charts"]:
 3. **Navigation**: Link charts across different analysis pages
 4. **Responsive Design**: Charts adapt to screen sizes
 
-### ⚡ Performance Optimizations
+### Performance Optimizations
 
 #### **Data Loading Speed:**
 - **Parquet First**: 10-50x faster than CSV loading
@@ -284,7 +284,7 @@ for chart in charts["charts"]:
 - **Progressive Enhancement**: Basic charts → Rich interactivity
 - **Clear Error Messages**: Guide users to fix data issues
 
-### 🔍 Data Flow Checkpoints
+### Data Flow Checkpoints
 
 **Checkpoint 1: Data Availability**
 ```python
@@ -310,7 +310,7 @@ if interactive_charts_unavailable():
     use_static_png_fallbacks()
 ```
 
-### 🎯 Key Design Decisions
+### Key Design Decisions
 
 1. **Performance First**: Prioritize Parquet for speed
 2. **Fallback Strategy**: Multiple data sources for reliability
@@ -334,10 +334,10 @@ python src/data/full_dataset_processor.py
 ```bash
 # Expected output structure
 data/processed/
-├── job_market_processed.parquet/     # 🎯 Primary (fastest)
+├── job_market_processed.parquet/     # Primary (fastest)
 ├── clean_job_data.csv               # 📄 Fallback (compatible)
-├── job_market_sample.csv            # 📊 Quick analysis
-└── processing_report.md             # 📋 Quality metrics
+├── job_market_sample.csv            # Quick analysis
+└── processing_report.md             # Quality metrics
 ```
 
 #### **Quarto Document Implementation Patterns**
