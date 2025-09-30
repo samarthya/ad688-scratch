@@ -42,6 +42,7 @@ class SparkJobAnalyzer:
                 .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
                 .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
                 .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+                .config("spark.sql.debug.maxToStringFields", 1000) \
                 .getOrCreate()
         else:
             self.spark = spark_session

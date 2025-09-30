@@ -15,7 +15,7 @@ from pyspark.sql.functions import (
     min as spark_min, max as spark_max, stddev, percentile_approx,
     regexp_replace, trim, upper, lower, lit, current_timestamp,
     expr, year, month, dayofmonth, to_date, split, isnan, isnull,
-    coalesce, monotonically_increasing_id
+    coalesce, monotonically_increasing_id, udf
 )
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, 
@@ -364,6 +364,139 @@ def clean_and_process_data(df: DataFrame) -> DataFrame:
     return df_final
 
 
+def clean_and_process_data_optimized(df: DataFrame) -> DataFrame:
+    """
+    Optimized version of clean_and_process_data incorporating all notebook improvements.
+    
+    This method applies the following optimizations:
+    1. Drop non-essential timestamp columns early
+    2. Handle REMOTE_TYPE_NAME nulls
+    3. Resolve CITY vs CITY_NAME consolidation with base64 decoding
+    4. Remove duplicate county columns
+    5. Apply core cleaning pipeline
+    6. Generate optimization summary
+    
+    Args:
+        df: Raw Spark DataFrame
+        
+    Returns:
+        DataFrame: Cleaned and processed data with optimizations
+    """
+    logger.info("Starting optimized data cleaning and processing")
+    initial_count = df.count()
+    logger.info(f"Initial record count: {initial_count:,}")
+    
+    # Step 1: Drop non-essential columns early for better performance
+    logger.info("Step 1: Dropping non-essential timestamp columns")
+    columns_to_drop = ["LAST_UPDATED_DATE", "LAST_UPDATED_TIMESTAMP", "ACTIVE_SOURCES_INFO"]
+    existing_cols_to_drop = [col for col in columns_to_drop if col in df.columns]
+    if existing_cols_to_drop:
+        df = df.drop(*existing_cols_to_drop)
+        logger.info(f"Dropped columns: {existing_cols_to_drop}")
+    
+    # Step 2: Handle REMOTE_TYPE_NAME nulls
+    logger.info("Step 2: Handling REMOTE_TYPE_NAME nulls")
+    if "REMOTE_TYPE_NAME" in df.columns:
+        null_count = df.filter(col("REMOTE_TYPE_NAME").isNull()).count()
+        logger.info(f"REMOTE_TYPE_NAME null values: {null_count:,}")
+        df = df.withColumn("REMOTE_TYPE_NAME", 
+                          when(col("REMOTE_TYPE_NAME").isNull(), lit("Undefined"))
+                          .otherwise(col("REMOTE_TYPE_NAME")))
+    
+    # Step 3: Resolve CITY vs CITY_NAME with base64 decoding
+    logger.info("Step 3: Resolving CITY vs CITY_NAME consolidation")
+    if "CITY" in df.columns and "CITY_NAME" in df.columns:
+        # Create safe base64 decoding UDF
+        def safe_base64_decode(encoded_str):
+            if encoded_str is None:
+                return None
+            try:
+                import base64
+                decoded_bytes = base64.b64decode(encoded_str)
+                return decoded_bytes.decode('utf-8')
+            except:
+                return encoded_str
+        
+        from pyspark.sql.types import StringType
+        decode_udf = udf(safe_base64_decode, StringType())
+        
+        # Apply base64 decoding to CITY column
+        df = df.withColumn("CITY_DECODED", decode_udf(col("CITY")))
+        
+        # Consolidate into single city column
+        df = df.withColumn("CITY_CONSOLIDATED", 
+                          when(col("CITY_DECODED").isNotNull(), col("CITY_DECODED"))
+                          .otherwise(col("CITY_NAME")))
+        
+        # Replace original CITY column and drop intermediates
+        df = df.withColumn("CITY", col("CITY_CONSOLIDATED")) \
+               .drop("CITY_NAME", "CITY_DECODED", "CITY_CONSOLIDATED")
+        
+        logger.info("CITY column consolidated with base64 decoding")
+    
+    # Step 4: Remove duplicate county columns
+    logger.info("Step 4: Checking for duplicate county columns")
+    county_columns = [col_name for col_name in df.columns if 'county' in col_name.lower()]
+    if len(county_columns) > 1:
+        logger.info(f"Found county columns: {county_columns}")
+        
+        # Sample data to check similarity
+        sample_df = df.select(*county_columns).limit(1000).toPandas()
+        
+        # Calculate similarity between county columns
+        from difflib import SequenceMatcher
+        similarities = []
+        for i, col1 in enumerate(county_columns):
+            for j, col2 in enumerate(county_columns[i+1:], i+1):
+                # Compare non-null values
+                col1_vals = sample_df[col1].dropna().astype(str).tolist()
+                col2_vals = sample_df[col2].dropna().astype(str).tolist()
+                
+                if col1_vals and col2_vals:
+                    # Compare first few values
+                    similarity = SequenceMatcher(None, str(col1_vals[:10]), str(col2_vals[:10])).ratio()
+                    similarities.append((col1, col2, similarity))
+                    logger.info(f"Similarity between {col1} and {col2}: {similarity:.3f}")
+        
+        # Remove columns with >95% similarity (keep the first one)
+        cols_to_remove = []
+        for col1, col2, sim in similarities:
+            if sim > 0.95 and col2 not in cols_to_remove:
+                cols_to_remove.append(col2)
+        
+        if cols_to_remove:
+            df = df.drop(*cols_to_remove)
+            logger.info(f"Removed duplicate county columns: {cols_to_remove}")
+    
+    # Step 5: Apply existing cleaning pipeline
+    logger.info("Step 5: Applying core cleaning pipeline")
+    df_processed = clean_and_process_data(df)
+    
+    # Step 6: Generate optimization summary
+    final_count = df_processed.count()
+    optimization_summary = {
+        "initial_records": initial_count,
+        "final_records": final_count,
+        "records_filtered": initial_count - final_count,
+        "optimizations_applied": [
+            "Dropped non-essential timestamp columns",
+            "Handled REMOTE_TYPE_NAME nulls", 
+            "Consolidated CITY columns with base64 decoding",
+            "Removed duplicate county columns",
+            "Applied core cleaning pipeline"
+        ]
+    }
+    
+    logger.info("=== OPTIMIZATION SUMMARY ===")
+    for key, value in optimization_summary.items():
+        if isinstance(value, list):
+            logger.info(f"{key}: {', '.join(value)}")
+        else:
+            logger.info(f"{key}: {value:,}" if isinstance(value, int) else f"{key}: {value}")
+    
+    return df_processed
+
+
 def create_relational_tables(df: DataFrame, output_path: str = "data/processed/relational_tables"):
     """
     Create normalized relational tables from the processed data.
@@ -496,8 +629,8 @@ def save_processed_data(df: DataFrame, output_path: str = "data/processed"):
 
 
 def main():
-    """Main processing pipeline."""
-    logger.info("Starting Lightcast job market data processing")
+    """Main processing pipeline using optimized cleaning method."""
+    logger.info("Starting Lightcast job market data processing (optimized)")
     
     # Initialize Spark
     spark = create_spark_session()
@@ -506,8 +639,8 @@ def main():
         # Load raw data
         raw_df = load_raw_lightcast_data(spark, "data/raw/lightcast_job_postings.csv")
         
-        # Clean and process data
-        processed_df = clean_and_process_data(raw_df)
+        # Clean and process data using optimized method
+        processed_df = clean_and_process_data_optimized(raw_df)
         
         # Cache for multiple operations
         processed_df.cache()
@@ -518,7 +651,7 @@ def main():
         # Save processed data
         save_processed_data(processed_df)
         
-        logger.info("Data processing pipeline completed successfully")
+        logger.info("Optimized data processing pipeline completed successfully")
         
     except Exception as e:
         logger.error(f"Error in processing pipeline: {e}")

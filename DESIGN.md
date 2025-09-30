@@ -7,13 +7,14 @@
 ## Table of Contents
 
 1. [System Architecture](#system-architecture)
-2. [Data Processing Pipeline](#data-processing-pipeline)
-3. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
-4. [Data Loading Strategy](#data-loading-strategy)
-5. [Storage Strategy](#storage-strategy)
-6. [Data Cleaning & Quality Assurance](#data-cleaning--quality-assurance)
-7. [Performance Optimizations](#performance-optimizations)
-8. [Usage Patterns](#usage-patterns)
+2. [Quarto Website Data Loading Process Flow](#quarto-website-data-loading-process-flow)
+3. [Data Processing Pipeline](#data-processing-pipeline)
+4. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
+5. [Data Loading Strategy](#data-loading-strategy)
+6. [Storage Strategy](#storage-strategy)
+7. [Data Cleaning & Quality Assurance](#data-cleaning--quality-assurance)
+8. [Performance Optimizations](#performance-optimizations)
+9. [Usage Patterns](#usage-patterns)
 
 ---
 
@@ -56,6 +57,522 @@ Each major functionality is encapsulated in specialized classes:
 - **Data Processing**: `JobMarketDataProcessor` & `AdvancedJobDataProcessor`
 - **Visualization**: `SalaryVisualizer`
 - **Full Pipeline**: `full_dataset_processor.py` functions
+
+---
+
+## Quarto Website Data Loading Process Flow
+
+### Overview: From Raw Data to Interactive Website
+
+The Quarto website follows a sophisticated data loading and chart generation pipeline that prioritizes performance while maintaining data integrity and fallback capabilities.
+
+### 🔄 Complete Process Flow Diagram
+
+```mermaid
+flowchart TD
+    %% User Access
+    START([User Visits Quarto Website]) --> RENDER{Quarto Rendering Process}
+    
+    %% Quarto Document Processing
+    RENDER --> QMD[Load .qmd Documents]
+    QMD --> PYTHON{Execute Python Code Blocks}
+    
+    %% Data Loading Decision Tree
+    PYTHON --> DATACHECK{Check Data Availability}
+    
+    %% Data Source Hierarchy
+    DATACHECK -->|Priority 1| PARQUET[Load Processed Parquet<br/>📁 data/processed/job_market_processed.parquet]
+    DATACHECK -->|Priority 2| CSV[Load Processed CSV<br/>📁 data/processed/clean_job_data.csv]
+    DATACHECK -->|Priority 3| RAW[Load Raw Lightcast Data<br/>📁 data/raw/lightcast_job_postings.csv]
+    
+    %% Data Processing Branch
+    PARQUET --> VALIDATE{Data Validation}
+    CSV --> VALIDATE
+    RAW --> PROCESS[Data Processing Required]
+    
+    %% Processing Pipeline
+    PROCESS --> CLEAN[Data Cleaning & Standardization]
+    CLEAN --> FEATURE[Feature Engineering]
+    FEATURE --> SAVE[Save Processed Data]
+    SAVE --> VALIDATE
+    
+    %% Chart Generation Pipeline
+    VALIDATE --> ANALYSIS[Statistical Analysis]
+    ANALYSIS --> CHARTS[Chart Generation]
+    
+    %% Chart Types
+    CHARTS --> EXPERIENCE[Experience Gap Analysis]
+    CHARTS --> EDUCATION[Education Premium Charts]
+    CHARTS --> REMOTE[Remote Work Analysis]
+    CHARTS --> GEOGRAPHIC[Geographic Salary Maps]
+    CHARTS --> INDUSTRY[Industry Comparisons]
+    
+    %% Output Generation
+    EXPERIENCE --> EXPORT[Chart Export System]
+    EDUCATION --> EXPORT
+    REMOTE --> EXPORT
+    GEOGRAPHIC --> EXPORT
+    INDUSTRY --> EXPORT
+    
+    %% Multi-Format Output
+    EXPORT --> HTML[Interactive HTML Charts]
+    EXPORT --> PNG[Static PNG Images]
+    EXPORT --> SVG[Vector SVG Graphics]
+    
+    %% Registry and Integration
+    HTML --> REGISTRY[Chart Registry JSON]
+    PNG --> REGISTRY
+    SVG --> REGISTRY
+    
+    %% Final Website Assembly
+    REGISTRY --> INTEGRATE[Quarto Integration]
+    INTEGRATE --> WEBSITE[📊 Live Website with Charts]
+    
+    %% Error Handling
+    DATACHECK -->|No Data Found| ERROR[Fallback to Mock Data]
+    ERROR --> MOCKCHARTS[Generate Demo Charts]
+    MOCKCHARTS --> REGISTRY
+    
+    %% Styling
+    classDef dataSource fill:#3498DB,stroke:#2980B9,color:#fff
+    classDef processing fill:#E74C3C,stroke:#C0392B,color:#fff
+    classDef analysis fill:#27AE60,stroke:#229954,color:#fff
+    classDef output fill:#F39C12,stroke:#E67E22,color:#fff
+    classDef final fill:#9B59B6,stroke:#8E44AD,color:#fff
+    
+    class PARQUET,CSV,RAW dataSource
+    class PROCESS,CLEAN,FEATURE,SAVE processing
+    class ANALYSIS,CHARTS,EXPERIENCE,EDUCATION,REMOTE,GEOGRAPHIC,INDUSTRY analysis
+    class EXPORT,HTML,PNG,SVG,REGISTRY output
+    class WEBSITE final
+```
+
+### 📋 Detailed Step-by-Step Process
+
+#### **Phase 1: Quarto Document Processing**
+
+1. **User Access**: User visits Quarto website
+2. **Document Loading**: Quarto loads `.qmd` documents (e.g., `data-analysis.qmd`, `salary-analysis.qmd`)
+3. **Python Execution**: Quarto executes Python code blocks within documents
+
+#### **Phase 2: Data Source Discovery & Loading**
+
+**Priority 1: Processed Parquet Data**
+```python
+# Fastest loading path - optimized for performance
+data_path = "data/processed/job_market_processed.parquet"
+if Path(data_path).exists():
+    analyzer = SparkJobAnalyzer()
+    df = analyzer.load_full_dataset(data_path)
+    # ✅ FAST: Columnar format, schema preserved, type-safe
+```
+
+**Priority 2: Processed CSV Fallback**
+```python
+# Secondary path - good compatibility
+csv_path = "data/processed/clean_job_data.csv"
+if Path(csv_path).exists():
+    df = analyzer.load_full_dataset(csv_path)
+    # ✅ COMPATIBLE: Human-readable, broad tool support
+```
+
+**Priority 3: Raw Data Processing**
+```python
+# Last resort - requires processing
+raw_path = "data/raw/lightcast_job_postings.csv"
+df = analyzer.load_full_dataset(force_raw=True)
+# ⚠️ SLOW: Requires real-time processing, schema inference
+```
+
+#### **Phase 3: Data Processing (If Required)**
+
+**When Raw Data is Used:**
+1. **Data Cleaning**: Handle nulls, standardize formats
+2. **Feature Engineering**: Create derived columns
+3. **Quality Validation**: Check completeness, outliers
+4. **Save Processed**: Store for future fast loading
+
+```python
+# Real-time processing workflow
+processor = JobMarketDataProcessor()
+raw_df = processor.load_data(raw_path)
+cleaned_df = processor.clean_and_standardize_data(raw_df)
+enhanced_df = processor.engineer_features(cleaned_df)
+processor.save_processed_data(enhanced_df)  # Creates Parquet for next time
+```
+
+#### **Phase 4: Statistical Analysis & Chart Generation**
+
+**Analysis Pipeline:**
+```python
+# Core analyses for website charts
+experience_analysis = analyzer.get_experience_analysis()
+industry_analysis = analyzer.get_industry_analysis()
+geographic_analysis = analyzer.get_geographic_analysis()
+salary_statistics = analyzer.get_overall_statistics()
+```
+
+**Chart Generation System:**
+```python
+# Multi-format chart export
+chart_exporter = QuartoChartExporter(output_dir="figures/")
+
+# Generate each chart type
+experience_chart = chart_exporter.create_experience_salary_chart(experience_data)
+education_chart = chart_exporter.create_education_premium_chart(education_data)
+remote_chart = chart_exporter.create_remote_work_chart(remote_data)
+```
+
+#### **Phase 5: Multi-Format Export & Registry**
+
+**Chart Export Formats:**
+- **Interactive HTML**: Plotly charts with hover, zoom, interactivity
+- **Static PNG**: High-quality images for print/email
+- **Vector SVG**: Scalable graphics for presentations
+
+**Chart Registry System:**
+```json
+{
+  "charts": [
+    {
+      "name": "experience_salary_analysis",
+      "title": "Experience Gap Analysis",
+      "type": "plotly",
+      "files": {
+        "html": "figures/experience_salary_analysis.html",
+        "png": "figures/experience_salary_analysis.png",
+        "svg": "figures/experience_salary_analysis.svg"
+      }
+    }
+  ]
+}
+```
+
+#### **Phase 6: Quarto Integration & Website Assembly**
+
+**Dynamic Chart Loading:**
+```python
+# In Quarto .qmd documents
+with open("figures/chart_registry.json") as f:
+    charts = json.load(f)
+
+for chart in charts["charts"]:
+    if chart["type"] == "plotly":
+        display_html_chart(chart["files"]["html"])
+```
+
+**Website Generation:**
+1. **Chart Integration**: Embed interactive charts in pages
+2. **Static Fallbacks**: PNG images for email/print versions
+3. **Navigation**: Link charts across different analysis pages
+4. **Responsive Design**: Charts adapt to screen sizes
+
+### ⚡ Performance Optimizations
+
+#### **Data Loading Speed:**
+- **Parquet First**: 10-50x faster than CSV loading
+- **Schema Preservation**: No type inference required
+- **Columnar Access**: Only load needed columns
+
+#### **Chart Generation:**
+- **Registry Caching**: Avoid regenerating existing charts
+- **Lazy Loading**: Generate charts only when needed
+- **Format Selection**: Interactive for web, static for print
+
+#### **Error Handling:**
+- **Graceful Fallbacks**: Mock data if real data unavailable
+- **Progressive Enhancement**: Basic charts → Rich interactivity
+- **Clear Error Messages**: Guide users to fix data issues
+
+### 🔍 Data Flow Checkpoints
+
+**Checkpoint 1: Data Availability**
+```python
+if not any_data_source_available():
+    use_mock_data_for_demonstration()
+```
+
+**Checkpoint 2: Data Quality**
+```python
+if data_quality_score < 0.8:
+    trigger_data_cleaning_pipeline()
+```
+
+**Checkpoint 3: Chart Generation**
+```python
+if chart_generation_fails():
+    fallback_to_static_charts()
+```
+
+**Checkpoint 4: Website Assembly**
+```python
+if interactive_charts_unavailable():
+    use_static_png_fallbacks()
+```
+
+### 🎯 Key Design Decisions
+
+1. **Performance First**: Prioritize Parquet for speed
+2. **Fallback Strategy**: Multiple data sources for reliability
+3. **Real-time Capable**: Can process raw data if needed
+4. **Multi-format Output**: Interactive + static for all use cases
+5. **Registry System**: Centralized chart management
+6. **Error Resilience**: Graceful degradation at every step
+
+### 💻 Practical Implementation for Developers
+
+#### **Setting Up Data Processing Pipeline**
+
+**Step 1: Initial Data Processing (One-time Setup)**
+```bash
+# Create processed data for fast Quarto loading
+cd /home/samarthya/sourcebox/github.com/project-from-scratch
+python src/data/full_dataset_processor.py
+```
+
+**Step 2: Verify Processed Data Structure**
+```bash
+# Expected output structure
+data/processed/
+├── job_market_processed.parquet/     # 🎯 Primary (fastest)
+├── clean_job_data.csv               # 📄 Fallback (compatible)
+├── job_market_sample.csv            # 📊 Quick analysis
+└── processing_report.md             # 📋 Quality metrics
+```
+
+#### **Quarto Document Implementation Patterns**
+
+**Pattern 1: Fast Loading with Validation**
+```python
+# In your .qmd document
+from src.data.spark_analyzer import SparkJobAnalyzer
+from pathlib import Path
+
+def load_data_for_quarto():
+    """Optimized data loading for Quarto websites."""
+    analyzer = SparkJobAnalyzer()
+    
+    # Try processed data first (fastest)
+    processed_path = "data/processed/job_market_processed.parquet"
+    if Path(processed_path).exists():
+        print("📊 Loading processed data (optimized)...")
+        return analyzer.load_full_dataset(processed_path)
+    
+    # Fallback to raw data with processing
+    print("⚠️ Processing raw data (slower first load)...")
+    df = analyzer.load_full_dataset(force_raw=True)
+    
+    # Save processed data for next time
+    from src.data.enhanced_processor import JobMarketDataProcessor
+    processor = JobMarketDataProcessor()
+    processor.save_processed_data(df, "data/processed/")
+    print("✅ Processed data saved for faster future loads")
+    
+    return df
+```
+
+**Pattern 2: Chart Generation with Registry**
+```python
+# In your .qmd document
+from src.visualization.quarto_charts import QuartoChartExporter
+import json
+
+def generate_charts_for_website():
+    """Generate all charts needed for Quarto website."""
+    
+    # Initialize chart system
+    chart_exporter = QuartoChartExporter(output_dir="figures/")
+    
+    # Load data
+    df = load_data_for_quarto()
+    analyzer = SparkJobAnalyzer()
+    analyzer.job_data = df
+    
+    # Generate core analyses
+    experience_data = analyzer.get_experience_analysis()
+    industry_data = analyzer.get_industry_analysis()
+    
+    # Create charts with registry tracking
+    charts = []
+    
+    # Experience analysis chart
+    exp_chart = chart_exporter.create_experience_salary_chart(
+        experience_data, 
+        title="Career Progression: Experience vs Salary"
+    )
+    charts.append(exp_chart)
+    
+    # Industry analysis chart
+    ind_chart = chart_exporter.create_industry_salary_chart(
+        industry_data,
+        title="Industry Salary Comparison"
+    )
+    charts.append(ind_chart)
+    
+    # Export registry for dynamic loading
+    registry_path = chart_exporter.export_chart_registry()
+    print(f"📋 Chart registry: {registry_path}")
+    
+    return charts
+
+# Execute in Quarto
+charts = generate_charts_for_website()
+```
+
+**Pattern 3: Dynamic Chart Loading in Quarto**
+```python
+# Load and display charts dynamically
+import json
+from pathlib import Path
+from IPython.display import HTML
+
+def display_website_charts():
+    """Load and display charts from registry."""
+    
+    registry_path = Path("figures/chart_registry.json")
+    if registry_path.exists():
+        with open(registry_path) as f:
+            registry = json.load(f)
+        
+        for chart in registry.get("charts", []):
+            print(f"📊 {chart['title']}")
+            
+            # Display interactive version
+            html_path = chart["files"]["html"]
+            if Path(html_path).exists():
+                with open(html_path) as f:
+                    display(HTML(f.read()))
+            
+            # Show static fallback info
+            png_path = chart["files"].get("png")
+            if png_path and Path(png_path).exists():
+                print(f"   📷 Static version: {png_path}")
+    else:
+        print("⚠️ No chart registry found. Run chart generation first.")
+
+# Display in Quarto
+display_website_charts()
+```
+
+#### **Error Handling and Fallbacks**
+
+**Robust Data Loading**
+```python
+def robust_data_loading():
+    """Data loading with comprehensive error handling."""
+    
+    try:
+        # Primary: Processed Parquet
+        analyzer = SparkJobAnalyzer()
+        df = analyzer.load_full_dataset()
+        print("✅ Loaded processed data")
+        return df, "processed"
+        
+    except FileNotFoundError:
+        print("⚠️ No processed data found, trying raw data...")
+        
+        try:
+            # Secondary: Raw data processing
+            df = analyzer.load_full_dataset(force_raw=True)
+            print("✅ Loaded and processed raw data")
+            return df, "raw_processed"
+            
+        except Exception as e:
+            print(f"❌ Data loading failed: {e}")
+            
+            # Tertiary: Mock data for development
+            print("🔄 Using mock data for development...")
+            mock_df = create_mock_data()
+            return mock_df, "mock"
+
+def create_mock_data():
+    """Create realistic mock data for development/testing."""
+    import pandas as pd
+    
+    mock_data = pd.DataFrame({
+        'experience_level': ['Entry', 'Mid', 'Senior', 'Executive'],
+        'median_salary': [65000, 85000, 120000, 150000],
+        'job_count': [25000, 35000, 20000, 8000]
+    })
+    
+    # Convert to Spark DataFrame for consistency
+    from pyspark.sql import SparkSession
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(mock_data)
+```
+
+#### **Performance Monitoring**
+
+**Execution Time Tracking**
+```python
+import time
+from contextlib import contextmanager
+
+@contextmanager
+def timer(operation_name):
+    """Time operations for performance monitoring."""
+    start = time.time()
+    print(f"⏱️ Starting: {operation_name}")
+    yield
+    duration = time.time() - start
+    print(f"✅ Completed: {operation_name} in {duration:.2f}s")
+
+# Usage in Quarto
+with timer("Data Loading"):
+    df = load_data_for_quarto()
+
+with timer("Chart Generation"):
+    charts = generate_charts_for_website()
+```
+
+#### **Development vs Production Modes**
+
+```python
+import os
+
+def get_execution_mode():
+    """Determine execution mode for appropriate optimizations."""
+    
+    # Check if running in development
+    if os.environ.get("QUARTO_DEV_MODE") == "true":
+        return "development"
+    
+    # Check if processed data exists (production ready)
+    if Path("data/processed/job_market_processed.parquet").exists():
+        return "production"
+    
+    # Default to setup mode
+    return "setup"
+
+def load_data_by_mode():
+    """Load data optimized for current mode."""
+    
+    mode = get_execution_mode()
+    
+    if mode == "development":
+        # Fast loading with smaller sample
+        print("🔧 Development mode: Using sample data")
+        df = load_sample_data()
+        
+    elif mode == "production":
+        # Full data with all optimizations
+        print("🚀 Production mode: Loading full processed data")
+        df = load_data_for_quarto()
+        
+    else:  # setup mode
+        # Process data for future fast loading
+        print("⚙️ Setup mode: Processing data for optimization")
+        df = setup_processed_data()
+    
+    return df
+```
+
+This comprehensive process flow provides developers with:
+- **Clear execution sequence** from website load to chart display
+- **Practical implementation patterns** for Quarto documents
+- **Error handling strategies** for robust websites
+- **Performance optimization** for fast loading
+- **Development workflow** for iterative improvement
 
 ---
 

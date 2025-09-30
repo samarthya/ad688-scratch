@@ -648,6 +648,157 @@ class JobMarketDataProcessor:
         
         logger.info(f"Processing report saved: {report_path}")
     
+    def clean_and_process_data_optimized(self, df: DataFrame) -> DataFrame:
+        """
+        Optimized data cleaning and processing pipeline with notebook improvements.
+        
+        This method incorporates all the optimizations discovered in the notebook analysis:
+        - Drop non-essential timestamp columns
+        - Handle REMOTE_TYPE_NAME nulls
+        - Resolve CITY vs CITY_NAME duplication with base64 decoding
+        - Remove duplicate county columns
+        - Comprehensive data structure optimization
+        
+        Args:
+            df: Raw Spark DataFrame
+            
+        Returns:
+            Optimized and cleaned DataFrame
+        """
+        import base64
+        from pyspark.sql.functions import when, col, isnan, isnull, coalesce, lit, trim, udf
+        from pyspark.sql.types import StringType
+        
+        logger.info("=== STARTING OPTIMIZED DATA CLEANING PIPELINE ===")
+        
+        original_column_count = len(df.columns)
+        original_record_count = df.count()
+        
+        logger.info(f"BEFORE CLEANING:")
+        logger.info(f"   → Columns: {original_column_count}")
+        logger.info(f"   → Records: {original_record_count:,}")
+        
+        # STEP 1: Drop non-essential timestamp/metadata columns
+        logger.info("Step 1: Dropping non-essential columns...")
+        columns_to_drop = [
+            'LAST_UPDATED_DATE',
+            'LAST_UPDATED_TIMESTAMP', 
+            'ACTIVE_SOURCES_INFO'
+        ]
+        
+        existing_columns_to_drop = [col_name for col_name in columns_to_drop if col_name in df.columns]
+        if existing_columns_to_drop:
+            df_cleaned = df.drop(*existing_columns_to_drop)
+            logger.info(f"   ✅ Dropped columns: {existing_columns_to_drop}")
+        else:
+            df_cleaned = df
+            logger.info(f"   ℹ️ No target columns found to drop")
+        
+        # STEP 2: Handle REMOTE_TYPE_NAME nulls
+        logger.info("Step 2: Handling REMOTE_TYPE_NAME nulls...")
+        if 'REMOTE_TYPE_NAME' in df_cleaned.columns:
+            null_remote_count = df_cleaned.filter(col('REMOTE_TYPE_NAME').isNull()).count()
+            null_percentage = (null_remote_count / original_record_count) * 100
+            
+            logger.info(f"   → REMOTE_TYPE_NAME nulls: {null_remote_count:,} ({null_percentage:.1f}%)")
+            
+            df_cleaned = df_cleaned.withColumn(
+                'REMOTE_TYPE_NAME',
+                when(col('REMOTE_TYPE_NAME').isNull(), lit('Undefined'))
+                .otherwise(col('REMOTE_TYPE_NAME'))
+            )
+            logger.info(f"   ✅ Nulls replaced with 'Undefined'")
+        else:
+            logger.info(f"   ℹ️ REMOTE_TYPE_NAME column not found")
+        
+        # STEP 3: Resolve CITY vs CITY_NAME duplication with base64 decoding
+        logger.info("Step 3: Resolving CITY vs CITY_NAME duplication...")
+        city_cols = [col_name for col_name in df_cleaned.columns if col_name in ['CITY', 'CITY_NAME']]
+        logger.info(f"   → Found city columns: {city_cols}")
+        
+        if len(city_cols) >= 2:
+            # Define base64 decoding UDF
+            def safe_base64_decode(encoded_str):
+                if not encoded_str:
+                    return None
+                try:
+                    # Simple check for base64-like string
+                    if len(encoded_str) > 10 and encoded_str.replace('=', '').replace('+', '').replace('/', '').isalnum():
+                        decoded = base64.b64decode(encoded_str).decode('utf-8', errors='ignore')
+                        return decoded.strip() if decoded.strip() else None
+                    else:
+                        return encoded_str
+                except:
+                    return encoded_str
+            
+            decode_udf = udf(safe_base64_decode, StringType())
+            
+            if 'CITY' in city_cols and 'CITY_NAME' in city_cols:
+                # Create unified CITY column
+                df_cleaned = df_cleaned.withColumn(
+                    'CITY_UNIFIED',
+                    coalesce(
+                        # Priority 1: Use CITY_NAME if not null/empty
+                        when(col('CITY_NAME').isNotNull() & (col('CITY_NAME') != ''), col('CITY_NAME')),
+                        # Priority 2: Use decoded CITY if CITY_NAME is null/empty
+                        decode_udf(col('CITY'))
+                    )
+                )
+                
+                # Drop original columns and rename unified column
+                df_cleaned = df_cleaned.drop('CITY', 'CITY_NAME').withColumnRenamed('CITY_UNIFIED', 'CITY')
+                logger.info(f"   ✅ Created unified CITY column from CITY and CITY_NAME")
+                
+            elif 'CITY_NAME' in city_cols:
+                df_cleaned = df_cleaned.withColumnRenamed('CITY_NAME', 'CITY')
+                logger.info(f"   ✅ Renamed CITY_NAME to CITY")
+                
+            elif 'CITY' in city_cols:
+                df_cleaned = df_cleaned.withColumn('CITY', decode_udf(col('CITY')))
+                logger.info(f"   ✅ Attempted base64 decoding on CITY column")
+        
+        # STEP 4: Remove duplicate county columns
+        logger.info("Step 4: Removing duplicate county columns...")
+        county_id_cols = [col_name for col_name in df_cleaned.columns if col_name in ['COUNTY_OUTGOING', 'COUNTY_INCOMING']]
+        county_name_cols = [col_name for col_name in df_cleaned.columns if col_name in ['COUNTY_NAME_OUTGOING', 'COUNTY_NAME_INCOMING']]
+        
+        # Handle county ID columns
+        if len(county_id_cols) >= 2:
+            # Check if values are identical
+            comparison_df = df_cleaned.select('COUNTY_OUTGOING', 'COUNTY_INCOMING').limit(100)
+            identical_count = comparison_df.filter(col('COUNTY_OUTGOING') == col('COUNTY_INCOMING')).count()
+            total_sample = comparison_df.count()
+            
+            if identical_count == total_sample or identical_count / total_sample > 0.95:
+                df_cleaned = df_cleaned.drop('COUNTY_INCOMING').withColumnRenamed('COUNTY_OUTGOING', 'COUNTY_ID')
+                logger.info(f"   ✅ Dropped COUNTY_INCOMING, renamed COUNTY_OUTGOING to COUNTY_ID")
+        
+        # Handle county name columns  
+        if len(county_name_cols) >= 2:
+            comparison_df = df_cleaned.select('COUNTY_NAME_OUTGOING', 'COUNTY_NAME_INCOMING').limit(100)
+            identical_count = comparison_df.filter(col('COUNTY_NAME_OUTGOING') == col('COUNTY_NAME_INCOMING')).count()
+            total_sample = comparison_df.count()
+            
+            if identical_count == total_sample or identical_count / total_sample > 0.95:
+                df_cleaned = df_cleaned.drop('COUNTY_NAME_INCOMING').withColumnRenamed('COUNTY_NAME_OUTGOING', 'COUNTY_NAME')
+                logger.info(f"   ✅ Dropped COUNTY_NAME_INCOMING, renamed COUNTY_NAME_OUTGOING to COUNTY_NAME")
+        
+        # STEP 5: Apply existing cleaning pipeline
+        logger.info("Step 5: Applying standard data cleaning pipeline...")
+        df_cleaned = self.clean_and_process_data(df_cleaned)
+        
+        # STEP 6: Final optimization summary
+        final_column_count = len(df_cleaned.columns)
+        final_record_count = df_cleaned.count()
+        
+        logger.info(f"\nOPTIMIZATION SUMMARY:")
+        logger.info(f"   → Columns: {original_column_count} → {final_column_count} (removed {original_column_count - final_column_count})")
+        logger.info(f"   → Records: {original_record_count:,} → {final_record_count:,}")
+        logger.info(f"   ✅ Data cleaning and optimization complete")
+        
+        self.df_processed = df_cleaned
+        return df_cleaned
+
     def stop_spark(self):
         """Stop the Spark session."""
         if self.spark:
@@ -668,8 +819,8 @@ def main():
         # Assess data quality
         quality_report = processor.assess_data_quality(df_raw)
         
-        # Clean and process data
-        df_processed = processor.clean_and_process_data(df_raw)
+        # Clean and process data using optimized pipeline
+        df_processed = processor.clean_and_process_data_optimized(df_raw)
         
         # Generate summary statistics
         summary_stats = processor.generate_summary_statistics(df_processed)
