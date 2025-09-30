@@ -449,15 +449,21 @@ class JobMarketDataProcessor:
         
         # Step 2: Clean and convert salary fields
         logger.info("Step 2: Processing salary data...")
-        df_clean = df_clean.withColumn("SALARY_MIN_CLEAN", when(col("SALARY_MIN").rlike("^[0-9]+$"), col("SALARY_MIN").cast("double")).otherwise(None)).withColumn("SALARY_MAX_CLEAN", when(col("SALARY_MAX").rlike("^[0-9]+$"), col("SALARY_MAX").cast("double")).otherwise(None)).withColumn("SALARY_AVG", (col("SALARY_MIN_CLEAN") + col("SALARY_MAX_CLEAN")) / 2)
+        df_clean = df_clean.withColumn("SALARY_MIN_CLEAN", when(col("SALARY_FROM").rlike("^[0-9]+$"), col("SALARY_FROM").cast("double")).otherwise(None)).withColumn("SALARY_MAX_CLEAN", when(col("SALARY_TO").rlike("^[0-9]+$"), col("SALARY_TO").cast("double")).otherwise(None)).withColumn("SALARY_AVG", (col("SALARY_MIN_CLEAN") + col("SALARY_MAX_CLEAN")) / 2)
         
         # Step 3: Standardize categorical fields
         logger.info("Step 3: Standardizing categorical fields...")
-        df_clean = df_clean.withColumn("COMPANY_CLEAN", when(col("COMPANY").isNull() | (col("COMPANY") == "") | (col("COMPANY") == "null"), "Undefined").otherwise(trim(col("COMPANY")))).withColumn("INDUSTRY_CLEAN", when(col("INDUSTRY").isNull() | (col("INDUSTRY") == ""), "Unknown").otherwise(trim(col("INDUSTRY")))).withColumn("EXPERIENCE_LEVEL_CLEAN", when(col("EXPERIENCE_LEVEL").isNull() | (col("EXPERIENCE_LEVEL") == ""), "Unknown").otherwise(trim(col("EXPERIENCE_LEVEL")))).withColumn("EMPLOYMENT_TYPE_CLEAN", when(col("EMPLOYMENT_TYPE").isNull() | (col("EMPLOYMENT_TYPE") == ""), "Full-time").otherwise(trim(col("EMPLOYMENT_TYPE")))).withColumn("REMOTE_ALLOWED_CLEAN", when(col("REMOTE_ALLOWED").isNull(), "Unknown").when(lower(col("REMOTE_ALLOWED")).contains("remote"), "Remote").when(lower(col("REMOTE_ALLOWED")).contains("hybrid"), "Hybrid").when(lower(col("REMOTE_ALLOWED")).contains("on"), "On-site").otherwise("Unknown"))
+        df_clean = df_clean.withColumn("COMPANY_CLEAN", when(col("COMPANY").isNull() | (col("COMPANY") == "") | (col("COMPANY") == "null"), "Undefined").otherwise(trim(col("COMPANY")))).withColumn("EMPLOYMENT_TYPE_CLEAN", when(col("EMPLOYMENT_TYPE").isNull() | (col("EMPLOYMENT_TYPE") == ""), "Full-time").otherwise(trim(col("EMPLOYMENT_TYPE")))).withColumn("REMOTE_TYPE_CLEAN", when(col("REMOTE_TYPE").isNull(), "Unknown").when(lower(col("REMOTE_TYPE_NAME")).contains("remote"), "Remote").when(lower(col("REMOTE_TYPE_NAME")).contains("hybrid"), "Hybrid").when(lower(col("REMOTE_TYPE_NAME")).contains("on"), "On-site").otherwise("Unknown")).withColumn("EXPERIENCE_CLEAN", 
+            when(col("MIN_YEARS_EXPERIENCE").isNull() & col("MAX_YEARS_EXPERIENCE").isNull(), "Unknown")
+            .when(col("MIN_YEARS_EXPERIENCE") <= 2, "Entry Level")
+            .when(col("MIN_YEARS_EXPERIENCE") <= 5, "Mid Level")
+            .when(col("MIN_YEARS_EXPERIENCE") <= 10, "Senior Level")
+            .otherwise("Executive Level")
+        )
         
         # Step 4: Geographic data cleaning
         logger.info("Step 4: Cleaning geographic data...")
-        df_clean = df_clean.withColumn("STATE_CLEAN", when(col("STATE").isNull(), "Unknown").otherwise(trim(upper(col("STATE"))))).withColumn("CITY_CLEAN", when(col("CITY").isNull(), "Unknown").otherwise(trim(col("CITY"))))
+        df_clean = df_clean.withColumn("STATE_CLEAN", when(col("STATE").isNull(), "Unknown").otherwise(trim(upper(col("STATE"))))).withColumn("CITY_CLEAN", when(col("CITY_NAME").isNull(), trim(col("CITY"))).otherwise(trim(col("CITY_NAME"))))
         
         # Step 5: Handle missing salary values with sophisticated imputation
         logger.info("Step 5: Imputing missing salary values...")
@@ -484,34 +490,34 @@ class JobMarketDataProcessor:
     def _impute_missing_salaries(self, df: DataFrame) -> DataFrame:
         """Sophisticated missing salary imputation using multiple strategies."""
         
-        # Strategy 1: Impute based on location, industry, and experience level
-        location_industry_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("STATE_CLEAN", "INDUSTRY_CLEAN", "EXPERIENCE_LEVEL_CLEAN").agg(median("SALARY_AVG").alias("median_salary_detailed"))
+        # Strategy 1: Impute based on location, employment type, and experience level
+        location_employment_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("STATE_CLEAN", "EMPLOYMENT_TYPE_CLEAN", "EXPERIENCE_CLEAN").agg(median("SALARY_AVG").alias("median_salary_detailed"))
         
-        # Strategy 2: Impute based on industry and experience level only
-        industry_experience_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("INDUSTRY_CLEAN", "EXPERIENCE_LEVEL_CLEAN").agg(median("SALARY_AVG").alias("median_salary_industry"))
+        # Strategy 2: Impute based on employment type and experience level only
+        employment_experience_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("EMPLOYMENT_TYPE_CLEAN", "EXPERIENCE_CLEAN").agg(median("SALARY_AVG").alias("median_salary_employment"))
         
         # Strategy 3: Impute based on experience level only
-        experience_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("EXPERIENCE_LEVEL_CLEAN").agg(median("SALARY_AVG").alias("median_salary_experience"))
+        experience_medians = df.filter(col("SALARY_AVG").isNotNull()).groupBy("EXPERIENCE_CLEAN").agg(median("SALARY_AVG").alias("median_salary_experience"))
         
         # Strategy 4: Overall median
         overall_median = df.filter(col("SALARY_AVG").isNotNull()).agg(median("SALARY_AVG").alias("overall_median")).collect()[0]["overall_median"]
         
         # Join imputation values
-        df_imputed = df.join(location_industry_medians, ["STATE_CLEAN", "INDUSTRY_CLEAN", "EXPERIENCE_LEVEL_CLEAN"], "left").join(industry_experience_medians, ["INDUSTRY_CLEAN", "EXPERIENCE_LEVEL_CLEAN"], "left").join(experience_medians, ["EXPERIENCE_LEVEL_CLEAN"], "left")
+        df_imputed = df.join(location_employment_medians, ["STATE_CLEAN", "EMPLOYMENT_TYPE_CLEAN", "EXPERIENCE_CLEAN"], "left").join(employment_experience_medians, ["EMPLOYMENT_TYPE_CLEAN", "EXPERIENCE_CLEAN"], "left").join(experience_medians, ["EXPERIENCE_CLEAN"], "left")
         
         # Apply imputation in order of preference
         df_imputed = df_imputed.withColumn(
             "SALARY_AVG_IMPUTED",
             when(col("SALARY_AVG").isNotNull(), col("SALARY_AVG"))
             .when(col("median_salary_detailed").isNotNull(), col("median_salary_detailed"))
-            .when(col("median_salary_industry").isNotNull(), col("median_salary_industry"))
+            .when(col("median_salary_employment").isNotNull(), col("median_salary_employment"))
             .when(col("median_salary_experience").isNotNull(), col("median_salary_experience"))
             .otherwise(lit(overall_median))
         )
         
         # Clean up intermediate columns
         df_imputed = df_imputed.drop(
-            "median_salary_detailed", "median_salary_industry", "median_salary_experience"
+            "median_salary_detailed", "median_salary_employment", "median_salary_experience"
         )
         
         return df_imputed
@@ -525,17 +531,18 @@ class JobMarketDataProcessor:
         df_features = df.withColumn(
             "IS_AI_ROLE",
             when(lower(col("TITLE")).rlike(ai_keywords_pattern) |
-                 lower(col("REQUIRED_SKILLS")).rlike(ai_keywords_pattern), True)
+                 lower(col("SKILLS_NAME")).rlike(ai_keywords_pattern) |
+                 lower(col("BODY")).rlike(ai_keywords_pattern), True)
             .otherwise(False)
         )
         
         # Experience years mapping
         df_features = df_features.withColumn(
             "EXPERIENCE_YEARS",
-            when(col("EXPERIENCE_LEVEL_CLEAN") == "Entry", 1)
-            .when(col("EXPERIENCE_LEVEL_CLEAN") == "Mid", 4)
-            .when(col("EXPERIENCE_LEVEL_CLEAN") == "Senior", 8)
-            .when(col("EXPERIENCE_LEVEL_CLEAN") == "Executive", 15)
+            when(col("EXPERIENCE_CLEAN") == "Entry Level", 1)
+            .when(col("EXPERIENCE_CLEAN") == "Mid Level", 4)
+            .when(col("EXPERIENCE_CLEAN") == "Senior Level", 8)
+            .when(col("EXPERIENCE_CLEAN") == "Executive Level", 15)
             .otherwise(3)
         )
         
@@ -689,10 +696,10 @@ class JobMarketDataProcessor:
         existing_columns_to_drop = [col_name for col_name in columns_to_drop if col_name in df.columns]
         if existing_columns_to_drop:
             df_cleaned = df.drop(*existing_columns_to_drop)
-            logger.info(f"   ✅ Dropped columns: {existing_columns_to_drop}")
+            logger.info(f"   Dropped columns: {existing_columns_to_drop}")
         else:
             df_cleaned = df
-            logger.info(f"   ℹ️ No target columns found to drop")
+            logger.info(f"   No target columns found to drop")
         
         # STEP 2: Handle REMOTE_TYPE_NAME nulls
         logger.info("Step 2: Handling REMOTE_TYPE_NAME nulls...")
@@ -707,9 +714,9 @@ class JobMarketDataProcessor:
                 when(col('REMOTE_TYPE_NAME').isNull(), lit('Undefined'))
                 .otherwise(col('REMOTE_TYPE_NAME'))
             )
-            logger.info(f"   ✅ Nulls replaced with 'Undefined'")
+            logger.info(f"   Nulls replaced with 'Undefined'")
         else:
-            logger.info(f"   ℹ️ REMOTE_TYPE_NAME column not found")
+            logger.info(f"   REMOTE_TYPE_NAME column not found")
         
         # STEP 3: Resolve CITY vs CITY_NAME duplication with base64 decoding
         logger.info("Step 3: Resolving CITY vs CITY_NAME duplication...")
@@ -747,15 +754,15 @@ class JobMarketDataProcessor:
                 
                 # Drop original columns and rename unified column
                 df_cleaned = df_cleaned.drop('CITY', 'CITY_NAME').withColumnRenamed('CITY_UNIFIED', 'CITY')
-                logger.info(f"   ✅ Created unified CITY column from CITY and CITY_NAME")
+                logger.info(f"   Created unified CITY column from CITY and CITY_NAME")
                 
             elif 'CITY_NAME' in city_cols:
                 df_cleaned = df_cleaned.withColumnRenamed('CITY_NAME', 'CITY')
-                logger.info(f"   ✅ Renamed CITY_NAME to CITY")
+                logger.info(f"   Renamed CITY_NAME to CITY")
                 
             elif 'CITY' in city_cols:
                 df_cleaned = df_cleaned.withColumn('CITY', decode_udf(col('CITY')))
-                logger.info(f"   ✅ Attempted base64 decoding on CITY column")
+                logger.info(f"   Attempted base64 decoding on CITY column")
         
         # STEP 4: Remove duplicate county columns
         logger.info("Step 4: Removing duplicate county columns...")
@@ -771,7 +778,7 @@ class JobMarketDataProcessor:
             
             if identical_count == total_sample or identical_count / total_sample > 0.95:
                 df_cleaned = df_cleaned.drop('COUNTY_INCOMING').withColumnRenamed('COUNTY_OUTGOING', 'COUNTY_ID')
-                logger.info(f"   ✅ Dropped COUNTY_INCOMING, renamed COUNTY_OUTGOING to COUNTY_ID")
+                logger.info(f"   Dropped COUNTY_INCOMING, renamed COUNTY_OUTGOING to COUNTY_ID")
         
         # Handle county name columns  
         if len(county_name_cols) >= 2:
@@ -781,7 +788,7 @@ class JobMarketDataProcessor:
             
             if identical_count == total_sample or identical_count / total_sample > 0.95:
                 df_cleaned = df_cleaned.drop('COUNTY_NAME_INCOMING').withColumnRenamed('COUNTY_NAME_OUTGOING', 'COUNTY_NAME')
-                logger.info(f"   ✅ Dropped COUNTY_NAME_INCOMING, renamed COUNTY_NAME_OUTGOING to COUNTY_NAME")
+                logger.info(f"   Dropped COUNTY_NAME_INCOMING, renamed COUNTY_NAME_OUTGOING to COUNTY_NAME")
         
         # STEP 5: Apply existing cleaning pipeline
         logger.info("Step 5: Applying standard data cleaning pipeline...")
@@ -794,7 +801,7 @@ class JobMarketDataProcessor:
         logger.info(f"\nOPTIMIZATION SUMMARY:")
         logger.info(f"   → Columns: {original_column_count} → {final_column_count} (removed {original_column_count - final_column_count})")
         logger.info(f"   → Records: {original_record_count:,} → {final_record_count:,}")
-        logger.info(f"   ✅ Data cleaning and optimization complete")
+        logger.info(f"   Data cleaning and optimization complete")
         
         self.df_processed = df_cleaned
         return df_cleaned

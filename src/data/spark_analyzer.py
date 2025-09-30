@@ -70,7 +70,7 @@ class SparkJobAnalyzer:
             Exception: If data loading or validation fails
         """
         if force_raw:
-            logger.info("🔄 FORCE RAW MODE: Bypassing processed data, loading from raw source")
+            logger.info("FORCE RAW MODE: Bypassing processed data, loading from raw source")
             return self._load_raw_data()
         
         # Normal loading hierarchy: Parquet -> CSV -> Raw
@@ -145,7 +145,7 @@ class SparkJobAnalyzer:
             FileNotFoundError: If raw data file doesn't exist
             Exception: If loading fails
         """
-        logger.warning("⚠️  DEVELOPER MODE: Loading raw data - processed optimizations bypassed")
+        logger.warning("DEVELOPER MODE: Loading raw data - processed optimizations bypassed")
         
         if not Path(raw_data_path).exists():
             error_msg = f"Raw data file not found: {raw_data_path}"
@@ -166,8 +166,8 @@ class SparkJobAnalyzer:
             record_count = self.job_data.count()
             col_count = len(self.job_data.columns)
             
-            logger.info(f"✅ Raw data loaded: {record_count:,} records, {col_count} columns")
-            logger.warning("⚠️  Note: Raw data may have different column names and require processing")
+            logger.info(f"Raw data loaded: {record_count:,} records, {col_count} columns")
+            logger.warning("Note: Raw data may have different column names and require processing")
             
             # Use flexible validation for raw data
             self._validate_raw_dataset(self.job_data)
@@ -211,17 +211,17 @@ class SparkJobAnalyzer:
             if len(missing_processed) == len(processed_columns):
                 raise Exception(f"No recognizable job data columns found. Expected either {basic_columns} or {processed_columns}")
             else:
-                logger.info("✅ Detected processed column schema")
+                logger.info("Detected processed column schema")
         else:
-            logger.info("✅ Detected raw Lightcast schema")
+            logger.info("Detected raw Lightcast schema")
         
         # Flexible salary validation
         salary_columns = [col for col in df.columns if 'SALARY' in col.upper() or 'salary' in col.lower()]
         
         if salary_columns:
-            logger.info(f"📊 Found salary columns: {salary_columns}")
+            logger.info(f"Found salary columns: {salary_columns}")
         else:
-            logger.warning("⚠️  No salary columns detected - analysis may be limited")
+            logger.warning("No salary columns detected - analysis may be limited")
         
         logger.info(f"Raw dataset validation completed: {record_count:,} records")
     

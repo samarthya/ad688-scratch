@@ -181,7 +181,7 @@ if Path(csv_path).exists():
 # Last resort - requires processing
 raw_path = "data/raw/lightcast_job_postings.csv"
 df = analyzer.load_full_dataset(force_raw=True)
-# ⚠️ SLOW: Requires real-time processing, schema inference
+# WARNING: SLOW: Requires real-time processing, schema inference
 ```
 
 #### **Phase 3: Data Processing (If Required)**
@@ -355,18 +355,18 @@ def load_data_for_quarto():
     # Try processed data first (fastest)
     processed_path = "data/processed/job_market_processed.parquet"
     if Path(processed_path).exists():
-        print("📊 Loading processed data (optimized)...")
+        print("Loading processed data (optimized)...")
         return analyzer.load_full_dataset(processed_path)
     
     # Fallback to raw data with processing
-    print("⚠️ Processing raw data (slower first load)...")
+    print("WARNING: Processing raw data (slower first load)...")
     df = analyzer.load_full_dataset(force_raw=True)
     
     # Save processed data for next time
     from src.data.enhanced_processor import JobMarketDataProcessor
     processor = JobMarketDataProcessor()
     processor.save_processed_data(df, "data/processed/")
-    print("✅ Processed data saved for faster future loads")
+    print("Processed data saved for faster future loads")
     
     return df
 ```
@@ -411,7 +411,7 @@ def generate_charts_for_website():
     
     # Export registry for dynamic loading
     registry_path = chart_exporter.export_chart_registry()
-    print(f"📋 Chart registry: {registry_path}")
+    print(f"Chart registry: {registry_path}")
     
     return charts
 
@@ -435,7 +435,7 @@ def display_website_charts():
             registry = json.load(f)
         
         for chart in registry.get("charts", []):
-            print(f"📊 {chart['title']}")
+            print(f"{chart['title']}")
             
             # Display interactive version
             html_path = chart["files"]["html"]
@@ -448,7 +448,7 @@ def display_website_charts():
             if png_path and Path(png_path).exists():
                 print(f"   📷 Static version: {png_path}")
     else:
-        print("⚠️ No chart registry found. Run chart generation first.")
+        print("WARNING: No chart registry found. Run chart generation first.")
 
 # Display in Quarto
 display_website_charts()
@@ -465,23 +465,23 @@ def robust_data_loading():
         # Primary: Processed Parquet
         analyzer = SparkJobAnalyzer()
         df = analyzer.load_full_dataset()
-        print("✅ Loaded processed data")
+        print("Loaded processed data")
         return df, "processed"
         
     except FileNotFoundError:
-        print("⚠️ No processed data found, trying raw data...")
+        print("WARNING: No processed data found, trying raw data...")
         
         try:
             # Secondary: Raw data processing
             df = analyzer.load_full_dataset(force_raw=True)
-            print("✅ Loaded and processed raw data")
+            print("Loaded and processed raw data")
             return df, "raw_processed"
             
         except Exception as e:
-            print(f"❌ Data loading failed: {e}")
+            print(f"Data loading failed: {e}")
             
             # Tertiary: Mock data for development
-            print("🔄 Using mock data for development...")
+            print("Using mock data for development...")
             mock_df = create_mock_data()
             return mock_df, "mock"
 
@@ -515,7 +515,7 @@ def timer(operation_name):
     print(f"⏱️ Starting: {operation_name}")
     yield
     duration = time.time() - start
-    print(f"✅ Completed: {operation_name} in {duration:.2f}s")
+    print(f"Completed: {operation_name} in {duration:.2f}s")
 
 # Usage in Quarto
 with timer("Data Loading"):
@@ -551,17 +551,17 @@ def load_data_by_mode():
     
     if mode == "development":
         # Fast loading with smaller sample
-        print("🔧 Development mode: Using sample data")
+        print("Development mode: Using sample data")
         df = load_sample_data()
         
     elif mode == "production":
         # Full data with all optimizations
-        print("🚀 Production mode: Loading full processed data")
+        print("Production mode: Loading full processed data")
         df = load_data_for_quarto()
         
     else:  # setup mode
         # Process data for future fast loading
-        print("⚙️ Setup mode: Processing data for optimization")
+        print("Setup mode: Processing data for optimization")
         df = setup_processed_data()
     
     return df

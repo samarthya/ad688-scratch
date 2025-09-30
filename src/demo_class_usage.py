@@ -47,7 +47,7 @@ def demonstrate_class_usage():
         print("   WARNING: No data loaded - using sample data")
     
     # 2. Use JobMarketDataProcessor for advanced processing
-    print("\n2. 🔧 Using JobMarketDataProcessor...")
+    print("\n2. Using JobMarketDataProcessor...")
     processor = JobMarketDataProcessor("ClassDemo")
     processor.df_raw = analyzer.job_data  # Share data between classes
     print("   SUCCESS: Processor initialized with shared data")
@@ -120,7 +120,7 @@ def demonstrate_class_usage():
             print(f"     WARNING: Key findings creation: {e}")
     
     # 5. Export results using class methods
-    print("\n5. 💾 Exporting Results...")
+    print("\n5. Exporting Results...")
     
     output_dir = Path("data/processed/class_demo")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -189,4 +189,4 @@ if __name__ == "__main__":
     
     print("\nClass demonstration complete!")
     print("See docs/CLASS_ARCHITECTURE.md for complete UML diagram")
-    print("🔧 Use these classes in your Quarto documents and notebooks")
+    print("Use these classes in your Quarto documents and notebooks")
