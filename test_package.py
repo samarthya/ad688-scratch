@@ -17,24 +17,24 @@ sys.path.insert(0, 'src')
 
 def test_package_imports():
     """Test that all main package components can be imported."""
-    print("🧪 Testing Package Imports...")
+    print("Testing Package Imports...")
     
     try:
         # Test main package import
         import src
-        print("   ✅ Main package import: SUCCESS")
+        print("   SUCCESS: Main package import: SUCCESS")
         
         # Test data module imports
         from src.data import JobMarketDataProcessor, SparkJobAnalyzer
-        print("   ✅ Data module imports: SUCCESS")
+        print("   SUCCESS: Data module imports: SUCCESS")
         
         # Test visualization module imports
         from src.visualization import QuartoChartExporter, SalaryDisparityChartConfig
-        print("   ✅ Visualization module imports: SUCCESS")
+        print("   SUCCESS: Visualization module imports: SUCCESS")
         
         # Test utilities module imports
         from src.utilities.get_stats import JobMarketStatistics
-        print("   ✅ Utilities module imports: SUCCESS")
+        print("   SUCCESS: Utilities module imports: SUCCESS")
         
         # Test config module imports
         import src.config.column_mapping

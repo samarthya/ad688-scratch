@@ -16,18 +16,26 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import json
+import sys
 
 # PySpark imports
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import (
     col, when, isnan, isnull, trim, upper, lower, 
     count, avg, sum as spark_sum, median, desc, 
-    lit, current_timestamp, regexp_replace, coalesce
+    lit, current_timestamp, regexp_replace, coalesce, length
 )
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, 
     DoubleType, BooleanType, DateType
 )
+
+# Try to import robust casting utilities
+try:
+    from utils.robust_casting import RobustDataCaster, safe_cast_salary, create_data_quality_report
+    ROBUST_UTILS_AVAILABLE = True
+except ImportError:
+    ROBUST_UTILS_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -1080,12 +1088,228 @@ def main():
         
         return df_processed
         
+    def validate_data_quality(self, df: DataFrame, critical_columns: Optional[List[str]] = None) -> Dict:
+        """
+        Perform comprehensive data quality validation.
+        
+        Args:
+            df: DataFrame to validate
+            critical_columns: List of columns critical for analysis
+            
+        Returns:
+            Dictionary with validation results and recommendations
+        """
+        if critical_columns is None:
+            critical_columns = ['job_title', 'company', 'location', 'salary_avg']
+            
+        logger.info("Performing comprehensive data quality validation...")
+        
+        total_rows = df.count()
+        total_cols = len(df.columns)
+        
+        validation_report = {
+            'timestamp': datetime.now().isoformat(),
+            'total_rows': total_rows,
+            'total_columns': total_cols,
+            'critical_columns': critical_columns,
+            'column_metrics': {},
+            'validation_status': 'PASSED',
+            'issues': [],
+            'recommendations': []
+        }
+        
+        # Check each critical column
+        for col_name in critical_columns:
+            if col_name in df.columns:
+                null_count = df.filter(col(col_name).isNull()).count()
+                empty_count = df.filter((col(col_name) == '') | (col(col_name) == 'null')).count()
+                valid_count = total_rows - null_count - empty_count
+                completion_rate = (valid_count / total_rows) * 100 if total_rows > 0 else 0
+                
+                validation_report['column_metrics'][col_name] = {
+                    'completion_rate': completion_rate,
+                    'null_count': null_count,
+                    'empty_count': empty_count,
+                    'valid_count': valid_count
+                }
+                
+                # Flag issues
+                if completion_rate < 50:
+                    validation_report['issues'].append(f"{col_name} has low completion rate: {completion_rate:.1f}%")
+                    validation_report['validation_status'] = 'WARNING'
+                elif completion_rate < 30:
+                    validation_report['issues'].append(f"{col_name} has critical completion rate: {completion_rate:.1f}%")
+                    validation_report['validation_status'] = 'FAILED'
+            else:
+                validation_report['issues'].append(f"Critical column missing: {col_name}")
+                validation_report['validation_status'] = 'FAILED'
+        
+        # Generate recommendations
+        if validation_report['validation_status'] == 'FAILED':
+            validation_report['recommendations'].append("Data quality issues require attention before analysis")
+        elif validation_report['validation_status'] == 'WARNING':
+            validation_report['recommendations'].append("Consider data imputation for missing values")
+        else:
+            validation_report['recommendations'].append("Data quality is acceptable for analysis")
+            
+        return validation_report
+    
+    def safe_cast_numeric(self, df: DataFrame, column_name: str, target_type: str = 'double', 
+                         new_column_name: Optional[str] = None) -> DataFrame:
+        """
+        Safely cast a column to numeric type with validation.
+        
+        Args:
+            df: Input DataFrame
+            column_name: Column to cast
+            target_type: Target numeric type
+            new_column_name: Name for new column
+            
+        Returns:
+            DataFrame with safely cast column
+        """
+        if ROBUST_UTILS_AVAILABLE:
+            return RobustDataCaster.safe_numeric_cast(df, column_name, target_type, new_column_name)
+        else:
+            # Inline safe casting
+            if new_column_name is None:
+                new_column_name = f"{column_name}_numeric"
+                
+            numeric_pattern = r'^-?[0-9]+\.?[0-9]*$'
+            
+            return df.withColumn(
+                new_column_name,
+                when(
+                    (col(column_name).isNotNull()) &
+                    (length(col(column_name)) > 0) &
+                    (~col(column_name).isin(['', 'null', 'NULL', 'None', 'NaN', 'nan'])) &
+                    (col(column_name).rlike(numeric_pattern)),
+                    col(column_name).cast(target_type)
+                ).otherwise(None)
+            )
+    
+    def safe_filter_valid_data(self, df: DataFrame, column_name: str) -> DataFrame:
+        """
+        Filter DataFrame to only include rows with valid data in specified column.
+        
+        Args:
+            df: Input DataFrame
+            column_name: Column to filter on
+            
+        Returns:
+            Filtered DataFrame
+        """
+        return df.filter(
+            (col(column_name).isNotNull()) &
+            (length(col(column_name)) > 0) &
+            (col(column_name) != '') &
+            (col(column_name) != 'null') &
+            (col(column_name) != 'NULL')
+        )
+    
+    def run_validation_tests(self, df: DataFrame) -> Dict:
+        """
+        Run comprehensive validation tests on the processed data.
+        
+        Args:
+            df: Processed DataFrame to validate
+            
+        Returns:
+            Validation test results
+        """
+        logger.info("Running validation tests...")
+        
+        test_results = {
+            'timestamp': datetime.now().isoformat(),
+            'tests_run': 0,
+            'tests_passed': 0,
+            'test_details': {}
+        }
+        
+        # Test 1: Basic data integrity
+        test_results['tests_run'] += 1
+        total_rows = df.count()
+        if total_rows > 0:
+            test_results['tests_passed'] += 1
+            test_results['test_details']['data_loading'] = 'PASSED'
+        else:
+            test_results['test_details']['data_loading'] = 'FAILED - No data loaded'
+        
+        # Test 2: Safe salary casting
+        test_results['tests_run'] += 1
+        try:
+            salary_cols = [col for col in df.columns if 'salary' in col.lower()]
+            if salary_cols:
+                for sal_col in salary_cols[:1]:  # Test first salary column
+                    df_test = self.safe_cast_numeric(df, sal_col, 'double', f'{sal_col}_test')
+                    valid_conversions = df_test.filter(col(f'{sal_col}_test').isNotNull()).count()
+                    conversion_rate = (valid_conversions / total_rows) * 100 if total_rows > 0 else 0
+                    
+                    if conversion_rate > 30:  # At least 30% valid conversions
+                        test_results['tests_passed'] += 1
+                        test_results['test_details']['safe_casting'] = f'PASSED - {conversion_rate:.1f}% conversion rate'
+                    else:
+                        test_results['test_details']['safe_casting'] = f'WARNING - Low conversion rate: {conversion_rate:.1f}%'
+                    break
+            else:
+                test_results['test_details']['safe_casting'] = 'SKIPPED - No salary columns found'
+        except Exception as e:
+            test_results['test_details']['safe_casting'] = f'FAILED - {str(e)}'
+        
+        # Test 3: Data quality validation
+        test_results['tests_run'] += 1
+        try:
+            quality_report = self.validate_data_quality(df)
+            if quality_report['validation_status'] in ['PASSED', 'WARNING']:
+                test_results['tests_passed'] += 1
+                test_results['test_details']['data_quality'] = f"PASSED - {quality_report['validation_status']}"
+            else:
+                test_results['test_details']['data_quality'] = f"FAILED - {quality_report['validation_status']}"
+        except Exception as e:
+            test_results['test_details']['data_quality'] = f'FAILED - {str(e)}'
+        
+        # Calculate overall success rate
+        success_rate = (test_results['tests_passed'] / test_results['tests_run']) * 100
+        test_results['success_rate'] = success_rate
+        test_results['overall_status'] = 'PASSED' if success_rate >= 80 else 'WARNING' if success_rate >= 60 else 'FAILED'
+        
+        logger.info(f"Validation complete: {test_results['tests_passed']}/{test_results['tests_run']} tests passed ({success_rate:.1f}%)")
+        
+        return test_results
+
+
+def main():
+    """Main execution function for standalone processing."""
+    
+    # Initialize processor
+    processor = JobMarketDataProcessor("JobMarketAnalysis_Enhanced")
+    
+    try:
+        # Load data (will create sample data if file doesn't exist)
+        df_raw = processor.load_data("data/raw/lightcast_job_postings.csv", use_sample=True)
+        
+        # Assess data quality
+        quality_report = processor.assess_data_quality(df_raw)
+        
+        # Clean and process data using optimized pipeline
+        df_processed = processor.clean_and_process_data_optimized(df_raw)
+        
+        # Run validation tests
+        validation_results = processor.run_validation_tests(df_processed)
+        print(f"Validation Status: {validation_results['overall_status']}")
+        
+        # Generate summary statistics
+        summary_stats = processor.generate_summary_statistics(df_processed)
+        
+        # Save processed data
+        processor.save_processed_data(df_processed, "data/processed/enhanced_job_data.parquet")
+        
+        return df_processed
+        
     except Exception as e:
         logger.error(f"Error during processing: {str(e)}")
         raise
-    
     finally:
-        # Clean up Spark session
         processor.stop_spark()
 
 
