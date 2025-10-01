@@ -22,9 +22,9 @@
 
 ## System Architecture
 
-**Current Dataset**: Lightcast job postings (72K+ records, 131 columns)
-**Processing Engine**: Apache Spark 4.0.1 with PySpark
-**Output Formats**: Parquet (performance), CSV (compatibility), Interactive dashboards (Plotly)
+- **Current Dataset**: Lightcast job postings (72K+ records, 131 columns)
+- **Processing Engine**: Apache Spark 4.0.1 with PySpark
+- **Output Formats**: Parquet (performance), CSV (compatibility), Interactive dashboards (Plotly)
 
 ### Design Principles
 
@@ -98,214 +98,205 @@ Each major functionality is encapsulated in specialized classes:
 
 ## Quarto Website Data Loading Process Flow
 
-### Overview: From Raw Data to Interactive Website
+### Intelligent Auto-Processing Pipeline: Data → Clean → Analyze → Website
 
-The Quarto website follows a sophisticated data loading and chart generation pipeline that prioritizes performance while maintaining data integrity and fallback capabilities.
+The Quarto website uses an intelligent data loading pipeline that automatically processes and cleans data when needed, ensuring optimal performance and data quality for educational analysis.
 
-### Complete Process Flow Diagram
+### Core Process Flow
 
 ```mermaid
 flowchart TD
-    %% User Access
-    START([User Visits Quarto Website]) --> RENDER{Quarto Rendering Process}
+    %% Start
+    START([User Visits Website]) --> QMD[Load .qmd Files]
 
-    %% Quarto Document Processing
-    RENDER --> QMD[Load .qmd Documents]
-    QMD --> PYTHON{Execute Python Code Blocks}
+    %% Auto-Processing Pipeline
+    QMD --> AUTO["AutoDataProcessor.load_analysis_data()"]
 
-    %% Data Loading Decision Tree
-    PYTHON --> DATACHECK{Check Data Availability}
+    %% Data Source Priority
+    AUTO --> TRY1{Try Clean Sample}
+    TRY1 -->|Success| CLEAN[📁 data/processed/job_market_clean_sample.csv<br/>~4,500 clean records]
+    TRY1 -->|Fail| TRY2{Try Sample Data}
 
-    %% Data Source Hierarchy
-    DATACHECK -->|Priority 1| PARQUET[Load Processed Parquet<br/>📁 data/processed/job_market_processed.parquet]
-    DATACHECK -->|Priority 2| CSV[Load Processed CSV<br/>📁 data/processed/clean_job_data.csv]
-    DATACHECK -->|Priority 3| RAW[Load Raw Lightcast Data<br/>📁 data/raw/lightcast_job_postings.csv]
+    TRY2 -->|Success| SAMPLE[📁 data/processed/job_market_sample.csv<br/>~5,000 records]
+    TRY2 -->|Fail| TRY3{Try Raw Data}
 
-    %% Data Processing Branch
-    PARQUET --> VALIDATE{Data Validation}
-    CSV --> VALIDATE
-    RAW --> PROCESS[Data Processing Required]
+    TRY3 -->|Success| RAW[📁 data/raw/lightcast_job_postings.csv<br/>~72,000 records]
+    TRY3 -->|Fail| ERROR[Show Error Message]
 
-    %% Processing Pipeline
-    PROCESS --> CLEAN[Data Cleaning & Standardization]
-    CLEAN --> FEATURE[Feature Engineering]
-    FEATURE --> SAVE[Save Processed Data]
-    SAVE --> VALIDATE
+    %% Processing Chain
+    CLEAN --> VALIDATE[Validate Clean Data]
+    SAMPLE --> BASIC[Apply Basic Cleaning]
+    RAW --> COMPREHENSIVE[Apply Comprehensive Cleaning]
 
-    %% Chart Generation Pipeline
-    VALIDATE --> ANALYSIS[Statistical Analysis]
-    ANALYSIS --> CHARTS[Chart Generation]
+    %% Data Cleaning
+    COMPREHENSIVE --> CLEANER[JobMarketDataCleaner]
+    CLEANER --> PARSE[Parse JSON Fields]
+    PARSE --> EXTRACT[Extract Features]
+    EXTRACT --> VALIDATE2[Validate Data Quality]
 
-    %% Chart Types
-    CHARTS --> EXPERIENCE[Experience Gap Analysis]
-    CHARTS --> EDUCATION[Education Premium Charts]
-    CHARTS --> REMOTE[Remote Work Analysis]
-    CHARTS --> GEOGRAPHIC[Geographic Salary Maps]
-    CHARTS --> INDUSTRY[Industry Comparisons]
+    %% Analysis
+    VALIDATE --> ANALYZE[Run Analysis Methods]
+    BASIC --> ANALYZE
+    VALIDATE2 --> ANALYZE
 
-    %% Output Generation
-    EXPERIENCE --> EXPORT[Chart Export System]
-    EDUCATION --> EXPORT
-    REMOTE --> EXPORT
-    GEOGRAPHIC --> EXPORT
-    INDUSTRY --> EXPORT
+    ANALYZE --> VISUALIZER["SalaryVisualizer.get_*_analysis()"]
+    ANALYZE --> STATS["JobMarketStatistics.calculate_*()"]
 
-    %% Multi-Format Output
-    EXPORT --> HTML[Interactive HTML Charts]
-    EXPORT --> PNG[Static PNG Images]
-    EXPORT --> SVG[Vector SVG Graphics]
-
-    %% Registry and Integration
-    HTML --> REGISTRY[Chart Registry JSON]
-    PNG --> REGISTRY
-    SVG --> REGISTRY
-
-    %% Final Website Assembly
-    REGISTRY --> INTEGRATE[Quarto Integration]
-    INTEGRATE --> WEBSITE[Live Website with Charts]
+    %% Success Path
+    VISUALIZER --> CHARTS[Generate Charts]
+    STATS --> CHARTS
+    CHARTS --> WEBSITE[Display Results]
 
     %% Error Handling
-    DATACHECK -->|No Data Found| ERROR[Show Real Error]
-    ERROR --> AUTHENTIC[Display Authentic Error Message]
-    AUTHENTIC --> REGISTRY
+    ERROR --> STUDENT[Student Sees Actual Data Issue]
 
     %% Styling
-    classDef dataSource fill:#3498DB,stroke:#2980B9,color:#fff
-    classDef processing fill:#E74C3C,stroke:#C0392B,color:#fff
+    classDef data fill:#3498DB,stroke:#2980B9,color:#fff
+    classDef process fill:#E74C3C,stroke:#C0392B,color:#fff
     classDef analysis fill:#27AE60,stroke:#229954,color:#fff
-    classDef output fill:#F39C12,stroke:#E67E22,color:#fff
-    classDef final fill:#9B59B6,stroke:#8E44AD,color:#fff
+    classDef error fill:#E67E22,stroke:#D35400,color:#fff
+    classDef output fill:#9B59B6,stroke:#8E44AD,color:#fff
+    classDef auto fill:#F39C12,stroke:#E67E22,color:#fff
 
-    class PARQUET,CSV,RAW dataSource
-    class PROCESS,CLEAN,FEATURE,SAVE processing
-    class ANALYSIS,CHARTS,EXPERIENCE,EDUCATION,REMOTE,GEOGRAPHIC,INDUSTRY analysis
-    class EXPORT,HTML,PNG,SVG,REGISTRY output
-    class WEBSITE final
+    class CLEAN,SAMPLE,RAW data
+    class CLEANER,PARSE,EXTRACT,VALIDATE2 process
+    class ANALYZE,VISUALIZER,STATS analysis
+    class ERROR,STUDENT error
+    class CHARTS,WEBSITE output
+    class AUTO,TRY1,TRY2,TRY3 auto
 ```
 
-### Detailed Step-by-Step Process
+### Explicit Data Loading Details
 
-#### **Phase 1: Quarto Document Processing**
+#### **1. Intelligent Data Source Selection**
 
-1. **User Access**: User visits Quarto website
-2. **Document Loading**: Quarto loads `.qmd` documents (e.g., `data-analysis.qmd`, `salary-analysis.qmd`)
-3. **Python Execution**: Quarto executes Python code blocks within documents
-
-#### **Phase 2: Data Source Discovery & Loading**
-
-##### Priority 1: Processed Parquet Data
+**Auto-Processing Approach:**
 
 ```python
-# Fastest loading path - optimized for performance
-data_path = "data/processed/job_market_processed.parquet"
-if Path(data_path).exists():
-    analyzer = SparkJobAnalyzer()
-    df = analyzer.load_full_dataset(data_path)
-    # FAST: Columnar format, schema preserved, type-safe
+# Single function call handles all data loading and processing
+from src.data.auto_processor import load_analysis_data, get_data_summary
+
+# Automatically tries clean data first, then sample, then raw with processing
+df_pandas = load_analysis_data("analysis_type")
+
+# Get comprehensive data summary
+summary = get_data_summary(df_pandas)
+print(f"Data Summary: {summary['total_records']:,} records, {summary['salary_coverage']:.1f}% salary coverage")
 ```
 
-##### Priority 2: Processed CSV Fallback
+**Data Source Priority:**
+1. **Clean Sample Data** (`data/processed/job_market_clean_sample.csv`) - Pre-processed, highest quality
+2. **Sample Data** (`data/processed/job_market_sample.csv`) - Basic cleaning applied
+3. **Raw Data** (`data/raw/lightcast_job_postings.csv`) - Full processing pipeline applied
+
+#### **2. Data Processing Pipeline**
+
+#### Step 1: Data Validation
 
 ```python
-# Secondary path - good compatibility
-csv_path = "data/processed/clean_job_data.csv"
-if Path(csv_path).exists():
-    df = analyzer.load_full_dataset(csv_path)
-    # COMPATIBLE: Human-readable, broad tool support
+# Check required columns exist
+required_columns = ['TITLE', 'SALARY_AVG', 'COMPANY_NAME', 'LOCATION']
+missing_columns = [col for col in required_columns if col not in df_pandas.columns]
+if missing_columns:
+    raise ValueError(f"Missing required columns: {missing_columns}")
 ```
 
-##### Priority 3: Raw Data Processing
+##### Step 2: Data Cleaning
 
 ```python
-# Last resort - requires processing
-raw_path = "data/raw/lightcast_job_postings.csv"
-df = analyzer.load_full_dataset(force_raw=True)
-# WARNING: SLOW: Requires real-time processing, schema inference
+# Convert salary to numeric, handle missing values
+df_pandas['SALARY_AVG'] = pd.to_numeric(df_pandas['SALARY_AVG'], errors='coerce')
+df_pandas = df_pandas.dropna(subset=['SALARY_AVG'])
+print(f"After cleaning: {len(df_pandas):,} valid records")
 ```
 
-#### **Phase 3: Data Processing (If Required)**
-
-**When Raw Data is Used:**
-
-1. **Data Cleaning**: Handle nulls, standardize formats
-2. **Feature Engineering**: Create derived columns
-3. **Quality Validation**: Check completeness, outliers
-4. **Save Processed**: Store for future fast loading
+##### Step 3: Initialize Analysis Classes
 
 ```python
-# Real-time processing workflow
-processor = JobMarketDataProcessor()
-raw_df = processor.load_data(raw_path)
-cleaned_df = processor.clean_and_standardize_data(raw_df)
-enhanced_df = processor.engineer_features(cleaned_df)
-processor.save_processed_data(enhanced_df)  # Creates Parquet for next time
+# Create analysis objects
+visualizer = SalaryVisualizer(df_pandas)
+stats_analyzer = JobMarketStatistics()
+stats_analyzer.df = df_pandas  # Set data for analysis
 ```
 
-#### **Phase 4: Statistical Analysis & Chart Generation**
+#### **3. Analysis Execution**
 
-**Analysis Pipeline:**
+**Education Analysis:**
 
 ```python
-# Core analyses for website charts
-experience_analysis = analyzer.get_experience_analysis()
-industry_analysis = analyzer.get_industry_analysis()
-geographic_analysis = analyzer.get_geographic_analysis()
-salary_statistics = analyzer.get_overall_statistics()
+try:
+    edu_result = visualizer.get_education_analysis()
+    edu_data = edu_result['analysis']
+    print("Education premium analysis completed successfully")
+except Exception as e:
+    print(f"ERROR: Education analysis failed: {e}")
+    raise e  # Show real error to student
 ```
 
-**Chart Generation System:**
+**Skills Analysis:**
 
 ```python
-# Multi-format chart export
-chart_exporter = QuartoChartExporter(output_dir="figures/")
-
-# Generate each chart type
-experience_chart = chart_exporter.create_experience_salary_chart(experience_data)
-education_chart = chart_exporter.create_education_premium_chart(education_data)
-remote_chart = chart_exporter.create_remote_work_chart(remote_data)
+try:
+    skills_result = visualizer.get_skills_analysis()
+    skills_data = skills_result['analysis']
+    print("Skills premium analysis completed successfully")
+except Exception as e:
+    print(f"ERROR: Skills analysis failed: {e}")
+    raise e  # Show real error to student
 ```
 
-#### **Phase 5: Multi-Format Export & Registry**
-
-**Chart Export Formats:**
-
-- **Interactive HTML**: Plotly charts with hover, zoom, interactivity
-- **Static PNG**: High-quality images for print/email
-- **Vector SVG**: Scalable graphics for presentations
-
-**Chart Registry System:**
-
-```json
-{
-  "charts": [
-    {
-      "name": "experience_salary_analysis",
-      "title": "Experience Gap Analysis",
-      "type": "plotly",
-      "files": {
-        "html": "figures/experience_salary_analysis.html",
-        "png": "figures/experience_salary_analysis.png",
-        "svg": "figures/experience_salary_analysis.svg"
-      }
-    }
-  ]
-}
-```
-
-#### **Phase 6: Quarto Integration & Website Assembly**
-
-**Dynamic Chart Loading:**
+**Experience Analysis:**
 
 ```python
-
-# In Quarto .qmd documents
-with open("figures/chart_registry.json") as f:
-    charts = json.load(f)
-
-for chart in charts["charts"]:
-    if chart["type"] == "plotly":
-        display_html_chart(chart["files"]["html"])
+try:
+    exp_result = visualizer.get_experience_progression_analysis()
+    print("Experience progression analysis completed successfully")
+except Exception as e:
+    print(f"ERROR: Experience analysis failed: {e}")
+    raise e  # Show real error to student
 ```
+
+#### **4. Error Handling Strategy**
+
+**No Fallback Data Policy:**
+
+- All analysis methods throw real errors when data is insufficient
+- Students see actual data quality issues that need to be addressed
+- No dummy data masks real problems
+- Educational value through authentic data analysis challenges
+
+**Error Message Format:**
+
+```python
+except Exception as e:
+    print(f"ERROR: [Analysis Type] failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise so students can see the full error
+```
+
+#### **5. Chart Generation**
+
+**Dynamic Chart Creation:**
+```python
+# Charts are generated from real analysis results
+if 'analysis' in edu_result:
+    # Create education premium chart
+    fig = px.bar(edu_data, x='Education Level', y='Median Salary')
+    fig.show()
+```
+
+**No Static Charts:**
+- All charts generated from actual data
+- No hardcoded values or fallback visualizations
+- Charts reflect real dataset characteristics
+
+### Key Benefits of This Approach
+
+1. **Authentic Learning**: Students see real data analysis challenges
+2. **No False Positives**: Errors indicate actual data quality issues
+3. **Educational Value**: Students learn to identify and solve data problems
+4. **Professional Practice**: Mirrors real-world data analysis workflows
+5. **Transparency**: All analysis based on actual dataset characteristics
 
 **Website Generation:**
 
@@ -542,8 +533,9 @@ def robust_data_loading():
 
             # No fallback - show authentic error for educational purposes
             raise DataProcessingError(f"Data pipeline error: {e}")
+```
 
-**Robust Casting and Error Prevention**
+##### Robust Casting and Error Prevention
 
 The system implements comprehensive casting error prevention through specialized utilities:
 
@@ -587,7 +579,7 @@ df_filtered = safe_filter(df_safe, 'CITY')
 stats = safe_group_count(df_filtered, 'STATE')
 ```
 
-**Error Prevention Architecture:**
+##### Error Prevention Architecture
 
 - Regex validation before casting operations
 - Null and empty string handling
@@ -641,7 +633,7 @@ with timer("Chart Generation"):
     charts = generate_charts_for_website()
 ```
 
-#### **Development vs Production Modes**
+#### Development vs Production Modes
 
 ```python
 import os

@@ -1,15 +1,7 @@
 """
-Configuration Module
-
-This module contains configuration settings, column mappings, and other
-configuration-related utilities for the job market analysis package.
-
-Modules:
-    column_mapping: Column name mappings and data structure definitions
+Configuration module for job market analytics.
 """
 
-from . import column_mapping
+from .settings import Settings
 
-__all__ = [
-    "column_mapping",
-]
+__all__ = ['Settings']

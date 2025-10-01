@@ -27,18 +27,20 @@ sys.path.append('src')
 import pandas as pd
 
 # Import our custom classes
-from data.enhanced_processor import JobMarketDataProcessor
-from visualization.simple_plots import SalaryVisualizer
+from src.core import JobMarketDataProcessor
+from src.visualization import SalaryVisualizer
 
 # Load and process data using our class-based approach with auto-processing
-data_processor = JobMarketDataProcessor("IndustryAnalysis")
+data_processor = JobMarketDataProcessor()
 try:
-    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"Loaded and processed {df.count():,} job postings for industry analysis")
+    # Try to load sample data first (faster for testing)
+    df = data_processor.load_and_process_data('data/processed/job_market_sample.csv')
+    print(f"Loaded and processed {df.count():,} job postings from sample dataset for industry analysis")
 except Exception as e:
     try:
-        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"Using sample dataset: {df.count():,} job postings")
+        # Fallback to raw data if sample doesn't exist
+        df = data_processor.load_and_process_data('data/raw/lightcast_job_postings.csv')
+        print(f"Loaded and processed {df.count():,} job postings from raw dataset for industry analysis")
     except Exception as e2:
         print(f"ERROR: Unable to load any dataset: {e2}")
         raise e2  # Show the actual error for student analysis report
@@ -62,10 +64,10 @@ try:
     # Generate industry analysis using our class method
     industry_analysis = visualizer.get_industry_salary_analysis(top_n=8)
     results_table = industry_analysis.copy()
-    
+
     print(f"Industry analysis generated: {len(results_table)} industries analyzed")
     print("Data source: Our processed job market dataset")
-    
+
 except Exception as e:
     print(f"ERROR: Industry analysis failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -80,14 +82,14 @@ except Exception as e:
 # Display the dynamically generated industry analysis
 if 'results_table' in locals():
     print(results_table.to_string(index=False))
-    
+
     # Get record count safely
     try:
         record_count = len(df_pandas)
         print(f"\nAnalysis based on {record_count:,} job postings")
     except:
         print(f"\nAnalysis based on processed dataset")
-    
+
     print("**Key Insight**: This data is generated using our SalaryVisualizer class")
     print("**Reproducible**: All calculations use class-based methods from src/visualization/")
 else:
@@ -104,13 +106,13 @@ else:
 try:
     # Get industry analysis using our class method
     industry_analysis = visualizer.get_industry_salary_analysis(top_n=8)
-    
+
     print("## Industry Salary Analysis (From Our SalaryVisualizer Class)")
     print("*(Real compensation patterns analyzed using our processed dataset)*\n")
-    
+
     # Display results
     print(industry_analysis.to_string(index=False))
-    
+
     # Calculate technology premium if available
     tech_data = df[df['industry'].str.contains('Tech|Information', na=False)] if 'industry' in df.columns else pd.DataFrame()
     if len(tech_data) > 0:
@@ -118,16 +120,16 @@ try:
         overall_median = df['salary_avg'].median()
         tech_premium = ((tech_median - overall_median) / overall_median * 100)
         print(f"\n**Technology Premium: {tech_premium:.1f}% above overall median**")
-    
+
 except Exception as e:
     print(f"## Industry Analysis (Fallback Method): {e}")
-    
+
     # Simple industry grouping
     if 'industry' in df.columns:
         industry_analysis = df.groupby('industry')['salary_avg'].agg([
             'count', 'median', 'mean'
         ]).round(0).reset_index().head(5)
-        
+
         print(industry_analysis.to_string(index=False))
     else:
         print("Industry data not available in current format")
@@ -150,31 +152,31 @@ try:
     if 'title' in df.columns:
         ai_keywords = ['ai', 'machine learning', 'data scientist', 'ml engineer', 'artificial intelligence']
         tech_keywords = ['software', 'engineer', 'developer', 'devops', 'cloud', 'data']
-        
+
         df_ai = df[df['title'].str.lower().str.contains('|'.join(ai_keywords), na=False)]
         df_tech = df[df['title'].str.lower().str.contains('|'.join(tech_keywords), na=False)]
         df_general = df[~df['title'].str.lower().str.contains('|'.join(tech_keywords + ai_keywords), na=False)]
-        
+
         ai_median = df_ai['salary_avg'].median() if len(df_ai) > 0 else 0
         tech_median = df_tech['salary_avg'].median() if len(df_tech) > 0 else 0
         general_median = df_general['salary_avg'].median() if len(df_general) > 0 else 0
-        
+
         print("| Skill Category | Premium % | Median Salary | Jobs Available |")
         print("|----------------|-----------|---------------|----------------|")
-        
+
         if ai_median > 0 and general_median > 0:
             ai_premium = ((ai_median - general_median) / general_median * 100)
             print(f"| AI/Machine Learning | +{ai_premium:.0f}% | ${ai_median:,.0f} | {len(df_ai)} |")
-        
+
         if tech_median > 0 and general_median > 0:
             tech_premium = ((tech_median - general_median) / general_median * 100)
             print(f"| Technology/Engineering | +{tech_premium:.0f}% | ${tech_median:,.0f} | {len(df_tech)} |")
-        
+
         print(f"| General Roles | Baseline | ${general_median:,.0f} | {len(df_general)} |")
-        
+
     else:
         raise Exception("Title column not available")
-        
+
 except Exception as e:
     # Fallback to sample data if analysis fails
     print("| Skill Category | Premium % | Median Salary | Jobs Available |")

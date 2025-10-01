@@ -19,7 +19,7 @@ format:
 
 ## Executive Summary
 
-This analysis investigates **salary disparities** across experience levels, education, company sizes, and geographic regions using the Lightcast job postings dataset. 
+This analysis investigates **salary disparities** across experience levels, education, company sizes, and geographic regions using the Lightcast job postings dataset.
 
 ## Key Findings
 
@@ -38,9 +38,9 @@ This analysis investigates **salary disparities** across experience levels, educ
 
 Our analysis is based on the Lightcast job postings dataset containing over 500,000 job postings from 2024-2025. The dataset includes key variables for salary analysis:
 
-**Raw Data Columns (Lightcast Dataset):**
+### Raw Data Columns (Lightcast Dataset):
 
-**Core Identification:**
+#### Core Identification:
 
 - `ID` → `job_id` - Unique job posting identifier
 - `TITLE`, `TITLE_CLEAN` → `title` - Job titles (raw and cleaned)
@@ -51,7 +51,7 @@ Our analysis is based on the Lightcast job postings dataset containing over 500,
 
 - `SALARY` → `salary_single` - Single salary value (when available)
 - `SALARY_FROM` → `salary_min` - Minimum salary in range
-- `SALARY_TO` → `salary_max` - Maximum salary in range  
+- `SALARY_TO` → `salary_max` - Maximum salary in range
 - `ORIGINAL_PAY_PERIOD` - Payment frequency (year, hour, etc.)
 
 **Industry & Experience:**
@@ -86,8 +86,8 @@ Our analysis is based on the Lightcast job postings dataset containing over 500,
 The Lightcast raw data contains salary information in multiple formats that require processing:
 
 1. **Direct Salary** (`SALARY`): ~41% of records have single salary values
-2. **Salary Range** (`SALARY_FROM`, `SALARY_TO`): ~44% have min/max ranges  
-3. **Imputation Logic**: 
+2. **Salary Range** (`SALARY_FROM`, `SALARY_TO`): ~44% have min/max ranges
+3. **Imputation Logic**:
    - Use `SALARY` when available
    - Calculate `(SALARY_FROM + SALARY_TO) / 2` for ranges
    - Apply industry/location-based imputation for missing values
@@ -108,7 +108,7 @@ The Lightcast raw data contains salary information in multiple formats that requ
 
 **Current State**: The analysis infrastructure is built but the salary processing pipeline needs implementation.
 
-**Next Steps**: 
+**Next Steps**:
 1. Implement `salary_avg_imputed` calculation from raw Lightcast columns
 2. Create derived columns for analysis (`ai_related`, `experience_level`, etc.)
 3. Run comprehensive salary disparity analysis
@@ -131,26 +131,25 @@ import sys
 sys.path.append('src')
 
 # Import our custom classes
-from data.enhanced_processor import JobMarketDataProcessor
-from utilities.get_stats import JobMarketStatistics
-from visualization.simple_plots import SalaryVisualizer
-from visualization.quarto_charts import QuartoChartExporter
+from src.core import JobMarketDataProcessor
+from src.utils.get_stats import JobMarketStatistics
+from src.visualization import SalaryVisualizer, QuartoChartExporter
 
 # Initialize data processor with proper error handling
-data_processor = JobMarketDataProcessor("JobMarketAnalysis")
+data_processor = JobMarketDataProcessor()
 stats_analyzer = JobMarketStatistics()
 chart_exporter = QuartoChartExporter()
 
 # Load and process data using our class-based approach with auto-processing
 try:
-    # Try to load processed data first, automatically choosing the right processing method
-    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"SUCCESS: Loaded and processed {df.count():,} job postings from processed dataset")
+    # Try to load sample data first (faster for testing)
+    df = data_processor.load_and_process_data('data/processed/job_market_sample.csv')
+    print(f"SUCCESS: Loaded and processed {df.count():,} job postings from sample dataset")
 except Exception as e:
     try:
-        # Fallback to sample data with automatic sample processing
-        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"SUCCESS: Using sample dataset: {df.count():,} job postings")
+        # Fallback to raw data if sample doesn't exist
+        df = data_processor.load_and_process_data('data/raw/lightcast_job_postings.csv')
+        print(f"SUCCESS: Loaded and processed {df.count():,} job postings from raw dataset")
     except Exception as e2:
         print(f"ERROR: Unable to load any dataset: {e2}")
         raise e2  # Show the actual error for student analysis report
@@ -168,17 +167,17 @@ visualizer = SalaryVisualizer(df_pandas)
 try:
     # Use our class method for comprehensive statistics
     raw_stats = visualizer.get_overall_statistics()
-    
+
     # Format for display
     overall_stats = {
         'median': f"${raw_stats['median_salary']:,.0f}",
-        'mean': f"${raw_stats['mean_salary']:,.0f}", 
+        'mean': f"${raw_stats['mean_salary']:,.0f}",
         'std': f"${raw_stats['std_salary']:,.0f}",
         'range_min': f"${raw_stats['min_salary']:,.0f}",
         'range_max': f"${raw_stats['max_salary']:,.0f}",
         'total_jobs': raw_stats['total_jobs']
     }
-    
+
 except Exception as e:
     print(f"ERROR: Statistics calculation failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -191,7 +190,7 @@ Our analysis reveals a right-skewed salary distribution typical of professional 
 #| echo: false
 
 print(f"- **Median Salary**: {overall_stats['median']} across all roles")
-print(f"- **Mean Salary**: {overall_stats['mean']} (higher due to executive compensation)")  
+print(f"- **Mean Salary**: {overall_stats['mean']} (higher due to executive compensation)")
 print(f"- **Standard Deviation**: {overall_stats['std']} indicating significant variation")
 print(f"- **Range**: {overall_stats['range_min']} - {overall_stats['range_max']} (min to max)")
 print(f"- **Dataset Size**: {overall_stats['total_jobs']:,} job postings analyzed")
@@ -216,10 +215,10 @@ try:
     # Generate industry analysis using our class method
     industry_analysis = visualizer.get_industry_salary_analysis(top_n=8)
     results_table = industry_analysis.copy()
-    
+
     print(f"Industry analysis generated: {len(results_table)} industries analyzed")
     print("Data source: Our processed job market dataset")
-    
+
 except Exception as e:
     print(f"ERROR: Industry analysis failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -234,7 +233,7 @@ except Exception as e:
 # Display the dynamically generated industry analysis
 if 'results_table' in locals():
     print(results_table.to_string(index=False))
-    
+
     # Get record count safely
     try:
         # Try to get the record count from the global variables or recalculate
@@ -243,11 +242,11 @@ if 'results_table' in locals():
         else:
             # Fallback: estimate from results table
             record_count = results_table['Job Count'].sum() if 'Job Count' in results_table.columns else 1000
-        
+
         print(f"\nAnalysis based on {record_count:,} job postings")
     except:
         print(f"\nAnalysis based on processed dataset")
-    
+
     print("**Key Insight**: This data is generated using our SalaryVisualizer class")
     print("**Reproducible**: All calculations use class-based methods from src/visualization/")
 else:
@@ -299,14 +298,14 @@ print(f"Dataset columns available: {list(df.columns)[:5]}...")
 try:
     # Get experience progression analysis using our class method
     exp_analysis_raw = visualizer.get_experience_progression_analysis()
-    
+
     # Format for display
     exp_analysis = pd.DataFrame([
-        {'Experience Level': level, 'Job Count': data['count'], 
-         'Median Salary': data['median'], 'Formatted Salary': f"${data['median']:,.0f}"}
+        {'Experience Level': level, 'Median Salary': data['salary'],
+         'Salary Increase': f"{data['increase_pct']:.1f}%", 'Formatted Salary': f"${data['salary']:,.0f}"}
         for level, data in exp_analysis_raw.items()
     ])
-    
+
 except Exception as e:
     print(f"ERROR: Experience analysis failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -315,7 +314,7 @@ print("## Real Data: Salary Progression by Experience Level")
 print("*(Based on our processed job market dataset)*\n")
 
 # Display the analysis table using our class results
-print(exp_analysis[['Experience Level', 'Job Count', 'Formatted Salary']].to_string(index=False))
+print(exp_analysis[['Experience Level', 'Median Salary', 'Salary Increase', 'Formatted Salary']].to_string(index=False))
 
 # Calculate growth patterns
 if len(exp_analysis) >= 2:
@@ -328,7 +327,7 @@ if len(exp_analysis) >= 2:
 ```
 
 ```{python}
-#| label: experience-visualization  
+#| label: experience-visualization
 #| fig-cap: "Salary distribution by experience level from our data"
 #| fig-width: 10
 #| fig-height: 6
@@ -338,21 +337,21 @@ try:
     # Use our SalaryVisualizer class to create experience plots
     fig = visualizer.plot_experience_salary_trend()
     fig.show()
-    
+
     print("Experience visualization created using SalaryVisualizer.plot_experience_salary_trend()")
-    
+
 except Exception as e:
     print(f"Class-based visualization unavailable: {e}")
-    
+
     # Fallback: Create simple experience level analysis
     if 'salary_avg' in df.columns:
         # Create experience tiers for visualization
         df['experience_tier'] = pd.cut(
-            df['salary_avg'], 
+            df['salary_avg'],
             bins=[0, 70000, 100000, 140000, 200000, float('inf')],
             labels=['Entry', 'Mid', 'Senior', 'Principal', 'Executive']
         )
-        
+
         plt.figure(figsize=(12, 6))
         sns.boxplot(data=df, x='experience_tier', y='salary_avg', palette='Set2')
         plt.title('Salary Distribution by Experience Level (Our Processed Data)', fontsize=14, fontweight='bold')
@@ -362,7 +361,7 @@ except Exception as e:
         plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
         plt.tight_layout()
         plt.show()
-        
+
         print("Fallback visualization created using direct matplotlib/seaborn")
 ```
 
@@ -377,62 +376,62 @@ except Exception as e:
 try:
     # Use our class method for education premium analysis
     edu_analysis = visualizer.get_education_premium_analysis()
-    
+
     print("## Education Premium Analysis (Real Job Market Data)")
     print("*(Premium calculated using our SalaryVisualizer class)*\n")
     print(edu_analysis.to_string(index=False))
     print(f"\n**Key Education ROI Insights:**")
     print(f"- Education premium analysis based on {len(df):,} job postings from our processed dataset")
-    
+
 except Exception as e:
     print("## Education Premium Analysis (Real Dataset)")
     print(f"**Note**: Analyzing education requirements from actual job postings - {e}\n")
-    
+
     # Analyze education requirements from our real dataset
     if 'education_required' in df.columns:
         # Group by education level and calculate salary statistics
         edu_real = df.groupby('education_required')['salary_avg'].agg([
             'count', 'median', 'mean'
         ]).round(0).reset_index()
-        
+
         # Sort by median salary
         edu_real = edu_real.sort_values('median')
-        
+
         # Calculate premium vs lowest education level
         base_salary = edu_real['median'].iloc[0] if len(edu_real) > 0 else 50000
         edu_real['premium_pct'] = ((edu_real['median'] - base_salary) / base_salary * 100).round(0)
-        
+
         # Format for display
         edu_real['formatted_salary'] = edu_real['median'].apply(lambda x: f"${int(x):,}")
         edu_real['formatted_premium'] = edu_real['premium_pct'].apply(lambda x: f"{int(x)}%" if x >= 0 else f"{int(x)}%")
-        
+
         print("| Education Level | Median Salary | Premium vs Base | Job Count |")
         print("|----------------|---------------|-----------------|-----------|")
-        
+
         for _, row in edu_real.iterrows():
             edu_level = row['education_required'][:20] if len(str(row['education_required'])) > 20 else row['education_required']
             salary = row['formatted_salary']
             premium = row['formatted_premium']
             count = int(row['count'])
             print(f"| {edu_level} | {salary} | {premium} | {count} |")
-            
+
         print(f"\n**Key Education ROI Insights (Real Data Analysis):**")
         print(f"- Analysis based on {edu_real['count'].sum():,} job postings with education requirements")
         print(f"- Education premium calculated from actual job market data using our processing pipeline")
     else:
         # Fallback: Basic salary tier analysis by education inference
         print("**Education analysis by salary tier (inferred from compensation levels):**")
-        
+
         salary_tiers = [
             ("Entry Level (< $60k)", df[df['salary_avg'] < 60000]),
             ("Professional ($60k-$100k)", df[(df['salary_avg'] >= 60000) & (df['salary_avg'] < 100000)]),
             ("Senior Professional ($100k-$150k)", df[(df['salary_avg'] >= 100000) & (df['salary_avg'] < 150000)]),
             ("Advanced Professional ($150k+)", df[df['salary_avg'] >= 150000])
         ]
-        
+
         print("| Compensation Tier | Count | Median | Likely Education |")
         print("|------------------|-------|--------|------------------|")
-        
+
         for tier_name, tier_data in salary_tiers:
             if len(tier_data) > 0:
                 count = len(tier_data)
@@ -445,16 +444,16 @@ except Exception as e:
                     education = "Bachelor's + Experience"
                 else:
                     education = "Advanced Degree"
-                    
+
                 print(f"| {tier_name} | {count:,} | ${median:,.0f} | {education} |")
-        
+
         print(f"\n**Key Education ROI Insights (Salary Tier Analysis):**")
         print(f"- Education requirements inferred from {len(df):,} job salary distributions")
         print(f"- Higher education correlates with access to higher-paying positions")
 ```
 
-### Company Size & Industry Effects 
- 
+### Company Size & Industry Effects
+
 **Dynamic analysis of organizational factors using our job data**
 
 ```{python}
@@ -465,13 +464,13 @@ except Exception as e:
 try:
     # Get industry analysis using our class method
     industry_analysis = visualizer.get_industry_salary_analysis(top_n=8)
-    
+
     print("## Industry Salary Analysis (From Our SalaryVisualizer Class)")
     print("*(Real compensation patterns analyzed using our processed dataset)*\n")
-    
+
     # Display results
     print(industry_analysis.to_string(index=False))
-    
+
     # Calculate technology premium if available
     tech_data = df[df['industry'].str.contains('Tech|Information', na=False)] if 'industry' in df.columns else pd.DataFrame()
     if len(tech_data) > 0:
@@ -479,16 +478,16 @@ try:
         overall_median = df['salary_avg'].median()
         tech_premium = ((tech_median - overall_median) / overall_median * 100)
         print(f"\n**Technology Premium: {tech_premium:.1f}% above overall median**")
-    
+
 except Exception as e:
     print(f"## Industry Analysis (Fallback Method): {e}")
-    
+
     # Simple industry grouping
     if 'industry' in df.columns:
         industry_analysis = df.groupby('industry')['salary_avg'].agg([
             'count', 'median', 'mean'
         ]).round(0).reset_index().head(5)
-        
+
         print(industry_analysis.to_string(index=False))
     else:
         print("Industry data not available in current format")
@@ -498,6 +497,7 @@ print(f"**Dataset: {len(df):,} job postings from our processed pipeline**")
 ```
 
 ### Statistical Distribution Analysis
+
 **Comprehensive statistical analysis using our processing functions**
 
 ```{python}
@@ -508,17 +508,17 @@ print(f"**Dataset: {len(df):,} job postings from our processed pipeline**")
 try:
     # Get overall statistics using our class method
     overall_stats = visualizer.get_overall_statistics()
-    
+
     print("## Statistical Distribution Analysis")
     print("*(Based on our SalaryVisualizer class methods)*\n")
-    
+
     print("**Overall Salary Distribution (Our Class-Based Analysis):**")
     print(f"- Sample Size: **{overall_stats['total_jobs']:,} job postings** from our processed dataset")
     print(f"- Median Salary: **${overall_stats['median_salary']:,.0f}**")
     print(f"- Mean Salary: **${overall_stats['mean_salary']:,.0f}**")
     print(f"- Standard Deviation: **${overall_stats['std_salary']:,.0f}**")
     print(f"- Range: **${overall_stats['min_salary']:,.0f}** to **${overall_stats['max_salary']:,.0f}**")
-    
+
 except Exception as e:
     print(f"ERROR: Statistical analysis failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -554,35 +554,18 @@ print(f"- Analysis powered by our custom SalaryVisualizer and JobMarketDataProce
 try:
     # Use our class method for comprehensive experience analysis
     exp_progression = visualizer.get_experience_progression_analysis()
-    
+
     print("**Experience Level Salary Progression (Using Our Class Methods):**")
-    
+
     for level, data in exp_progression.items():
         salary = int(data['median'])
         count = int(data['count'])
         print(f"- **{level}**: ${salary:,} median | {count:,} positions")
-    
+
 except Exception as e:
-    print(f"**Experience Level Salary Progression (Fallback Analysis):**")
-    
-    # Simple fallback based on salary tiers
-    df['experience_tier'] = pd.cut(
-        df['salary_avg'], 
-        bins=[0, 70000, 100000, 140000, 200000, float('inf')],
-        labels=['Entry Level ($<70k)', 'Mid Level ($70k-100k)', 'Senior Level ($100k-140k)', 'Principal ($140k-200k)', 'Executive ($200k+)']
-    )
-    
-    exp_analysis = df.groupby('experience_tier')['salary_avg'].agg([
-        'count', 'median', 'mean'
-    ]).round(0).reset_index()
-    
-    exp_analysis = exp_analysis.sort_values('median')
-    
-    for _, row in exp_analysis.iterrows():
-        level = row['experience_tier']
-        salary = int(row['median'])
-        count = int(row['count'])
-        print(f"- **{level}**: ${salary:,} median | {count:,} positions")
+    print(f"ERROR: Experience analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 
 print("\n**Industry Comparison Insights (Class-Based Analysis):**")
 
@@ -591,17 +574,17 @@ if 'sector' in df.columns or 'industry' in df.columns:
     try:
         # Try to get sector analysis from our visualizer
         sector_analysis = visualizer.get_industry_salary_analysis(top_n=5)
-        
+
         tech_median = df[df['industry'].str.contains('Tech|tech', na=False)]['salary_avg'].median() if 'industry' in df.columns else 0
         non_tech_median = df[~df['industry'].str.contains('Tech|tech', na=False)]['salary_avg'].median() if 'industry' in df.columns else 0
-        
+
         if tech_median > 0 and non_tech_median > 0:
             tech_premium = ((tech_median - non_tech_median) / non_tech_median * 100)
             print(f"- Technology roles average **{tech_premium:.0f}% higher** using our processed data")
-        
+
         print(f"- Analysis generated using SalaryVisualizer class methods")
         print(f"- **{len(df):,}** positions analyzed from our enhanced processor")
-        
+
     except:
         print(f"- Comprehensive analysis completed on **{len(df):,}** job market positions")
         print(f"- Career progression patterns identified using our data processing pipeline")
@@ -613,7 +596,8 @@ else:
 ## Geographic Salary Analysis
 
 ### Interactive Regional Analysis
-<iframe src="../figures/interactive_geographic_analysis.html" width="100%" height="600px" frameborder="0"></iframe>
+
+**[→ View Geographic Analysis](salary-geographic.qmd){target="_blank"}** - Interactive geographic salary analysis
 
 ### Regional Variations
 
@@ -627,29 +611,29 @@ else:
 try:
     # Use our class method for geographic analysis
     geographic_data = visualizer.get_geographic_salary_analysis(top_n=10)
-    
+
     print("| Location | Median Salary | Job Count | Analysis |")
     print("|----------|---------------|-----------|----------|")
-    
+
     overall_median = df['salary_avg'].median()
-    
+
     for _, row in geographic_data.iterrows():
         location = row['Location'] if 'Location' in row else row.iloc[0]
         salary = int(row['Median Salary']) if 'Median Salary' in row else int(row.iloc[1])
         count = int(row['Job Count']) if 'Job Count' in row else int(row.iloc[2])
-        
+
         # Calculate relative position
         premium = ((salary - overall_median) / overall_median * 100)
-        
+
         if premium > 20:
             analysis = f"+{premium:.0f}% premium"
         elif premium > 0:
             analysis = f"+{premium:.0f}% above avg"
         else:
             analysis = f"{premium:.0f}% below avg"
-        
+
         print(f"| {location} | ${salary:,} | {count} | {analysis} |")
-        
+
 except Exception as e:
     print(f"ERROR: Geographic analysis failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -670,22 +654,22 @@ print(f"- Geographic salary variation reflects local market conditions and indus
 #| echo: false
 #| output: asis
 
-# Dynamic skills analysis using SparkJobAnalyzer  
+# Dynamic skills analysis using SparkJobAnalyzer
 try:
     import sys
     import os
     sys.path.append('src')
     from data.spark_analyzer import SparkJobAnalyzer
-    
+
     # Create analyzer and get skills analysis
     analyzer = SparkJobAnalyzer()
     analyzer.load_full_dataset()
     skills_df = analyzer.get_skills_analysis(top_n=7)
-    
+
     # Display results as markdown table
     print("| Skill Category | Premium % | Median Salary | Jobs Available |")
     print("|----------------|-----------|---------------|----------------|")
-    
+
     for _, row in skills_df.iterrows():
         skill = row['Skill Category']
         premium_val = int(row['Premium %'])
@@ -693,23 +677,17 @@ try:
         salary = f"${int(row['Median Salary']):,}"
         jobs = int(row['Jobs Available'])
         print(f"| {skill} | {premium} | {salary} | {jobs} |")
-    
+
     analyzer.stop()
-    
+
 except Exception as e:
-    # Fallback to sample data if SparkJobAnalyzer fails
-    print("| Skill Category | Premium % | Median Salary | Jobs Available |")
-    print("|----------------|-----------|---------------|----------------|")
-    print("| Machine Learning | +45% | $155,000 | 12,500 |")
-    print("| Data Science | +42% | $145,000 | 18,200 |")
-    print("| Cloud Architecture | +38% | $140,000 | 15,800 |")
-    print("| Cybersecurity | +35% | $135,000 | 22,100 |")
-    print("| DevOps | +32% | $128,000 | 19,500 |")
-    print("| Mobile Development | +28% | $118,000 | 14,200 |")
-    print("| UI/UX Design | +25% | $110,000 | 16,800 |")
+    print(f"ERROR: Skills analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 **Strategic Skill Development:**
+
 - Machine Learning offers the highest premium but requires significant investment
 - Cloud Architecture provides strong ROI with faster learning curve
 - Cybersecurity has high demand and competitive premiums
@@ -720,22 +698,26 @@ except Exception as e:
 ### Regression Analysis Results
 
 **Multiple Linear Regression Model:**
+
 - **Dependent Variable**: Annual Salary
 - **Independent Variables**: Experience, Location, Skills, Industry
 - **Sample Size**: 500,000+ observations
 
 **Model Performance:**
+
 - **R-squared**: 0.73 (73% of salary variance explained)
 - **Mean Absolute Error**: $8,500
 - **Root Mean Square Error**: $12,200
 
 **Key Predictors (in order of importance):**
+
 1. **Experience Level** (β = 0.34) - Most significant factor
 2. **Geographic Location** (β = 0.28) - Strong regional effects
 3. **AI/Tech Skills** (β = 0.21) - Substantial skill premiums
 4. **Industry Sector** (β = 0.17) - Moderate industry variation
 
 **Statistical Significance:**
+
 - All predictors significant at p < 0.001 level
 - Model explains majority of salary variation
 - Residuals show normal distribution with minimal bias
@@ -746,19 +728,19 @@ except Exception as e:
 
 ### Market Overview
 
-{{< include figures/executive_market_overview.html >}}
+**[→ View Salary Overview](salary-overview.qmd){target="_blank"}** - Executive market overview and key insights
 
-### Salary Insights  
+### Salary Insights
 
-{{< include figures/executive_salary_insights.html >}}
+**[→ View Education & Skills Analysis](salary-education.qmd){target="_blank"}** - Skills premium and education ROI analysis
 
 ### Remote Work Trends
 
-{{< include figures/executive_remote_work.html >}}
+**[→ View Remote Work Analysis](remote-work.qmd){target="_blank"}** - Remote work impact on compensation
 
 ### Occupation Analysis
 
-{{< include figures/executive_occupation_trends.html >}}
+**[→ View Industry Analysis](salary-industry.qmd){target="_blank"}** - Occupation trends and industry comparisons
 
 #### Key Metrics
 **Executive Summary Statistics (Dynamic Data Analysis):**
@@ -772,41 +754,31 @@ try:
     # Use our class methods for comprehensive analysis
     overall_stats = visualizer.get_overall_statistics()
     industry_analysis = visualizer.get_industry_salary_analysis(top_n=5)
-    
+
     # Calculate key metrics using our processed data
     tech_data = df[df['industry'].str.contains('Tech|Information|Software', na=False)] if 'industry' in df.columns else pd.DataFrame()
     non_tech_data = df[~df['industry'].str.contains('Tech|Information|Software', na=False)] if 'industry' in df.columns else df
-    
+
     tech_median = tech_data['salary_avg'].median() if len(tech_data) > 0 else overall_stats['median_salary']
     non_tech_median = non_tech_data['salary_avg'].median() if len(non_tech_data) > 0 else overall_stats['median_salary']
     tech_disparity = ((tech_median - non_tech_median) / non_tech_median * 100) if non_tech_median > 0 else 0
-    
+
     # Experience tier analysis
     entry_median = df[df['salary_avg'] < 70000]['salary_avg'].median()
     exec_median = df[df['salary_avg'] > 200000]['salary_avg'].median()
     career_growth = ((exec_median - entry_median) / entry_median * 100) if entry_median > 0 else 0
-    
+
     print("| Metric | Value | Analysis |")
     print("|--------|-------|----------|")
     print(f"| Tech vs Non-Tech Median | ${tech_median:,.0f} vs ${non_tech_median:,.0f} | **{tech_disparity:.0f}% gap** |")
     print(f"| Entry vs Executive Tier | ${entry_median:,.0f} vs ${exec_median:,.0f} | **{career_growth:.0f}% growth** |")
     print(f"| Total Positions Analyzed | {overall_stats['total_jobs']:,} | Our processed dataset |")
     print(f"| Data Source | SalaryVisualizer Class | Professional analysis methods |")
-    
+
 except Exception as e:
-    print(f"**Executive Summary (Fallback Analysis): {e}**")
-    
-    # Basic fallback analysis
-    overall_median = df['salary_avg'].median()
-    entry_median = df[df['salary_avg'] < 70000]['salary_avg'].median()
-    exec_median = df[df['salary_avg'] > 200000]['salary_avg'].median()
-    career_growth = ((exec_median - entry_median) / entry_median * 100) if entry_median > 0 else 0
-    
-    print("| Metric | Value | Analysis |")
-    print("|--------|-------|----------|")
-    print(f"| Overall Median Salary | ${overall_median:,.0f} | From our processed data |")
-    print(f"| Entry vs Executive | ${entry_median:,.0f} vs ${exec_median:,.0f} | **{career_growth:.0f}% growth** |")
-    print(f"| Total Dataset | {len(df):,} | JobMarketDataProcessor results |")
+    print(f"ERROR: Executive summary analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 **Strategic Insights (Data-Driven):**
@@ -817,7 +789,7 @@ except Exception as e:
 try:
     # Get comprehensive insights from our SalaryVisualizer class
     overall_stats = visualizer.get_overall_statistics()
-    
+
     # Calculate AI premium using our processed data
     if 'title' in df.columns:
         ai_keywords = ['ai', 'machine learning', 'data scientist', 'ml engineer', 'artificial intelligence']
@@ -829,36 +801,37 @@ try:
         ai_premium = ((ai_median - non_ai_median) / non_ai_median * 100) if non_ai_median > 0 else 0
 
         print(f"- **AI-related roles** command **{ai_premium:.0f}% premium** over traditional roles")
-        
+
     # Get technology sector insights
     tech_data = df[df['industry'].str.contains('Tech|Information', na=False)] if 'industry' in df.columns else pd.DataFrame()
     tech_median = tech_data['salary_avg'].median() if len(tech_data) > 0 else overall_stats['median_salary']
-    
+
     print(f"- **Technology sector** leads with **${tech_median:,.0f}** median salary")
-    
+
     # Career progression analysis
     entry_median = df[df['salary_avg'] < 70000]['salary_avg'].median()
     exec_median = df[df['salary_avg'] > 200000]['salary_avg'].median()
     career_growth = ((exec_median - entry_median) / entry_median * 100) if entry_median > 0 else 0
     print(f"- **Career progression** shows **{career_growth:.0f}%** potential growth from entry to executive")
-    
+
     print(f"- **Comprehensive analysis** powered by our SalaryVisualizer and JobMarketDataProcessor classes")
     print(f"- **Dataset insights** from **{len(df):,}** job postings in our processed dataset")
-    
+
 except Exception as e:
-    print(f"**Strategic Insights (Fallback Analysis):**")
-    print(f"- **Comprehensive analysis** completed on **{len(df):,}** job market positions")
-    print(f"- **Professional data processing** using our custom class architecture")
-    print(f"- **Real-world insights** from our JobMarketDataProcessor pipeline")
+    print(f"ERROR: Strategic insights analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ### Trend Analysis
+
 **Statistical trend analysis and historical comparisons.**
 
 *This section provides:*
+
 - Multi-year salary progression trends
 - Statistical significance testing
-- Predictive modeling results  
+- Predictive modeling results
 - Disparity trend analysis over time
 
 :::
@@ -868,21 +841,25 @@ except Exception as e:
 Based on our disparity analysis, we recommend:
 
 1. **Addressing Experience-Based Disparities**
+
    - Advocate for transparent salary progression frameworks
    - Negotiate based on skills and contributions rather than just tenure
    - Seek companies with structured advancement policies
 
 2. **Mitigating Education Premium Inequities**
+
    - Focus on demonstrable skills and portfolio development
    - Consider alternative credentials and certifications
    - Evaluate the ROI of advanced degrees versus practical experience
 
 3. **Leveraging Geographic Arbitrage**
+
    - Consider remote positions with high-paying markets
    - Factor in total compensation including benefits and equity
    - Negotiate location-independent pay scales
 
 4. **Company Size Strategy**
+
    - Understand compensation structures across different organization sizes
    - Evaluate startup equity versus established company stability
    - Consider total compensation beyond base salary
@@ -890,24 +867,28 @@ Based on our disparity analysis, we recommend:
 ## Technical Implementation & Class-Based Architecture
 
 ::: {.callout-tip}
+
 ## "Drinking Our Own Wine" - Class-Based Analysis Benefits
+
 This analysis demonstrates proper software engineering practices using our custom analysis classes:
 
 **SalaryVisualizer Class Methods Used:**
 
-- `get_top_paying_industries(top_n=8)` - Dynamic industry salary rankings  
+- `get_top_paying_industries(top_n=8)` - Dynamic industry salary rankings
 - `get_overall_statistics()` - Comprehensive salary statistics
 - `get_experience_progression()` - Career advancement analysis
 - `get_education_premium_analysis()` - Education ROI calculations
 
 **Key Benefits:**
+
 - **Reproducible**: All analysis methods are documented in `src/visualization/plots.py`
 - **Debuggable**: Run individual methods for targeted analysis
 - **Extensible**: Add new analysis methods to the SalaryVisualizer class
-- **Real Data**: Powered by our processed `job_market_sample.csv` dataset  
+- **Real Data**: Powered by our processed `job_market_sample.csv` dataset
 - **Maintainable**: No hard-coded values - all results generated dynamically
 
 **Usage Examples for Debugging:**
+
 ```python
 # Initialize with your data
 visualizer = SalaryVisualizer(df)
@@ -917,7 +898,7 @@ top_industries = visualizer.get_top_paying_industries(top_n=10)
 overall_stats = visualizer.get_overall_statistics()
 experience_data = visualizer.get_experience_progression()
 
-# Create interactive visualizations  
+# Create interactive visualizations
 industry_plot = visualizer.plot_salary_by_category('industry')
 experience_plot = visualizer.plot_experience_salary_trend()
 ```

@@ -9,7 +9,7 @@ author:
         city: Boston
         state: MA
 date: today
-format: 
+format:
   html:
     toc: true
     toc-depth: 2
@@ -60,7 +60,7 @@ Instead of guessing about career decisions, get data-driven answers to your most
 ## Data-Driven Career Intelligence
 
 - **3.3x Salary Growth**: Entry-level to Executive progression potential
-- **25% Education Premium**: Advanced degree ROI quantified  
+- **25% Education Premium**: Advanced degree ROI quantified
 - **40% Company Size Impact**: Startup vs. Enterprise compensation differences
 - **75% Remote Availability**: Location-flexible opportunities in tech
 :::
@@ -85,13 +85,13 @@ Instead of guessing about career decisions, get data-driven answers to your most
 
 ## Career Progression: "How much will I earn as I grow?"
 
-<iframe src="figures/validated_experience_salary.html" width="100%" height="700px" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+**[→ View Experience Analysis](salary-experience.qmd){target="_blank"}** - Complete career progression analysis with interactive charts
 
 <h4>Answers: "What's my earning potential over time?"</h4>
 
 ## Education ROI: "Is graduate school worth it?"
 
-<iframe src="figures/key_finding_education_premium.html" width="100%" height="600px" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+**[→ View Education & Skills Analysis](salary-education.qmd){target="_blank"}** - Education ROI and skills premium analysis
 
 <h4>Answers: "Should I invest in more education?"</h4>
 
@@ -99,7 +99,7 @@ Instead of guessing about career decisions, get data-driven answers to your most
 
 <div style="border: 2px solid #27ae60; border-radius: 8px; padding: 15px; background: #f4fff8;">
 <h4>Answers: "Where should I work for best compensation?"</h4>
-<iframe src="figures/key_finding_company_size.html" width="100%" height="450px" frameborder="0"></iframe>
+**[→ View Industry Analysis](salary-industry.qmd){target="_blank}** - Company size effects and industry comparisons
 <p><strong>Key Insight:</strong> Large companies pay 40% more on average, but startups offer equity upside. Consider total compensation packages.</p>
 **[→ View Detailed Analysis](salary-industry.qmd#company-size-effects){target="_blank"}**
 </div>
@@ -110,25 +110,25 @@ Instead of guessing about career decisions, get data-driven answers to your most
 
 ### Experience Progression
 
-<iframe src="figures/key_finding_experience_gap.html" width="100%" height="600px" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+**[→ View Experience Analysis](salary-experience.qmd){target="_blank}** - Interactive career progression charts and salary benchmarks
 
 **Key Insight**: Experience drives significant salary growth - plan your career progression strategically.
 
 ### Education Investment
 
-<iframe src="figures/key_finding_education_premium.html" width="100%" height="600px" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+**[→ View Education & Skills Analysis](salary-education.qmd){target="_blank}** - Education ROI and skills premium analysis
 
 **Key Insight**: Advanced degrees provide measurable ROI - calculate the investment value for your situation.
 
 ### Company Strategy
 
-<iframe src="figures/key_finding_company_size.html" width="100%" height="600px" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+**[→ View Industry Analysis](salary-industry.qmd){target="_blank}** - Company size effects and industry comparisons
 
 **Key Insight**: Company size significantly impacts compensation - consider this in your job search strategy.
 
 :::
 
-**[→ View Executive Dashboard Suite](figures/executive_dashboard_index.html){target="_blank"}** for comprehensive market analysis
+**[→ View Salary Overview](salary-overview.qmd){target="_blank"}** for comprehensive market analysis
 
 :::
 
@@ -137,6 +137,7 @@ Instead of guessing about career decisions, get data-driven answers to your most
 This analysis is organized to answer your questions in the order you'd naturally ask them:
 
 ### Comprehensive Salary Analysis (New Modular Structure)
+
 - **[Salary Overview](salary-overview.qmd)** - "What's the big picture?"
   - Executive summary and key insights
   - Market overview and data foundation
@@ -156,7 +157,7 @@ This analysis is organized to answer your questions in the order you'd naturally
   - Advanced statistical modeling and predictive insights
   - Distribution analysis and correlation studies
 
-### Market Intelligence  
+### Market Intelligence
 - **[Regional Analysis](regional-trends.qmd)** - "Regional deep dive"
   - Highest-paying metropolitan areas
   - Industry concentrations by region
@@ -180,7 +181,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 ### For Students Planning Careers:
 
 1. **Start with [Salary Overview](salary-overview.qmd)** to set realistic expectations
-2. **Check [Regional Analysis](regional-trends.qmd)** for location strategy  
+2. **Check [Regional Analysis](regional-trends.qmd)** for location strategy
 3. **Review [Remote Work](remote-work.qmd)** for modern workplace trends
 4. **Use benchmarks for internship and job negotiations**
 
@@ -219,7 +220,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 ---
 
 ::: {.callout-tip}
-## Ready to Start? 
+## Ready to Start?
 
 **New to the analysis?** Begin with [Salary Overview](salary-overview.qmd) to understand compensation fundamentals, then explore specific areas like [Experience Analysis](salary-experience.qmd) and [Education Premium](salary-education.qmd).
 
@@ -235,7 +236,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 ### For Job Seekers
 
 - **Understand disparity patterns** to negotiate fairly
-- **Target companies** with equitable compensation practices  
+- **Target companies** with equitable compensation practices
 - **Leverage geographic arbitrage** opportunities
 - **Invest in high-ROI skills** to minimize gaps
 
@@ -256,7 +257,7 @@ This analysis is organized to answer your questions in the order you'd naturally
 ::: {.callout-tip}
 ## Getting Started
 1. **Explore Interactive Dashboards** - Dive into the salary disparity analysis
-2. **Review Methodology** - Understand our research approach  
+2. **Review Methodology** - Understand our research approach
 3. **Access Raw Analysis** - View the complete Jupyter notebook
 4. **Apply Insights** - Use findings for career or organizational strategy
 :::

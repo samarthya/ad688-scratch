@@ -52,9 +52,8 @@ warnings.filterwarnings('ignore')
 
 # Import our custom analysis classes
 sys.path.append('src')
-from data.spark_analyzer import SparkJobAnalyzer, create_spark_analyzer
-from data.enhanced_processor import JobMarketDataProcessor
-from visualization.simple_plots import SalaryVisualizer
+from src.core import SparkJobAnalyzer, create_spark_analyzer, JobMarketDataProcessor
+from src.visualization import SalaryVisualizer
 
 # Visualization libraries
 import plotly.express as px
@@ -124,20 +123,20 @@ for key, value in stats.items():
 def load_job_data(file_path: str = None):
     """
     Load processed job market data using our existing infrastructure
-    
+
     Args:
         file_path: Optional path override (uses processed data by default)
     """
-    
+
     # Use our existing processed dataset
     processed_path = "data/processed/job_market_processed.parquet"
-    
+
     if Path(processed_path).exists():
         print(f"Loading processed data from: {processed_path}")
         df = spark.read.parquet(processed_path)
         print(f"Real processed data loaded: {df.count():,} records")
         return df
-    
+
     elif file_path and Path(file_path).exists():
         print(f"Loading raw data from: {file_path}")
         df = spark.read \
@@ -147,7 +146,7 @@ def load_job_data(file_path: str = None):
             .csv(file_path)
         print(f"Raw data loaded: {df.count():,} records")
         return df
-    
+
     else:
         print("Error: No processed or raw data found!")
         print("Tip: Run the data processing pipeline first to create processed data")
@@ -162,7 +161,7 @@ if df_raw is not None:
     print(f"Successfully loaded {df_raw.count():,} records")
     print("\nData Schema:")
     df_raw.printSchema()
-    
+
     print("\nSample Records:")
     df_raw.show(5, truncate=False)
 else:
@@ -184,10 +183,10 @@ print("=== DATA QUALITY ASSESSMENT (Class-Based) ===")
 # Get comprehensive data quality report from our processor
 try:
     quality_report = processor.assess_data_quality()
-    
+
     print(f"Total Records: {quality_report.get('total_records', 'N/A'):,}")
     print(f"Total Columns: {quality_report.get('total_columns', 'N/A')}")
-    
+
     # Display missing value analysis
     if 'missing_analysis' in quality_report:
         print("\nMissing Value Analysis:")
@@ -197,23 +196,23 @@ try:
             missing_count = col_info['missing_count']
             missing_pct = col_info['missing_percentage']
             print(f"{col_name:20} | {missing_count:>8,} ({missing_pct:>5.1f}%)")
-    
+
     # Show recommendations
     if 'recommendations' in quality_report:
         print(f"\nData Quality Recommendations:")
         for rec in quality_report['recommendations']:
             print(f"  - {rec}")
-            
+
 except AttributeError:
     # Fallback to basic analysis if method not implemented
     print("Using basic data quality assessment...")
-    
+
     total_rows = df_raw.count()
     total_cols = len(df_raw.columns)
-    
+
     print(f"Total Records: {total_rows:,}")
     print(f"Total Columns: {total_cols}")
-    
+
     print("\nBasic Column Analysis:")
     print("-" * 30)
     for col_name in df_raw.columns[:10]:  # Show first 10 columns
@@ -238,25 +237,25 @@ if df_raw is not None:
         df_processed = df_raw
     else:
         print("Applying JobMarketDataProcessor cleaning pipeline...")
-        
+
         try:
             # Use our comprehensive processor
             df_processed = processor.clean_job_data()
-            
+
             if df_processed is None:
                 print("Warning: Processor returned None, using analyzer data")
                 df_processed = df_raw
         except AttributeError:
             print("Warning: Cleaning method not available, using processed data as-is")
             df_processed = df_raw
-    
+
     # Show sample of processed data using our display format
     print(f"\nProcessed Data Sample ({df_processed.count():,} records):")
-    
+
     # Select appropriate columns based on what's available
     available_cols = df_processed.columns
     display_cols = []
-    
+
     # Build display columns list based on available columns
     if "title" in available_cols or "TITLE" in available_cols:
         display_cols.append("TITLE" if "TITLE" in available_cols else "title")
@@ -268,7 +267,7 @@ if df_raw is not None:
         display_cols.append("salary_avg_imputed")
     elif "SALARY_AVG_IMPUTED" in available_cols:
         display_cols.append("SALARY_AVG_IMPUTED")
-        
+
     # Show sample with available columns
     if display_cols:
         df_processed.select(*display_cols[:5]).show(10, truncate=False)
@@ -334,10 +333,10 @@ print(f"\nSample data prepared: {len(df_sample):,} records for visualization")
 
 def plot_jobs_by_industry(analyzer_results):
     """Create interactive plot using SparkJobAnalyzer results"""
-    
+
     # Use analyzer results instead of raw data processing
     industry_data = analyzer_results.copy()
-    
+
     # Create interactive bar plot
     fig = px.bar(
         industry_data,
@@ -350,16 +349,16 @@ def plot_jobs_by_industry(analyzer_results):
         color_continuous_scale="viridis",
         hover_data=["AI Premium", "Remote %"]
     )
-    
+
     fig.update_layout(
         height=600,
         yaxis={"categoryorder": "total ascending"},
         showlegend=False
     )
-    
+
     # Add value labels
     fig.update_traces(texttemplate='%{x:,}', textposition='outside')
-    
+
     return fig
 
 # Create plot using our analyzer results (already computed above)
@@ -376,14 +375,14 @@ fig_industry.show()
 
 def plot_salary_by_industry(analyzer_results):
     """Create salary analysis plot using SparkJobAnalyzer results"""
-    
+
     # Use pre-computed analyzer results
     industry_data = analyzer_results.copy()
-    
+
     # Create enhanced bar plot showing median salaries
     fig = px.bar(
         industry_data,
-        x="Industry", 
+        x="Industry",
         y="Median Salary",
         title="Median Salary by Industry (SparkJobAnalyzer Analysis)",
         labels={
@@ -394,15 +393,15 @@ def plot_salary_by_industry(analyzer_results):
         color_continuous_scale="RdYlBu_r",
         hover_data=["Job Count", "AI Premium", "Remote %"]
     )
-    
+
     fig.update_layout(
         height=600,
         xaxis_tickangle=-45
     )
-    
+
     # Add value labels
     fig.update_traces(texttemplate='$%{y:,.0f}', textposition='outside')
-    
+
     return fig
 
 # Create plot using analyzer results
@@ -419,7 +418,7 @@ fig_salary_industry.show()
 
 def plot_employment_type_analysis(df):
     """Analyze salary by employment type"""
-    
+
     # Calculate statistics by employment type
     emp_stats = df.filter(col("REMOTE_ALLOWED_CLEAN").isin(["Remote", "Hybrid", "On-site"])) \
         .groupBy("REMOTE_ALLOWED_CLEAN") \
@@ -428,14 +427,14 @@ def plot_employment_type_analysis(df):
             avg("SALARY_AVG_IMPUTED").alias("avg_salary"),
             median("SALARY_AVG_IMPUTED").alias("median_salary")
         ).toPandas()
-    
+
     # Create subplot with multiple metrics
     fig = make_subplots(
         rows=1, cols=2,
         subplot_titles=("Job Count by Employment Type", "Average Salary by Employment Type"),
         specs=[[{"secondary_y": False}, {"secondary_y": False}]]
     )
-    
+
     # Job count bar chart
     fig.add_trace(
         go.Bar(
@@ -449,7 +448,7 @@ def plot_employment_type_analysis(df):
         ),
         row=1, col=1
     )
-    
+
     # Salary bar chart
     fig.add_trace(
         go.Bar(
@@ -463,18 +462,18 @@ def plot_employment_type_analysis(df):
         ),
         row=1, col=2
     )
-    
+
     fig.update_layout(
         height=500,
         title_text="Employment Type Analysis: Remote vs Hybrid vs On-site",
         showlegend=False
     )
-    
+
     fig.update_xaxes(title_text="Employment Type", row=1, col=1)
     fig.update_xaxes(title_text="Employment Type", row=1, col=2)
     fig.update_yaxes(title_text="Number of Jobs", row=1, col=1)
     fig.update_yaxes(title_text="Average Salary (USD)", row=1, col=2)
-    
+
     return fig
 
 # Create and display the plot
@@ -491,7 +490,7 @@ fig_employment.show()
 
 def plot_ai_vs_traditional_analysis(df):
     """Comprehensive AI vs traditional roles analysis"""
-    
+
     # Get comparison data
     ai_comparison = df.groupBy("IS_AI_ROLE") \
         .agg(
@@ -499,24 +498,24 @@ def plot_ai_vs_traditional_analysis(df):
             avg("SALARY_AVG_IMPUTED").alias("avg_salary"),
             median("SALARY_AVG_IMPUTED").alias("median_salary")
         ).toPandas()
-    
+
     ai_comparison["role_type"] = ai_comparison["IS_AI_ROLE"].map({True: "AI/ML Roles", False: "Traditional Roles"})
-    
+
     # Salary distribution data for violin plot
     salary_dist = df.select("IS_AI_ROLE", "SALARY_AVG_IMPUTED") \
         .filter(col("SALARY_AVG_IMPUTED").isNotNull()) \
         .sample(fraction=0.1) \
         .toPandas()
-    
+
     salary_dist["role_type"] = salary_dist["IS_AI_ROLE"].map({True: "AI/ML Roles", False: "Traditional Roles"})
-    
+
     # Create comprehensive subplot
     fig = make_subplots(
         rows=2, cols=2,
         subplot_titles=(
-            "Job Count Comparison", 
+            "Job Count Comparison",
             "Average Salary Comparison",
-            "Salary Distribution", 
+            "Salary Distribution",
             "AI Premium by Experience Level"
         ),
         specs=[
@@ -524,7 +523,7 @@ def plot_ai_vs_traditional_analysis(df):
             [{"type": "violin"}, {"type": "scatter"}]
         ]
     )
-    
+
     # Job count comparison
     fig.add_trace(
         go.Bar(
@@ -538,7 +537,7 @@ def plot_ai_vs_traditional_analysis(df):
         ),
         row=1, col=1
     )
-    
+
     # Salary comparison
     fig.add_trace(
         go.Bar(
@@ -552,7 +551,7 @@ def plot_ai_vs_traditional_analysis(df):
         ),
         row=1, col=2
     )
-    
+
     # Salary distribution violin plot
     for i, role_type in enumerate(["Traditional Roles", "AI/ML Roles"]):
         subset = salary_dist[salary_dist["role_type"] == role_type]
@@ -567,17 +566,17 @@ def plot_ai_vs_traditional_analysis(df):
             ),
             row=2, col=1
         )
-    
+
     # AI premium by experience level
     exp_analysis = df.groupBy("EXPERIENCE_LEVEL_CLEAN", "IS_AI_ROLE") \
         .agg(avg("SALARY_AVG_IMPUTED").alias("avg_salary")) \
         .toPandas()
-    
+
     exp_pivot = exp_analysis.pivot(index="EXPERIENCE_LEVEL_CLEAN", columns="IS_AI_ROLE", values="avg_salary").fillna(0)
-    
+
     if True in exp_pivot.columns and False in exp_pivot.columns:
         exp_pivot["premium_pct"] = ((exp_pivot[True] - exp_pivot[False]) / exp_pivot[False] * 100).fillna(0)
-        
+
         fig.add_trace(
             go.Scatter(
                 x=exp_pivot.index,
@@ -589,23 +588,23 @@ def plot_ai_vs_traditional_analysis(df):
             ),
             row=2, col=2
         )
-    
+
     fig.update_layout(
         height=800,
         title_text="Comprehensive AI vs Traditional Roles Analysis",
         showlegend=False
     )
-    
+
     # Update axes labels
     fig.update_xaxes(title_text="Role Type", row=1, col=1)
     fig.update_xaxes(title_text="Role Type", row=1, col=2)
     fig.update_xaxes(title_text="Experience Level", row=2, col=2)
-    
+
     fig.update_yaxes(title_text="Number of Jobs", row=1, col=1)
     fig.update_yaxes(title_text="Average Salary (USD)", row=1, col=2)
     fig.update_yaxes(title_text="Salary (USD)", row=2, col=1)
     fig.update_yaxes(title_text="Premium %", row=2, col=2)
-    
+
     return fig
 
 # Create and display the comprehensive analysis
@@ -622,7 +621,7 @@ fig_ai_analysis.show()
 
 def plot_geographic_salary_heatmap(df):
     """Create geographic salary heatmap"""
-    
+
     # Calculate average salary by state
     state_salaries = df.groupBy("STATE_CLEAN") \
         .agg(
@@ -631,7 +630,7 @@ def plot_geographic_salary_heatmap(df):
         ) \
         .filter(col("job_count") >= 10) \
         .toPandas()
-    
+
     # Create choropleth map
     fig = px.choropleth(
         state_salaries,
@@ -644,9 +643,9 @@ def plot_geographic_salary_heatmap(df):
         color_continuous_scale="viridis",
         hover_data=["job_count"]
     )
-    
+
     fig.update_layout(height=600)
-    
+
     return fig
 
 # Create and display geographic heatmap
@@ -665,23 +664,23 @@ fig_geographic.show()
 
 def plot_correlation_analysis(df):
     """Perform correlation analysis on key variables"""
-    
+
     # Prepare data for correlation analysis
     corr_data = df.select(
         "SALARY_AVG_IMPUTED",
-        "EXPERIENCE_YEARS", 
+        "EXPERIENCE_YEARS",
         "IS_AI_ROLE",
         when(col("REMOTE_ALLOWED_CLEAN") == "Remote", 1)
         .when(col("REMOTE_ALLOWED_CLEAN") == "Hybrid", 0.5)
         .otherwise(0).alias("REMOTE_SCORE")
     ).toPandas()
-    
+
     # Convert boolean to numeric
     corr_data["IS_AI_ROLE"] = corr_data["IS_AI_ROLE"].astype(int)
-    
+
     # Calculate correlation matrix
     corr_matrix = corr_data.corr()
-    
+
     # Create heatmap
     fig = px.imshow(
         corr_matrix,
@@ -690,9 +689,9 @@ def plot_correlation_analysis(df):
         aspect="auto",
         text_auto=True
     )
-    
+
     fig.update_layout(height=500)
-    
+
     return fig, corr_matrix
 
 # Create correlation analysis
@@ -748,7 +747,7 @@ try:
             parquet_path = f"{output_path}/job_market_processed.parquet"
             df_processed.write.mode("overwrite").parquet(parquet_path)
             print(f"Saved processed data: {parquet_path}")
-            
+
             # Save sample as CSV
             csv_path = f"{output_path}/job_market_sample.csv"
             df_processed.sample(fraction=0.01).toPandas().to_csv(csv_path, index=False)
@@ -762,17 +761,17 @@ with open(report_path, "w") as f:
     f.write("# Comprehensive Job Market Analysis Report\n\n")
     f.write(f"**Generated:** {pd.Timestamp.now()}\n\n")
     f.write(f"**Analysis Framework:** Class-based SparkJobAnalyzer + JobMarketDataProcessor\n\n")
-    
+
     f.write("## Overall Statistics\n\n")
     for key, value in stats.items():
         f.write(f"- **{key.replace('_', ' ').title()}:** {value:,}\n")
-    
+
     f.write("\n## Top Industries by Median Salary\n\n")
     f.write(industry_analysis.to_markdown(index=False))
-    
+
     f.write("\n\n## Skills Premium Analysis\n\n")
     f.write(skills_analysis.to_markdown(index=False))
-    
+
     f.write("\n\n## Analysis Architecture\n\n")
     f.write("This analysis was generated using our custom class-based architecture:\n")
     f.write("- **SparkJobAnalyzer**: SQL-based analysis engine\n")
@@ -796,7 +795,7 @@ This analysis demonstrates our **"Don't Reinvent the Wheel"** principle using a 
 
 **Key Classes Utilized:**
 1. **SparkJobAnalyzer**: SQL-based analysis engine replacing manual DataFrame operations
-2. **JobMarketDataProcessor**: Comprehensive data processing and quality assessment  
+2. **JobMarketDataProcessor**: Comprehensive data processing and quality assessment
 3. **SalaryVisualizer**: Consistent visualization utilities with graceful fallbacks
 
 **UML Architecture Benefits:**
@@ -816,13 +815,13 @@ This analysis demonstrates our **"Don't Reinvent the Wheel"** principle using a 
 ### Next Steps
 
 1. **Extend Class Methods**: Add new analysis methods to existing classes
-2. **Dashboard Integration**: Use class results in interactive dashboards  
+2. **Dashboard Integration**: Use class results in interactive dashboards
 3. **Automated Reporting**: Schedule class-based analysis pipelines
 4. **Advanced Modeling**: Implement ML models using our data infrastructure
 
 ### Design Pattern Success
 
-**Before (Manual Functions):** 300+ lines of duplicated data processing code  
+**Before (Manual Functions):** 300+ lines of duplicated data processing code
 **After (Class-Based):** Reusable methods with consistent interfaces and error handling
 
 **Architecture Documentation:** See `docs/CLASS_ARCHITECTURE.md` for complete UML diagram

@@ -23,29 +23,24 @@ format:
 
 # Initialize our job market analysis classes
 import sys
+import os
 sys.path.append('src')
 import pandas as pd
 import numpy as np
 
 # Import our custom classes
-from data.enhanced_processor import JobMarketDataProcessor
-from visualization.simple_plots import SalaryVisualizer
+from src.visualization import SalaryVisualizer
+from src.visualization.chart_components import chart_components
+from src.data.auto_processor import load_analysis_data, get_data_summary
 
-# Load and process data using our class-based approach with auto-processing
-data_processor = JobMarketDataProcessor("EducationAnalysis")
-try:
-    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"Loaded and processed {df.count():,} job postings for education analysis")
-except Exception as e:
-    try:
-        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"Using sample dataset: {df.count():,} job postings")
-    except Exception as e2:
-        print(f"ERROR: Unable to load any dataset: {e2}")
-        raise e2  # Show the actual error for student analysis report
+# Load data with automatic processing and cleaning
+df_pandas = load_analysis_data("education")
 
-# Initialize visualizer (convert Spark DataFrame to Pandas)
-df_pandas = df.toPandas()  # Convert to Pandas for SalaryVisualizer
+# Get data summary
+summary = get_data_summary(df_pandas)
+print(f"Data Summary: {summary['total_records']:,} records, {summary['salary_coverage']:.1f}% salary coverage")
+
+# Initialize visualizer
 visualizer = SalaryVisualizer(df_pandas)
 ```
 
@@ -59,51 +54,27 @@ visualizer = SalaryVisualizer(df_pandas)
 
 # Use our SalaryVisualizer class method for education analysis
 try:
-    # Check for education-related columns
-    education_columns = [col for col in df.columns if any(edu in col.lower() for edu in ['education', 'degree', 'qualification', 'certification'])]
-    
-    if education_columns:
-        edu_col = education_columns[0]
-        print(f"Using education column: {edu_col}")
-        
-        # Analyze by education level using our data
-        edu_analysis = df.groupby(edu_col)['salary_avg'].agg([
-            'count', 'median', 'mean', 'std'
-        ]).round(0).reset_index()
-        
-        # Sort by median salary for clear progression
-        edu_order = ['High School', 'Associate', 'Bachelor', 'Master', 'PhD', 'Doctorate']
-        edu_analysis['sort_order'] = edu_analysis[edu_col].apply(lambda x: 
-            next((i for i, order in enumerate(edu_order) if order.lower() in str(x).lower()), 999))
-        edu_analysis = edu_analysis.sort_values('sort_order')
-        
-        edu_analysis.columns = ['Education Level', 'Job Count', 'Median Salary', 'Mean Salary', 'Std Dev', 'sort_order']
-        edu_analysis = edu_analysis.drop('sort_order', axis=1)
-        
-        print("Education Premium Analysis (Generated from Real Data):")
-        print(edu_analysis.to_string(index=False))
-        
-        # Calculate education premium progression
-        if len(edu_analysis) > 1:
-            min_salary = edu_analysis['Median Salary'].min()
-            max_salary = edu_analysis['Median Salary'].max()
-            education_premium = ((max_salary - min_salary) / min_salary * 100)
-            print(f"\nEducation Premium Range: {education_premium:.1f}% from lowest to highest education level")
-        
-    else:
-        raise Exception("No education columns found - data processing issue")
-        
-except Exception as e:
-    print(f"Education analysis error: {e}")
-    # Comprehensive fallback data
-    edu_analysis = pd.DataFrame({
-        'Education Level': ['High School', 'Associate', 'Bachelor', 'Master', 'PhD'],
-        'Median Salary': [45000, 58000, 78000, 95000, 125000],
-        'Job Count': [5200, 8900, 35000, 28000, 4500]
-    })
-    print("Using fallback education analysis structure")
+    edu_analysis_result = visualizer.get_education_analysis()
+    edu_analysis = edu_analysis_result['analysis']
+    education_premium = edu_analysis_result.get('education_premium', 0)
+    edu_col = edu_analysis_result.get('education_column_used', 'Unknown')
 
-print(f"\nAnalysis powered by our JobMarketDataProcessor and SalaryVisualizer classes")
+    print(f"Using education column: {edu_col}")
+    print("Education Premium Analysis (Generated from Real Data):")
+
+    # Create formatted table
+    edu_table = chart_components.create_salary_comparison_table(edu_analysis_result, "Education Premium Analysis")
+    print(edu_table.to_string(index=False))
+
+    if education_premium > 0:
+        print(f"\nEducation Premium Range: {education_premium:.1f}% from lowest to highest education level")
+
+    print(f"\nAnalysis powered by our JobMarketDataProcessor and SalaryVisualizer classes")
+
+except Exception as e:
+    print(f"ERROR: Education analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Skills-Based Premium Analysis
@@ -114,82 +85,51 @@ print(f"\nAnalysis powered by our JobMarketDataProcessor and SalaryVisualizer cl
 #| label: skills-analysis
 #| echo: false
 
-# Analyze skill premiums using our class methods
+# Use our SalaryVisualizer class method for skills analysis
 try:
-    # Check for skills-related columns
-    skills_columns = [col for col in df.columns if any(skill in col.lower() for skill in ['skill', 'technology', 'tool', 'requirement'])]
-    
-    if skills_columns and 'title' in df.columns:
-        print("## Skills Premium Analysis (From Job Titles and Requirements)")
-        
-        # Define high-value skills to search for
-        high_value_skills = {
-            'Machine Learning': ['machine learning', 'ml ', 'ai ', 'artificial intelligence'],
-            'Cloud Computing': ['aws', 'azure', 'gcp', 'cloud', 'kubernetes'],
-            'Data Science': ['data scientist', 'data science', 'analytics', 'statistics'],
-            'DevOps': ['devops', 'ci/cd', 'docker', 'jenkins', 'automation'],
-            'Cybersecurity': ['security', 'cybersecurity', 'information security', 'infosec'],
-            'Blockchain': ['blockchain', 'cryptocurrency', 'smart contracts', 'defi'],
-            'Mobile Development': ['ios', 'android', 'mobile', 'react native', 'flutter'],
-            'Full Stack': ['full stack', 'fullstack', 'full-stack']
-        }
-        
-        skill_analysis = []
-        base_median = df['salary_avg'].median()
-        
-        for skill_name, keywords in high_value_skills.items():
-            # Search in title and other text fields
-            mask = df['title'].str.lower().str.contains('|'.join(keywords), na=False)
-            
-            # Also search in other potential text columns
-            for col in skills_columns:
-                if df[col].dtype == 'object':
-                    mask |= df[col].str.lower().str.contains('|'.join(keywords), na=False)
-            
-            skill_jobs = df[mask]
-            
-            if len(skill_jobs) > 10:  # Minimum threshold for analysis
-                skill_median = skill_jobs['salary_avg'].median()
-                premium = ((skill_median - base_median) / base_median * 100)
-                
-                skill_analysis.append({
-                    'Skill': skill_name,
-                    'Job Count': len(skill_jobs),
-                    'Median Salary': skill_median,
-                    'Premium %': premium
-                })
-        
-        if skill_analysis:
-            skill_df = pd.DataFrame(skill_analysis)
-            skill_df = skill_df.sort_values('Premium %', ascending=False)
-            
-            print("| Skill Category | Job Count | Median Salary | Premium % |")
-            print("|---------------|-----------|---------------|-----------|")
-            
-            for _, row in skill_df.iterrows():
-                print(f"| {row['Skill']} | {row['Job Count']:,} | ${row['Median Salary']:,.0f} | +{row['Premium %']:.1f}% |")
-            
-        else:
-            raise Exception("Insufficient skill data for analysis")
-    
-    else:
-        print("## Skills Premium Analysis (Market Research)")
-        print("| Skill Category | Job Count | Median Salary | Premium % |")
-        print("|---------------|-----------|---------------|-----------|")
-        print("| Machine Learning | 15,000 | $155,000 | +45% |")
-        print("| Cloud Architecture | 12,000 | $145,000 | +38% |")
-        print("| Data Science | 18,000 | $140,000 | +35% |")
-        print("| DevOps Engineering | 14,000 | $135,000 | +32% |")
-        print("| Cybersecurity | 10,000 | $130,000 | +28% |")
-        print("| Blockchain | 3,000 | $125,000 | +25% |")
-        print("| Mobile Development | 8,000 | $118,000 | +18% |")
-        print("| Full Stack Development | 20,000 | $115,000 | +15% |")
-        
-except Exception as e:
-    print(f"Skills analysis error: {e}")
-    print("Using market research skills data")
+    skills_analysis_result = visualizer.get_skills_analysis()
+    skill_df = skills_analysis_result['analysis']
+    base_median = skills_analysis_result.get('base_median_salary', 0)
+    total_skills = skills_analysis_result.get('total_skills_found', 0)
 
-print(f"\n**Analysis based on {len(df_pandas):,} job postings from our processed dataset**")
+    print("## Skills Premium Analysis (From Real Job Data)")
+    print(f"Analyzing {len(df_pandas):,} job postings from our dataset")
+    print()
+
+    # Create skills premium chart
+    skills_chart = chart_components.create_skills_analysis_chart(
+        skills_analysis_result,
+        title="Technical Skills Premium Analysis"
+    )
+
+    # Display the chart
+    import plotly.io as pio
+    pio.show(skills_chart)
+
+    # Create formatted table
+    skills_table = chart_components.create_salary_comparison_table(skills_analysis_result, "Skills Premium Analysis")
+    print("### Skills Premium Table")
+    print(skills_table.to_string(index=False))
+
+    # Show insights
+    print(f"\n**Skills Analysis Insights:**")
+    print(f"- Total skill categories found: {total_skills}")
+    print(f"- Base median salary: ${base_median:,.0f}")
+
+    if len(skill_df) > 0:
+        highest_premium = skill_df.iloc[0]
+        print(f"- Highest premium skill: {highest_premium['Skill']} (+{highest_premium['Premium %']:.1f}%)")
+
+        if len(skill_df) > 1:
+            lowest_premium = skill_df.iloc[-1]
+            print(f"- Lowest premium skill: {lowest_premium['Skill']} ({lowest_premium['Premium %']:+.1f}%)")
+
+    print(f"\n**Analysis based on {len(df_pandas):,} job postings from our processed dataset**")
+
+except Exception as e:
+    print(f"ERROR: Skills analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Certification Impact
@@ -229,7 +169,7 @@ for category, certs in certifications_data.items():
     print(f"### {category}")
     print("| Certification | Premium % | Average Salary | ROI Period |")
     print("|--------------|-----------|----------------|------------|")
-    
+
     for cert_name, data in certs.items():
         roi_period = "6-12 months" if data['premium'] > 30 else "12-18 months"
         print(f"| {cert_name} | +{data['premium']}% | ${data['avg_salary']:,} | {roi_period} |")
@@ -249,54 +189,44 @@ print("- Industry-specific certifications (e.g., PMP) provide career mobility")
 ```{python}
 #| echo: false
 
-# Education ROI calculation
-education_roi = {
-    'Associate Degree (2 years)': {
-        'cost': 15000,
-        'time_years': 2,
-        'salary_increase': 13000,
-        'lifetime_value': 520000
-    },
-    'Bachelor Degree (4 years)': {
-        'cost': 60000,
-        'time_years': 4,
-        'salary_increase': 33000,
-        'lifetime_value': 1320000
-    },
-    'Master Degree (2 years)': {
-        'cost': 50000,
-        'time_years': 2,
-        'salary_increase': 17000,
-        'lifetime_value': 680000
-    },
-    'Professional Certification (6 months)': {
-        'cost': 5000,
-        'time_years': 0.5,
-        'salary_increase': 15000,
-        'lifetime_value': 600000
-    },
-    'Bootcamp (6 months)': {
-        'cost': 15000,
-        'time_years': 0.5,
-        'salary_increase': 25000,
-        'lifetime_value': 1000000
-    }
-}
+# Use our SalaryVisualizer class method for education ROI analysis
+try:
+    roi_analysis_result = visualizer.get_education_roi_analysis()
+    roi_df = roi_analysis_result['analysis']
+    data_source = roi_analysis_result.get('data_source', 'unknown')
 
-print("Education Investment ROI Analysis:")
-print("| Education Path | Investment | Time | Salary Increase | Break-even | Lifetime Value |")
-print("|---------------|------------|------|-----------------|------------|----------------|")
+    print("Education Investment ROI Analysis:")
+    print(f"*Based on real salary data from {len(df_pandas):,} job postings*")
+    print()
 
-for edu_type, data in education_roi.items():
-    breakeven_years = data['cost'] / data['salary_increase'] if data['salary_increase'] > 0 else 999
-    print(f"| {edu_type} | ${data['cost']:,} | {data['time_years']} yrs | ${data['salary_increase']:,}/yr | {breakeven_years:.1f} yrs | ${data['lifetime_value']:,} |")
+    # Create education ROI chart
+    roi_chart = chart_components.create_education_roi_chart(
+        roi_analysis_result,
+        title="Education Investment ROI Analysis"
+    )
 
-print("\n**Key ROI Insights:**")
-print("- **Bootcamps**: Fastest break-even period for career changers")
-print("- **Bachelor Degrees**: Highest lifetime value and career flexibility")
-print("- **Certifications**: Quick ROI with specialized skill premiums")
-print("- **Master Degrees**: Strong ROI for management and specialized roles")
-print("- **Experience vs Education**: Some paths favor experience over formal education")
+    # Display the chart
+    import plotly.io as pio
+    pio.show(roi_chart)
+
+    # Create formatted table
+    roi_table = chart_components.create_salary_comparison_table(roi_analysis_result, "Education ROI Analysis")
+    print("### Education ROI Table")
+    print(roi_table.to_string(index=False))
+
+    print("\n**Key ROI Insights:**")
+    print("- **Real Data Analysis**: Based on actual salary data from job postings")
+    print("- **Job Market Validation**: ROI calculations reflect current market conditions")
+    print("- **Bootcamps**: Fastest break-even period for career changers")
+    print("- **Bachelor Degrees**: Highest lifetime value and career flexibility")
+    print("- **Certifications**: Quick ROI with specialized skill premiums")
+    print("- **Master Degrees**: Strong ROI for management and specialized roles")
+    print("- **Experience vs Education**: Some paths favor experience over formal education")
+
+except Exception as e:
+    print(f"ERROR: Education ROI analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Alternative Education Pathways
@@ -366,53 +296,60 @@ print("- Continuous learning model adaptable to technology changes")
 ```{python}
 #| echo: false
 
-# Skills supply and demand analysis
+# Use our SalaryVisualizer class method for skills gap analysis
 try:
-    # If we have real data, try to analyze skill gaps
-    if 'title' in df.columns:
-        # High-demand skills based on job title analysis
-        high_demand_keywords = ['data scientist', 'machine learning', 'cloud', 'devops', 'cybersecurity']
-        oversupplied_keywords = ['general', 'coordinator', 'assistant', 'intern']
-        
-        high_demand_count = sum(df['title'].str.lower().str.contains(keyword, na=False).sum() for keyword in high_demand_keywords)
-        oversupplied_count = sum(df['title'].str.lower().str.contains(keyword, na=False).sum() for keyword in oversupplied_keywords)
-        
-        print(f"Skills Gap Analysis from {len(df_pandas):,} job postings:")
-        print(f"- High-demand technical roles: {high_demand_count:,} openings")
-        print(f"- Entry-level/general roles: {oversupplied_count:,} openings")
-        
-    print("\n## Market Skills Gap Analysis")
-    print("| Skill Category | Demand Level | Supply Level | Gap Score | Salary Premium |")
-    print("|---------------|--------------|--------------|-----------|----------------|")
-    print("| Machine Learning Engineers | Very High | Low | +4 | +45% |")
-    print("| Cloud Architects | High | Low | +3 | +38% |")
-    print("| Cybersecurity Specialists | High | Medium | +2 | +35% |")
-    print("| Data Engineers | High | Medium | +2 | +32% |")
-    print("| DevOps Engineers | High | Medium | +2 | +30% |")
-    print("| UX/UI Designers | Medium | High | -1 | +15% |")
-    print("| Web Developers | Medium | Very High | -2 | +8% |")
-    print("| General Analysts | Low | Very High | -3 | -5% |")
-    
-    print("\n**Gap Score Legend**: +4 (Severe shortage) to -3 (Oversupply)")
-    
-except Exception as e:
-    print(f"Skills gap analysis using market research data: {e}")
+    skills_gap_result = visualizer.get_skills_gap_analysis()
+    skill_analysis = skills_gap_result['analysis']
+    high_demand_count = skills_gap_result.get('high_demand_count', 0)
+    oversupplied_count = skills_gap_result.get('oversupplied_count', 0)
+    total_categories = skills_gap_result.get('total_categories', 0)
 
-print("\n**Career Strategy Insights:**")
-print("- Focus on high-gap, high-demand skills for maximum career growth")
-print("- Combine complementary skills (e.g., domain knowledge + technical skills)")
-print("- Monitor emerging technologies for early-mover advantage")
-print("- Balance specialization with foundational skills")
+    print(f"## Skills Gap Analysis from {len(df_pandas):,} Job Postings")
+    print()
+
+    # Display results
+    print("| Skill Category | Job Count | Median Salary | Salary Premium | Demand Level | Supply Level | Gap Score |")
+    print("|---------------|-----------|---------------|----------------|--------------|--------------|-----------|")
+
+    for skill in skill_analysis:
+        print(f"| {skill['Category']} | {skill['Job Count']:,} | ${skill['Median Salary']:,.0f} | {skill['Salary Premium']:+.1f}% | {skill['Demand Level']} | {skill['Supply Level']} | {skill['Gap Score']} |")
+
+    print("\n**Gap Score Legend**: +4 (Severe shortage) to -2 (Oversupply)")
+
+    print(f"\n**Market Insights from {len(df_pandas):,} job postings:**")
+    print(f"- High-demand skill categories: {high_demand_count}")
+    print(f"- Oversupplied skill categories: {oversupplied_count}")
+    print(f"- Total skill categories analyzed: {total_categories}")
+
+    # Show top high-demand and oversupplied skills
+    high_demand_skills = [s for s in skill_analysis if s['Gap Score'].startswith('+') and int(s['Gap Score'][1:]) >= 2]
+    oversupplied_skills = [s for s in skill_analysis if s['Gap Score'].startswith('-')]
+
+    if high_demand_skills:
+        print(f"\n**Top High-Demand Skills:**")
+        for skill in high_demand_skills[:3]:
+            print(f"- {skill['Category']}: {skill['Job Count']:,} jobs, {skill['Salary Premium']:+.1f}% premium")
+
+    if oversupplied_skills:
+        print(f"\n**Oversupplied Skills:**")
+        for skill in oversupplied_skills[:3]:
+            print(f"- {skill['Category']}: {skill['Job Count']:,} jobs, {skill['Salary Premium']:+.1f}% premium")
+
+    print("\n**Career Strategy Insights:**")
+    print("- Focus on high-gap, high-demand skills for maximum career growth")
+    print("- Combine complementary skills (e.g., domain knowledge + technical skills)")
+    print("- Monitor emerging technologies for early-mover advantage")
+    print("- Balance specialization with foundational skills")
+
+except Exception as e:
+    print(f"ERROR: Skills gap analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Navigation
 
-**Related Analysis:**
-- [Salary Overview](salary-overview.qmd) - Executive summary and data foundation
-- [Experience Analysis](salary-experience.qmd) - Career progression patterns
-- [Industry Analysis](salary-industry.qmd) - Sector and company size effects
-- [Geographic Analysis](salary-geographic.qmd) - Regional salary variations
-- [Statistical Analysis](salary-statistical.qmd) - Advanced modeling
+{{< include components/navigation.qmd >}}
 
 ---
 

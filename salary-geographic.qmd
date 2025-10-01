@@ -28,24 +28,17 @@ import pandas as pd
 import numpy as np
 
 # Import our custom classes
-from data.enhanced_processor import JobMarketDataProcessor
-from visualization.simple_plots import SalaryVisualizer
+from src.visualization import SalaryVisualizer
+from src.data.auto_processor import load_analysis_data, get_data_summary
 
-# Load and process data using our class-based approach with auto-processing
-data_processor = JobMarketDataProcessor("GeographicAnalysis")
-try:
-    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"Loaded and processed {df.count():,} job postings for geographic analysis")
-except Exception as e:
-    try:
-        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"Using sample dataset: {df.count():,} job postings")
-    except Exception as e2:
-        print(f"ERROR: Unable to load any dataset: {e2}")
-        raise e2  # Show the actual error for student analysis report
+# Load data with automatic processing and cleaning
+df_pandas = load_analysis_data("geographic")
 
-# Initialize visualizer (convert Spark DataFrame to Pandas)
-df_pandas = df.toPandas()  # Convert to Pandas for SalaryVisualizer
+# Get data summary
+summary = get_data_summary(df_pandas)
+print(f"Data Summary: {summary['total_records']:,} records, {summary['salary_coverage']:.1f}% salary coverage")
+
+# Initialize visualizer
 visualizer = SalaryVisualizer(df_pandas)
 ```
 
@@ -60,42 +53,35 @@ visualizer = SalaryVisualizer(df_pandas)
 # Use our SalaryVisualizer class method for geographic analysis
 try:
     # Check for location or geographic data
-    location_columns = [col for col in df.columns if any(geo in col.lower() for geo in ['location', 'city', 'state', 'region', 'area'])]
-    
+    location_columns = [col for col in df_pandas.columns if any(geo in col.lower() for geo in ['location', 'city', 'state', 'region', 'area'])]
+
     if location_columns:
         location_col = location_columns[0]
         print(f"Using location column: {location_col}")
-        
+
         # Analyze by location using our data
-        geo_analysis = df.groupby(location_col)['salary_avg'].agg([
+        geo_analysis = df_pandas.groupby(location_col)['SALARY_AVG'].agg([
             'count', 'median', 'mean', 'std'
         ]).round(0).reset_index()
-        
+
         # Sort by median salary and take top locations
         geo_analysis = geo_analysis.sort_values('median', ascending=False).head(10)
         geo_analysis.columns = ['Location', 'Job Count', 'Median Salary', 'Mean Salary', 'Std Dev']
-        
+
         print("Geographic Salary Analysis (Generated from Real Data):")
         print(geo_analysis.to_string(index=False))
-        
+
         # Calculate regional variation
         salary_range = geo_analysis['Median Salary'].max() - geo_analysis['Median Salary'].min()
         print(f"\nSalary Range Across Regions: ${salary_range:,.0f}")
-        
+
     else:
         raise Exception("No geographic columns found - data processing issue")
-        
-except Exception as e:
-    print(f"Geographic analysis error: {e}")
-    # Fallback data structure
-    geo_analysis = pd.DataFrame({
-        'Location': ['San Francisco Bay Area', 'New York Metro', 'Seattle Area', 'Boston Metro'],
-        'Median Salary': [165000, 145000, 140000, 125000],
-        'Job Count': [18500, 22000, 12000, 8500]
-    })
-    print("Using fallback geographic data structure")
 
-print(f"\nAnalysis powered by our JobMarketDataProcessor and SalaryVisualizer classes")
+except Exception as e:
+    print(f"ERROR: Geographic analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Remote Work Impact
@@ -109,35 +95,36 @@ print(f"\nAnalysis powered by our JobMarketDataProcessor and SalaryVisualizer cl
 # Analyze remote work opportunities using our class methods
 try:
     # Check for remote work indicators
-    remote_columns = [col for col in df.columns if any(remote in col.lower() for remote in ['remote', 'work_from_home', 'wfh', 'flexible'])]
-    
+    remote_columns = [col for col in df_pandas.columns if any(remote in col.lower() for remote in ['remote', 'work_from_home', 'wfh', 'flexible'])]
+
     if remote_columns:
         remote_col = remote_columns[0]
         print(f"## Remote Work Analysis (Column: {remote_col})")
-        
-        remote_analysis = df.groupby(remote_col)['salary_avg'].agg([
+
+        remote_analysis = df_pandas.groupby(remote_col)['SALARY_AVG'].agg([
             'count', 'median', 'mean'
         ]).round(0).reset_index()
-        
+
         print("| Work Type | Job Count | Median Salary | Mean Salary |")
         print("|-----------|-----------|---------------|-------------|")
-        
+
         for _, row in remote_analysis.iterrows():
             work_type = "Remote Allowed" if row[remote_col] else "On-Site Only"
             print(f"| {work_type} | {row['count']:,} | ${row['median']:,.0f} | ${row['mean']:,.0f} |")
-        
+
         # Calculate remote premium if data exists
         if len(remote_analysis) >= 2:
             remote_median = remote_analysis[remote_analysis[remote_col] == True]['median'].iloc[0] if any(remote_analysis[remote_col] == True) else 0
             onsite_median = remote_analysis[remote_analysis[remote_col] == False]['median'].iloc[0] if any(remote_analysis[remote_col] == False) else 0
-            
+
             if remote_median > 0 and onsite_median > 0:
                 remote_premium = ((remote_median - onsite_median) / onsite_median * 100)
                 print(f"\n**Remote Work Premium: {remote_premium:+.1f}%**")
-        
+
 except Exception as e:
-    print(f"Remote work analysis error: {e}")
-    print("Using estimated remote work patterns")
+    print(f"ERROR: Remote work analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Cost of Living Adjustments
@@ -164,23 +151,25 @@ try:
         'Denver, CO': {'col_index': 105, 'median_salary': 98000},
         'Atlanta, GA': {'col_index': 95, 'median_salary': 92000}
     }
-    
+
     print("| Market | Median Salary | COL Index | Adjusted Salary | Purchasing Power |")
     print("|--------|---------------|-----------|-----------------|------------------|")
-    
+
     for city, data in col_data.items():
         adjusted_salary = (data['median_salary'] / data['col_index']) * 100
         power_rating = "High" if adjusted_salary > 75000 else "Medium" if adjusted_salary > 60000 else "Low"
-        
+
         print(f"| {city} | ${data['median_salary']:,} | {data['col_index']} | ${adjusted_salary:,.0f} | {power_rating} |")
-    
+
     print("\n**Key Insights:**")
     print("- San Francisco has highest salaries but moderate purchasing power due to COL")
     print("- Austin offers strong purchasing power relative to cost of living")
     print("- Geographic arbitrage opportunities exist with remote work")
-    
+
 except Exception as e:
-    print(f"Cost of living analysis not available: {e}")
+    print(f"ERROR: Cost of living analysis failed: {e}")
+    print("This error indicates a data quality issue that needs to be addressed for the analysis to work properly.")
+    raise e  # Re-raise the error so students can see what went wrong
 ```
 
 ## Metropolitan Area Analysis

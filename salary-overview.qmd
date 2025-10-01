@@ -19,7 +19,7 @@ format:
 
 ## Executive Summary
 
-This analysis investigates **salary disparities** across experience levels, education, company sizes, and geographic regions using the Lightcast job postings dataset. 
+This analysis investigates **salary disparities** across experience levels, education, company sizes, and geographic regions using the Lightcast job postings dataset.
 
 ## Key Findings
 
@@ -47,7 +47,7 @@ Our analysis is based on the Lightcast job postings dataset containing over 500,
 **Salary Data (Raw):**
 - `SALARY` → `salary_single` - Single salary value (when available)
 - `SALARY_FROM` → `salary_min` - Minimum salary in range
-- `SALARY_TO` → `salary_max` - Maximum salary in range  
+- `SALARY_TO` → `salary_max` - Maximum salary in range
 - `ORIGINAL_PAY_PERIOD` - Payment frequency (year, hour, etc.)
 
 **Industry & Experience:**
@@ -78,8 +78,8 @@ Our analysis is based on the Lightcast job postings dataset containing over 500,
 The Lightcast raw data contains salary information in multiple formats that require processing:
 
 1. **Direct Salary** (`SALARY`): ~41% of records have single salary values
-2. **Salary Range** (`SALARY_FROM`, `SALARY_TO`): ~44% have min/max ranges  
-3. **Imputation Logic**: 
+2. **Salary Range** (`SALARY_FROM`, `SALARY_TO`): ~44% have min/max ranges
+3. **Imputation Logic**:
    - Use `SALARY` when available
    - Calculate `(SALARY_FROM + SALARY_TO) / 2` for ranges
    - Apply industry/location-based imputation for missing values
@@ -103,32 +103,18 @@ import sys
 sys.path.append('src')
 
 # Import our custom classes
-from data.enhanced_processor import JobMarketDataProcessor
-from utilities.get_stats import JobMarketStatistics
-from visualization.simple_plots import SalaryVisualizer
-from visualization.quarto_charts import QuartoChartExporter
+from src.visualization import SalaryVisualizer
+from src.visualization.chart_components import chart_components
+from src.data.auto_processor import load_analysis_data, get_data_summary
 
-# Initialize data processor with proper fallback handling
-data_processor = JobMarketDataProcessor("JobMarketAnalysis")
-stats_analyzer = JobMarketStatistics()
-chart_exporter = QuartoChartExporter()
+# Load data with automatic processing and cleaning
+df_pandas = load_analysis_data("overview")
 
-# Load and process data using our class-based approach with auto-processing
-try:
-    # Try to load processed data first, automatically choosing the right processing method
-    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"Loaded and processed {df.count():,} job postings from processed dataset")
-except Exception as e:
-    try:
-        # Fallback to sample data with automatic sample processing
-        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"SUCCESS: Using sample dataset: {df.count():,} job postings")
-    except Exception as e2:
-        print(f"ERROR: Unable to load any dataset: {e2}")
-        raise e2  # Show the actual error for student analysis report
+# Get data summary
+summary = get_data_summary(df_pandas)
+print(f"Data Summary: {summary['total_records']:,} records, {summary['salary_coverage']:.1f}% salary coverage")
 
-# Initialize visualizer with loaded data (convert Spark DataFrame to Pandas)
-df_pandas = df.toPandas()  # Convert to Pandas for SalaryVisualizer
+# Initialize visualizer
 visualizer = SalaryVisualizer(df_pandas)
 ```
 
@@ -144,17 +130,26 @@ visualizer = SalaryVisualizer(df_pandas)
 try:
     # Use our class method for comprehensive statistics
     raw_stats = visualizer.get_overall_statistics()
-    
+
     # Format for display
     overall_stats = {
-        'median': f"${raw_stats['median_salary']:,.0f}",
-        'mean': f"${raw_stats['mean_salary']:,.0f}", 
-        'std': f"${raw_stats['std_salary']:,.0f}",
-        'range_min': f"${raw_stats['min_salary']:,.0f}",
-        'range_max': f"${raw_stats['max_salary']:,.0f}",
+        'median': f"${raw_stats['salary_median']:,.0f}",
+        'mean': f"${raw_stats['salary_mean']:,.0f}",
+        'std': f"${raw_stats['salary_std']:,.0f}",
+        'range_min': f"${raw_stats['salary_min']:,.0f}",
+        'range_max': f"${raw_stats['salary_max']:,.0f}",
         'total_jobs': raw_stats['total_jobs']
     }
-    
+
+    # Create comprehensive salary distribution chart
+    salary_chart = chart_components.create_salary_distribution_chart(
+        df_pandas,
+        title="Comprehensive Salary Analysis Overview"
+    )
+
+    # Create summary statistics cards
+    summary_cards = chart_components.create_summary_stats_cards(summary)
+
 except Exception as e:
     print(f"ERROR: Statistics calculation failed: {e}")
     raise e  # Show the actual error for student analysis report
@@ -162,12 +157,37 @@ except Exception as e:
 
 Our analysis reveals a right-skewed salary distribution typical of professional job markets:
 
+### 📊 Comprehensive Salary Analysis
+
+```{python}
+#| label: salary-visualization
+#| echo: false
+#| output: true
+
+# Display the comprehensive salary distribution chart
+import plotly.io as pio
+pio.show(salary_chart)
+```
+
+### 📈 Key Statistics Summary
+
+```{python}
+#| label: summary-cards
+#| echo: false
+
+# Display summary statistics cards
+from IPython.display import HTML, display
+display(HTML(summary_cards))
+```
+
+### 📋 Detailed Statistics
+
 ```{python}
 #| label: display-overall-stats
 #| echo: false
 
 print(f"- **Median Salary**: {overall_stats['median']} across all roles")
-print(f"- **Mean Salary**: {overall_stats['mean']} (higher due to executive compensation)")  
+print(f"- **Mean Salary**: {overall_stats['mean']} (higher due to executive compensation)")
 print(f"- **Standard Deviation**: {overall_stats['std']} indicating significant variation")
 print(f"- **Range**: {overall_stats['range_min']} - {overall_stats['range_max']} (min to max)")
 print(f"- **Dataset Size**: {overall_stats['total_jobs']:,} job postings analyzed")
@@ -180,12 +200,7 @@ These statistics are **dynamically calculated** from our processed dataset using
 
 ## Navigation
 
-**Continue Analysis:**
-- [Experience Level Analysis](salary-experience.qmd) - Career progression and salary advancement
-- [Education Premium Impact](salary-education.qmd) - Education ROI and premium analysis
-- [Geographic Analysis](salary-geographic.qmd) - Regional salary variations
-- [Industry Analysis](salary-industry.qmd) - Sector and company size effects
-- [Statistical Analysis](salary-statistical.qmd) - Advanced modeling and trends
+{{< include components/navigation.qmd >}}
 
 ---
 
