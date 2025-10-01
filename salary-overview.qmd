@@ -113,22 +113,23 @@ data_processor = JobMarketDataProcessor("JobMarketAnalysis")
 stats_analyzer = JobMarketStatistics()
 chart_exporter = QuartoChartExporter()
 
-# Load data using our class-based approach
+# Load and process data using our class-based approach with auto-processing
 try:
-    # Try to load processed data first
-    df = data_processor.load_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"SUCCESS: Loaded {len(df):,} job postings from processed dataset")
+    # Try to load processed data first, automatically choosing the right processing method
+    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
+    print(f"Loaded and processed {df.count():,} job postings from processed dataset")
 except Exception as e:
     try:
-        # Fallback to sample data
-        df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"SUCCESS: Using sample dataset: {len(df):,} job postings")
+        # Fallback to sample data with automatic sample processing
+        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
+        print(f"SUCCESS: Using sample dataset: {df.count():,} job postings")
     except Exception as e2:
         print(f"ERROR: Unable to load any dataset: {e2}")
         raise e2  # Show the actual error for student analysis report
 
-# Initialize visualizer with loaded data
-visualizer = SalaryVisualizer(df)
+# Initialize visualizer with loaded data (convert Spark DataFrame to Pandas)
+df_pandas = df.toPandas()  # Convert to Pandas for SalaryVisualizer
+visualizer = SalaryVisualizer(df_pandas)
 ```
 
 ## Overall Compensation Patterns

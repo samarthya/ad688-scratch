@@ -22,7 +22,7 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import (
     col, when, isnan, isnull, trim, upper, lower, 
     count, avg, sum as spark_sum, median, desc, 
-    lit, current_timestamp, regexp_replace
+    lit, current_timestamp, regexp_replace, coalesce
 )
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, 
@@ -116,6 +116,32 @@ class JobMarketDataProcessor:
             logger.info(f"Data loaded: {self.df_raw.count():,} records")
         
         return self.df_raw
+    
+    def load_and_process_data(self, file_path: str, use_sample: bool = False, sample_size: int = 50000) -> DataFrame:
+        """
+        Load and automatically process data with appropriate method.
+        
+        Args:
+            file_path: Path to the Lightcast CSV file
+            use_sample: Whether to create sample data instead of loading from file
+            sample_size: Number of sample records to generate (if using sample data)
+            
+        Returns:
+            Processed Spark DataFrame ready for analysis
+        """
+        # Load the raw data
+        df = self.load_data(file_path, use_sample, sample_size)
+        
+        # Choose appropriate processing method based on data format
+        if use_sample or not Path(file_path).exists():
+            # Use simple processing for generated sample data
+            return self.process_sample_data(df)
+        elif "sample" in file_path.lower() or df.count() < 100:  # Detect sample data format
+            # Use simple processing for sample data files
+            return self.process_sample_data(df)
+        else:
+            # Use full processing pipeline for real Lightcast data
+            return self.clean_and_process_data(df)
     
     def _create_enhanced_sample_data(self, n_samples: int = 50000) -> DataFrame:
         """Create comprehensive sample data with realistic distributions."""
@@ -449,7 +475,36 @@ class JobMarketDataProcessor:
         
         # Step 2: Clean and convert salary fields
         logger.info("Step 2: Processing salary data...")
-        df_clean = df_clean.withColumn("SALARY_MIN_CLEAN", when(col("SALARY_FROM").rlike("^[0-9]+$"), col("SALARY_FROM").cast("double")).otherwise(None)).withColumn("SALARY_MAX_CLEAN", when(col("SALARY_TO").rlike("^[0-9]+$"), col("SALARY_TO").cast("double")).otherwise(None)).withColumn("SALARY_AVG", (col("SALARY_MIN_CLEAN") + col("SALARY_MAX_CLEAN")) / 2)
+        
+        # Handle different salary column naming conventions
+        # Original Lightcast data uses SALARY_FROM/SALARY_TO
+        # Sample data uses SALARY_MIN/SALARY_MAX
+        if "SALARY_FROM" in df_clean.columns and "SALARY_TO" in df_clean.columns:
+            # Lightcast format
+            logger.info("   Processing Lightcast format (SALARY_FROM/SALARY_TO)")
+            df_clean = df_clean.withColumn(
+                "SALARY_MIN_CLEAN", 
+                when(col("SALARY_FROM").rlike("^[0-9]+$"), col("SALARY_FROM").cast("double")).otherwise(None)
+            ).withColumn(
+                "SALARY_MAX_CLEAN", 
+                when(col("SALARY_TO").rlike("^[0-9]+$"), col("SALARY_TO").cast("double")).otherwise(None)
+            )
+        elif "SALARY_MIN" in df_clean.columns and "SALARY_MAX" in df_clean.columns:
+            # Sample data format - already numeric strings
+            logger.info("   Processing sample data format (SALARY_MIN/SALARY_MAX)")
+            df_clean = df_clean.withColumn(
+                "SALARY_MIN_CLEAN", 
+                when(col("SALARY_MIN").rlike("^[0-9]+$"), col("SALARY_MIN").cast("double")).otherwise(None)
+            ).withColumn(
+                "SALARY_MAX_CLEAN", 
+                when(col("SALARY_MAX").rlike("^[0-9]+$"), col("SALARY_MAX").cast("double")).otherwise(None)
+            )
+        else:
+            logger.warning("   No recognizable salary columns found, creating null columns")
+            df_clean = df_clean.withColumn("SALARY_MIN_CLEAN", lit(None).cast("double")).withColumn("SALARY_MAX_CLEAN", lit(None).cast("double"))
+        
+        # Create average salary column
+        df_clean = df_clean.withColumn("SALARY_AVG", (col("SALARY_MIN_CLEAN") + col("SALARY_MAX_CLEAN")) / 2)
         
         # Step 3: Standardize categorical fields
         logger.info("Step 3: Standardizing categorical fields...")
@@ -480,12 +535,82 @@ class JobMarketDataProcessor:
         logger.info("Step 7: Engineering derived features...")
         df_clean = self._engineer_features(df_clean)
         
-        final_count = df_clean.count()
+        # Step 8: Final column standardization - alias salary columns to lowercase for compatibility
+        logger.info("Step 8: Standardizing final column names...")
+        df_final = df_clean.select(
+            # Salary columns with lowercase aliases for compatibility
+            col("SALARY_MIN").alias("salary_min"),
+            col("SALARY_MAX").alias("salary_max"),
+            col("SALARY_MIN_CLEAN").alias("salary_min_clean"),
+            col("SALARY_MAX_CLEAN").alias("salary_max_clean"),
+            col("SALARY_AVG").alias("salary_avg"),
+            col("SALARY_AVG_IMPUTED").alias("salary_avg_imputed"),
+            # All other columns as-is
+            *[col(c) for c in df_clean.columns if not c.startswith("SALARY_")]
+        )
+        
+        final_count = df_final.count()
         logger.info(f"Data cleaning completed: {initial_count:,} → {final_count:,} records")
         logger.info(f"Records removed: {initial_count - final_count:,} ({(initial_count - final_count)/initial_count*100:.1f}%)")
         
-        self.df_processed = df_clean
-        return df_clean
+        self.df_processed = df_final
+        return df_final
+    
+    def process_sample_data(self, df: DataFrame) -> DataFrame:
+        """
+        Simplified processing for sample data that adds column aliases and basic mapping.
+        
+        Sample data is already clean and just needs column name standardization
+        to match the expected lowercase format for SalaryVisualizer compatibility.
+        """
+        logger.info("=== PROCESSING SAMPLE DATA ===")
+        
+        # Add experience_level mapping for compatibility
+        df_with_experience = df.withColumn("experience_level", 
+            when(col("EXPERIENCE_LEVEL").isNull() | (col("EXPERIENCE_LEVEL") == ""), "Unknown")
+            .when(lower(col("EXPERIENCE_LEVEL")).contains("entry") | lower(col("EXPERIENCE_LEVEL")).contains("junior"), "Entry Level")
+            .when(lower(col("EXPERIENCE_LEVEL")).contains("mid") | lower(col("EXPERIENCE_LEVEL")).contains("intermediate"), "Mid Level") 
+            .when(lower(col("EXPERIENCE_LEVEL")).contains("senior"), "Senior Level")
+            .when(lower(col("EXPERIENCE_LEVEL")).contains("lead") | lower(col("EXPERIENCE_LEVEL")).contains("principal") | lower(col("EXPERIENCE_LEVEL")).contains("director"), "Executive Level")
+            .otherwise("Mid Level"))
+        
+        # Simple column aliasing for sample data (which is already clean)
+        df_processed = df_with_experience.select(
+            # Core salary columns with lowercase aliases for compatibility
+            col("SALARY_MIN").alias("salary_min"),
+            col("SALARY_MAX").alias("salary_max"),
+            col("SALARY_CURRENCY").alias("salary_currency"),
+            # Create derived salary columns with safe casting
+            coalesce(
+                (
+                    when(col("SALARY_MIN").rlike("^[0-9]+$"), col("SALARY_MIN").cast("double")).otherwise(lit(None)) +
+                    when(col("SALARY_MAX").rlike("^[0-9]+$"), col("SALARY_MAX").cast("double")).otherwise(lit(None))
+                ) / 2,
+                lit(None)
+            ).alias("salary_avg"),
+            # Experience level mapping
+            col("experience_level"),
+            # Key columns with lowercase aliases for SalaryVisualizer compatibility
+            col("INDUSTRY").alias("industry"),
+            col("EMPLOYMENT_TYPE").alias("employment_type"),
+            col("REMOTE_ALLOWED").alias("remote_type"),
+            col("EDUCATION_REQUIRED").alias("education_level"),
+            col("COMPANY").alias("company"),
+            col("LOCATION").alias("location"),
+            col("STATE").alias("state"),
+            col("CITY").alias("city"),
+            col("TITLE").alias("job_title"),
+            col("REQUIRED_SKILLS").alias("skills"),
+            col("COMPANY_SIZE").alias("company_size"),
+            # All other columns as-is
+            *[col(c) for c in df_with_experience.columns if c not in ["SALARY_MIN", "SALARY_MAX", "SALARY_CURRENCY", "experience_level", 
+                                                                       "INDUSTRY", "EMPLOYMENT_TYPE", "REMOTE_ALLOWED", "EDUCATION_REQUIRED",
+                                                                       "COMPANY", "LOCATION", "STATE", "CITY", "TITLE", "REQUIRED_SKILLS", "COMPANY_SIZE"]]
+        )
+        
+        logger.info(f"Sample data processed: {df_processed.count():,} records with standardized columns")
+        self.df_processed = df_processed
+        return df_processed
     
     def _impute_missing_salaries(self, df: DataFrame) -> DataFrame:
         """Sophisticated missing salary imputation using multiple strategies."""

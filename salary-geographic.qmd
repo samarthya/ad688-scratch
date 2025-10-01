@@ -31,21 +31,22 @@ import numpy as np
 from data.enhanced_processor import JobMarketDataProcessor
 from visualization.simple_plots import SalaryVisualizer
 
-# Load data using our class-based approach
+# Load and process data using our class-based approach with auto-processing
 data_processor = JobMarketDataProcessor("GeographicAnalysis")
 try:
-    df = data_processor.load_data('data/processed/clean_job_data.csv', use_sample=False)
-    print(f"Loaded {len(df):,} job postings for geographic analysis")
+    df = data_processor.load_and_process_data('data/processed/clean_job_data.csv', use_sample=False)
+    print(f"Loaded and processed {df.count():,} job postings for geographic analysis")
 except Exception as e:
     try:
-        df = data_processor.load_data('data/processed/job_market_sample.csv', use_sample=True)
-        print(f"Using sample dataset: {len(df):,} job postings")
+        df = data_processor.load_and_process_data('data/processed/job_market_sample.csv', use_sample=True)
+        print(f"Using sample dataset: {df.count():,} job postings")
     except Exception as e2:
         print(f"ERROR: Unable to load any dataset: {e2}")
         raise e2  # Show the actual error for student analysis report
 
-# Initialize visualizer
-visualizer = SalaryVisualizer(df)
+# Initialize visualizer (convert Spark DataFrame to Pandas)
+df_pandas = df.toPandas()  # Convert to Pandas for SalaryVisualizer
+visualizer = SalaryVisualizer(df_pandas)
 ```
 
 ## Geographic Salary Trends
@@ -231,7 +232,7 @@ print("|------------|---------------|-------------|-------------|---------------
 for hub, data in tech_hubs.items():
     print(f"| {hub} | ${data['median_salary']:,} | {data['job_density']} | {data['remote_rate']} | {data['specialization']} |")
 
-print(f"\n**Analysis based on {len(df):,} job postings from our processed dataset**")
+print(f"\n**Analysis based on {len(df_pandas):,} job postings from our processed dataset**")
 print("**Note**: Remote rates reflect percentage of positions offering remote work options")
 ```
 
