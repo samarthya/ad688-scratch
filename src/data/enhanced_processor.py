@@ -60,43 +60,44 @@ class JobMarketDataProcessor:
         self.spark.sparkContext.setLogLevel("WARN")
         
         # Define comprehensive Lightcast schema
-        self.lightcast_schema = StructType([
-            StructField("JOB_ID", StringType(), True),
-            StructField("TITLE", StringType(), True),
-            StructField("COMPANY", StringType(), True),
-            StructField("LOCATION", StringType(), True),
-            StructField("POSTED", StringType(), True),
-            StructField("SALARY_MIN", StringType(), True),
-            StructField("SALARY_MAX", StringType(), True),
-            StructField("SALARY_CURRENCY", StringType(), True),
-            StructField("INDUSTRY", StringType(), True),
-            StructField("EXPERIENCE_LEVEL", StringType(), True),
-            StructField("EMPLOYMENT_TYPE", StringType(), True),
-            StructField("REMOTE_ALLOWED", StringType(), True),
-            StructField("REQUIRED_SKILLS", StringType(), True),
-            StructField("EDUCATION_REQUIRED", StringType(), True),
-            StructField("DESCRIPTION", StringType(), True),
-            StructField("COUNTRY", StringType(), True),
-            StructField("STATE", StringType(), True),
-            StructField("CITY", StringType(), True),
-            StructField("JOB_FUNCTION", StringType(), True),
-            StructField("COMPANY_SIZE", StringType(), True),
-            StructField("BENEFITS", StringType(), True)
-        ])
+        # No predefined schema - let Spark infer from data
+        self.required_columns = {
+            'salary_min': ['SALARY_MIN', 'SALARY_FROM', 'salary_min'],
+            'salary_max': ['SALARY_MAX', 'SALARY_TO', 'salary_max'], 
+            'salary_currency': ['SALARY_CURRENCY', 'salary_currency'],
+            'experience_level': ['EXPERIENCE_LEVEL', 'MIN_YEARS_EXPERIENCE', 'experience_level'],
+            'industry': ['INDUSTRY', 'NAICS2_NAME', 'LIGHTCAST_SECTORS_NAME', 'industry'],
+            'employment_type': ['EMPLOYMENT_TYPE', 'EMPLOYMENT_TYPE_NAME', 'employment_type'],
+            'remote_type': ['REMOTE_TYPE', 'REMOTE_ALLOWED', 'REMOTE_TYPE_NAME', 'remote_type'],
+            'education_level': ['EDUCATION_REQUIRED', 'EDUCATION_LEVELS_NAME', 'education_level'],
+            'job_title': ['TITLE', 'TITLE_NAME', 'job_title'],
+            'company': ['COMPANY', 'COMPANY_NAME', 'company'],
+            'location': ['LOCATION', 'location'],
+            'state': ['STATE', 'STATE_NAME', 'state'],
+            'city': ['CITY', 'CITY_NAME', 'city'],
+            'skills': ['REQUIRED_SKILLS', 'SKILLS_NAME', 'skills'],
+            'company_size': ['COMPANY_SIZE', 'company_size']
+        }
+        
+        # Initialize Spark session for distributed processing
+        self.spark = SparkSession.builder.appName(f"JobMarketProcessor_{app_name}").config("spark.sql.adaptive.enabled", "true").config("spark.sql.adaptive.coalescePartitions.enabled", "true").getOrCreate()
+        
+        logger.info(f"Spark session initialized: {self.spark.version}")
+        logger.info("Using dynamic schema detection for flexible data loading")
         
         # Initialize data containers
         self.df_raw = None
         self.df_processed = None
         
         logger.info(f"Spark session initialized: {self.spark.version}")
-        logger.info(f"Schema defined with {len(self.lightcast_schema.fields)} fields")
+        logger.info("Dynamic column mapping initialized for flexible data processing")
     
     def load_data(self, file_path: str, use_sample: bool = False, sample_size: int = 50000) -> DataFrame:
         """
-        Load job market data from file or create sample data.
+        Load job market data with dynamic schema detection.
         
         Args:
-            file_path: Path to the Lightcast CSV file
+            file_path: Path to the CSV file
             use_sample: Whether to create sample data instead of loading from file
             sample_size: Number of sample records to generate (if using sample data)
             
@@ -110,38 +111,141 @@ class JobMarketDataProcessor:
         else:
             logger.info(f"Loading data from: {file_path}")
             
-            # Load CSV with predefined schema
-            self.df_raw = self.spark.read.option("header", "true").option("inferSchema", "false").option("multiline", "true").option("escape", "\"").schema(self.lightcast_schema).csv(file_path)
+            # Load CSV with automatic schema inference
+            self.df_raw = self.spark.read.option("header", "true").option("inferSchema", "true").option("multiline", "true").option("escape", "\"").csv(file_path)
             
-            logger.info(f"Data loaded: {self.df_raw.count():,} records")
+            logger.info(f"Data loaded: {self.df_raw.count():,} records with {len(self.df_raw.columns)} columns")
+            logger.info(f"Detected columns: {self.df_raw.columns[:10]}{'...' if len(self.df_raw.columns) > 10 else ''}")
         
         return self.df_raw
     
     def load_and_process_data(self, file_path: str, use_sample: bool = False, sample_size: int = 50000) -> DataFrame:
         """
-        Load and automatically process data with appropriate method.
+        Load and process data with unified pipeline using dynamic column mapping.
         
         Args:
-            file_path: Path to the Lightcast CSV file
+            file_path: Path to the CSV file
             use_sample: Whether to create sample data instead of loading from file
             sample_size: Number of sample records to generate (if using sample data)
             
         Returns:
-            Processed Spark DataFrame ready for analysis
+            Processed Spark DataFrame ready for analysis with standardized columns
         """
         # Load the raw data
         df = self.load_data(file_path, use_sample, sample_size)
         
-        # Choose appropriate processing method based on data format
-        if use_sample or not Path(file_path).exists():
-            # Use simple processing for generated sample data
-            return self.process_sample_data(df)
-        elif "sample" in file_path.lower() or df.count() < 100:  # Detect sample data format
-            # Use simple processing for sample data files
-            return self.process_sample_data(df)
+        # Use unified processing pipeline that adapts to any data format
+        return self.process_with_dynamic_mapping(df)
+    
+    def process_with_dynamic_mapping(self, df: DataFrame) -> DataFrame:
+        """
+        Unified processing pipeline that adapts to any data format using dynamic column mapping.
+        
+        This method automatically detects available columns and maps them to standardized names
+        that work with SalaryVisualizer and other analysis tools.
+        """
+        logger.info("=== STARTING DYNAMIC DATA PROCESSING ===")
+        
+        # Step 1: Analyze available columns
+        available_columns = df.columns
+        logger.info(f"Input data has {len(available_columns)} columns")
+        
+        # Step 2: Create column mapping based on what's available
+        column_mapping = {}
+        for target_col, source_options in self.required_columns.items():
+            mapped_col = None
+            for option in source_options:
+                if option in available_columns:
+                    mapped_col = option
+                    break
+            if mapped_col:
+                column_mapping[target_col] = mapped_col
+                logger.info(f"Mapped {target_col} ← {mapped_col}")
+            else:
+                logger.warning(f"No source found for {target_col} (tried: {source_options})")
+        
+        # Step 3: Remove duplicates
+        logger.info("Step 3: Removing duplicate records...")
+        dedup_columns = [col for col in ['TITLE', 'COMPANY', 'LOCATION', 'POSTED'] if col in available_columns]
+        if dedup_columns:
+            df_clean = df.dropDuplicates(dedup_columns)
+            initial_count = df.count()
+            final_count = df_clean.count()
+            logger.info(f"   Removed {initial_count - final_count} duplicate records")
         else:
-            # Use full processing pipeline for real Lightcast data
-            return self.clean_and_process_data(df)
+            df_clean = df
+            logger.info("   No standard deduplication columns found, skipping")
+        
+        # Step 4: Process salary data with safe casting
+        logger.info("Step 4: Processing salary data...")
+        salary_min_col = column_mapping.get('salary_min')
+        salary_max_col = column_mapping.get('salary_max')
+        
+        if salary_min_col and salary_max_col:
+            df_clean = df_clean.withColumn("salary_min_clean", 
+                        when(col(salary_min_col).rlike("^[0-9]+$"), col(salary_min_col).cast("double"))
+                        .otherwise(lit(None).cast("double"))) \
+                    .withColumn("salary_max_clean", 
+                        when(col(salary_max_col).rlike("^[0-9]+$"), col(salary_max_col).cast("double"))
+                        .otherwise(lit(None).cast("double")))
+            
+            # Create average salary
+            df_clean = df_clean.withColumn("salary_avg", 
+                coalesce((col("salary_min_clean") + col("salary_max_clean")) / 2, lit(None)))
+            logger.info(f"   Processed salary columns: {salary_min_col}, {salary_max_col}")
+        else:
+            # Create null salary columns for consistency
+            df_clean = df_clean.withColumn("salary_min_clean", lit(None).cast("double")) \
+                        .withColumn("salary_max_clean", lit(None).cast("double")) \
+                        .withColumn("salary_avg", lit(None).cast("double"))
+            logger.warning("   No salary columns found, created null columns")
+        
+        # Step 5: Process experience level
+        experience_col = column_mapping.get('experience_level')
+        if experience_col:
+            df_clean = df_clean.withColumn("experience_level",
+                when(col(experience_col).isNull() | (col(experience_col) == ""), "Unknown")
+                .when(lower(col(experience_col)).contains("entry") | lower(col(experience_col)).contains("junior"), "Entry Level")
+                .when(lower(col(experience_col)).contains("mid") | lower(col(experience_col)).contains("intermediate"), "Mid Level")
+                .when(lower(col(experience_col)).contains("senior"), "Senior Level")
+                .when(lower(col(experience_col)).contains("lead") | lower(col(experience_col)).contains("principal") | lower(col(experience_col)).contains("director"), "Executive Level")
+                .otherwise("Mid Level"))
+            logger.info(f"   Processed experience level: {experience_col}")
+        else:
+            df_clean = df_clean.withColumn("experience_level", lit("Unknown"))
+            logger.warning("   No experience column found, defaulting to 'Unknown'")
+        
+        # Step 6: Build final standardized output
+        logger.info("Step 6: Creating standardized output columns...")
+        
+        # Build select list with standardized column names
+        select_list = [
+            # Always include our processed columns
+            col("salary_min_clean").alias("salary_min"),
+            col("salary_max_clean").alias("salary_max"),
+            col("salary_avg"),
+            col("experience_level")
+        ]
+        
+        # Add mapped columns with standardized names
+        for target_col, source_col in column_mapping.items():
+            if target_col not in ['salary_min', 'salary_max', 'experience_level']:  # Skip already processed
+                select_list.append(col(source_col).alias(target_col))
+        
+        # Add currency column if available
+        currency_col = column_mapping.get('salary_currency')
+        if currency_col:
+            select_list.append(col(currency_col).alias("salary_currency"))
+        else:
+            select_list.append(lit("USD").alias("salary_currency"))
+        
+        df_final = df_clean.select(*select_list)
+        
+        logger.info(f"=== DYNAMIC PROCESSING COMPLETE: {df_final.count()} records with {len(df_final.columns)} standardized columns ===")
+        logger.info(f"Final columns: {df_final.columns}")
+        
+        self.df_processed = df_final
+        return df_final
     
     def _create_enhanced_sample_data(self, n_samples: int = 50000) -> DataFrame:
         """Create comprehensive sample data with realistic distributions."""
