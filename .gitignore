@@ -10,6 +10,7 @@ __pycache__/
 *.so
 
 site_libs/
+_salary/
 
 # Jupyter
 .ipynb_checkpoints/

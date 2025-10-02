@@ -17,6 +17,7 @@
 9. [Robust Casting & Error Prevention](#robust-casting--error-prevention)
 10. [Performance Optimizations](#performance-optimizations)
 11. [Usage Patterns](#usage-patterns)
+12. [Homepage Metrics Methodology](#homepage-metrics-methodology)
 
 ---
 
@@ -36,15 +37,26 @@
 
 ## Final Implementation Status
 
-### ✅ **Completed Architecture (September 2025)**
+### ✅ **Completed Architecture (October 2025)**
 
 **Core Data Pipeline:**
 
-- ✅ `JobMarketDataProcessor` for data processing.
+- ✅ `JobMarketDataProcessor` for data processing with centralized column mapping
 - ✅ `SalaryVisualizer` for comprehensive salary analysis and visualization
 - ✅ `JobMarketStatistics` for statistical analysis and reporting
-- ✅ Automatic column standardization (SALARY_MIN → salary_min) for compatibility
+- ✅ Centralized column standardization (all snake_case: CITY_NAME → city_name)
+- ✅ Enhanced location processing (JSON parsing, base64 decoding, coordinate mapping)
+- ✅ Smart imputation (Unknown → Remote for location data)
 - ✅ Real error handling without mock data fallbacks
+
+**Advanced Analytics Pipeline:**
+
+- ✅ `SalaryAnalyticsModels` for ML-based salary prediction and job classification
+- ✅ `JobMarketNLPAnalyzer` for skills extraction, clustering, and NLP analysis
+- ✅ `PredictiveAnalyticsDashboard` for interactive ML dashboards and insights
+- ✅ Two main analytics models: Multiple Linear Regression + Classification
+- ✅ NLP skills analysis with word clouds and topic clustering
+- ✅ Comprehensive reporting with strategic recommendations
 
 **Processing Methods:**
 
@@ -52,13 +64,18 @@
 - ✅ `process_sample_data()` - Simplified processing for sample datasets
 - ✅ `clean_and_process_data()` - Full processing pipeline for Lightcast data
 - ✅ Schema-aware processing handles both uppercase (Lightcast) and lowercase (expected) formats
+- ✅ `standardize_columns()` - Centralized column mapping with location priority handling
+- ✅ `parse_json_locations()` - JSON coordinate parsing with major city mapping
+- ✅ `decode_base64_locations()` - Base64 decoding for encoded location data
 
 **Quarto Integration:**
 
-- ✅ 6 modular QMD files replacing monolithic analysis
-- ✅ All files use `load_and_process_data()` for consistent data handling
-- ✅ Real error display for educational purposes (no mock data)
+- ✅ 5 clean QMD files with streamlined content (including predictive-analytics.qmd)
+- ✅ All files use `fig.show()` for proper Plotly integration
+- ✅ Clean markdown formatting without complex nested callouts
 - ✅ Professional class-based architecture throughout all analysis files
+- ✅ Automatic data processing pipeline with intelligent fallbacks
+- ✅ ML models integrated with existing abstraction layer patterns
 
 **Educational Value:**
 
@@ -92,7 +109,200 @@ Each major functionality is encapsulated in specialized classes:
 - **Data Loading**: `SparkJobAnalyzer`
 - **Data Processing**: `JobMarketDataProcessor` & `AdvancedJobDataProcessor`
 - **Visualization**: `SalaryVisualizer`
+- **Analytics**: `SalaryAnalyticsModels`, `JobMarketNLPAnalyzer`, `PredictiveAnalyticsDashboard`
 - **Full Pipeline**: `full_dataset_processor.py` functions
+
+---
+
+## Column Mapping & Data Transformations
+
+### Centralized Column Mapping Strategy
+
+All column transformations are managed through `src/config/column_mapping.py` to ensure consistency:
+
+```python
+# Raw Lightcast (UPPER_CASE) → Processed (snake_case)
+LIGHTCAST_COLUMN_MAPPING = {
+    'CITY_NAME': 'city_name',    # Plain text cities (preferred)
+    'CITY': 'city_name',         # Base64 encoded cities (decoded)
+    'LOCATION': 'location',      # JSON coordinates (parsed)
+    'SALARY_FROM': 'salary_min',
+    'SALARY_TO': 'salary_max',
+    'NAICS2_NAME': 'industry',
+    # ... 16 total mappings
+}
+```
+
+### Location Data Processing Priority
+
+1. **city_name** (already processed) → use directly
+2. **CITY_NAME** (raw plain text) → rename to city_name
+3. **CITY** (base64 encoded) → decode → city_name
+4. **LOCATION** (JSON coordinates) → parse → location
+5. **Unknown values** → impute as 'Remote'
+
+### Geographic Data Enhancement
+
+**JSON Coordinate Mapping** to major US cities:
+- New York, San Francisco, Chicago, Los Angeles
+- Seattle, Philadelphia, Dallas, Houston, Miami
+- Washington DC, Boston, Atlanta
+- Regional fallbacks: Northeast US, West US, etc.
+
+**Smart Imputation**:
+- `Unknown` → `Remote` (jobs without clear location)
+- Provides meaningful geographic analysis categories
+
+### Data Relations Created
+
+**Total Transformations: 23**
+- **Direct Mappings**: 16 (raw → standardized)
+- **Derived Columns**: 7 (calculated fields)
+  - `salary_avg_imputed`, `experience_years`, `city_name`
+  - `ai_related`, `remote_allowed`, `experience_level`, `industry_clean`
+
+---
+
+## Advanced Analytics Architecture
+
+### Two Main Analytics Models
+
+The system implements two core machine learning models as specified in the requirements:
+
+#### **Model 1: Multiple Linear Regression for Salary Prediction**
+
+**Purpose**: Predict salary based on location, job title, industry, experience, and skills.
+
+**Features Used**:
+
+- Location: Geographic cost of living and market demand
+- Job Title: Role complexity and responsibility level
+- Industry: Sector-specific compensation standards
+- Experience Years: Career progression and expertise
+- Skills Count: Technical capability breadth
+
+**Implementation**: `SalaryAnalyticsModels.model_1_multiple_linear_regression()`
+
+**Job Seeker Implications**:
+
+- Identify high-paying locations to target
+- Understand which skills command salary premiums
+- Quantify the value of experience and specialization
+- Compare compensation across industries and roles
+
+#### **Model 2: Classification for Above-Average Paying Jobs**
+
+**Purpose**: Classify jobs as "above-average" or "below-average" paying to flag high-opportunity roles.
+
+**Features Used**:
+- Location: High-paying vs. lower-paying markets
+- Job Title: Premium roles vs. standard positions
+- Industry: High-compensation vs. average sectors
+- Experience Level: Senior vs. junior classifications
+- Skills Complexity: Advanced vs. basic skill requirements
+
+**Implementation**: `SalaryAnalyticsModels.model_2_above_average_classification()`
+
+**Job Seeker Implications**:
+- Identify which combinations lead to above-average pay
+- Target high-opportunity locations and industries
+- Understand which skills unlock premium compensation
+- Focus job search on above-average paying role types
+
+### NLP Analysis Pipeline
+
+**Skills Extraction and Clustering**: `JobMarketNLPAnalyzer`
+
+**Capabilities**:
+- Extract skills from job descriptions and requirements
+- Cluster skills into topic groups using K-means
+- Generate word clouds for skills visualization
+- Analyze skill-salary correlation patterns
+- Create topic models for job requirements
+
+**Visualizations**:
+- Word clouds by skill clusters
+- Top skills by salary premium
+- Skills frequency analysis
+- Topic cluster treemaps
+
+### Analytics Integration with Existing Architecture
+
+**Abstraction Layer Compliance**:
+
+```python
+# Analytics classes follow existing patterns
+from src.analytics import SalaryAnalyticsModels, JobMarketNLPAnalyzer
+
+# Auto data loading (follows src.data.auto_processor pattern)
+models = SalaryAnalyticsModels()  # Uses load_analysis_data() internally
+nlp = JobMarketNLPAnalyzer()      # Uses load_analysis_data() internally
+
+# Column mapping integration (follows src.config.column_mapping)
+salary_col = get_analysis_column('salary')  # Returns 'salary_avg_imputed'
+city_col = get_analysis_column('city')      # Returns 'city_name'
+```
+
+**Data Processing Integration**:
+- Uses existing `src.data.auto_processor.load_analysis_data()`
+- Follows `src.config.column_mapping` for standardized column access
+- Integrates with existing data quality validation
+- Maintains 3-tier data loading strategy (clean → sample → raw)
+
+**Visualization Integration**:
+- Uses Plotly for consistency with existing charts
+- Follows `fig.show()` pattern for Quarto integration
+- Maintains existing error handling patterns
+- No hardcoded data or fallback visualizations
+
+### Predictive Dashboard Architecture
+
+**Executive Summary Dashboard**: `PredictiveAnalyticsDashboard.create_executive_summary_dashboard()`
+- Model performance overview
+- Top salary drivers and job predictors
+- Key insights summary table
+- Salary distribution analysis
+
+**Model Comparison Dashboard**: `PredictiveAnalyticsDashboard.create_model_comparison_dashboard()`
+- Regression prediction accuracy scatter plots
+- Classification confidence analysis
+- Feature importance comparisons
+- Model validation metrics
+
+**Skills Intelligence Dashboard**: `PredictiveAnalyticsDashboard.create_skills_insights_dashboard()`
+- Top in-demand skills analysis
+- Skills by salary premium
+- Skill cluster visualizations
+- Skills vs job count correlations
+
+### Analytics Module Structure
+
+```bash
+src/analytics/
+├── __init__.py                   # Module interface with convenience functions
+├── salary_models.py              # Two main ML models (regression + classification)
+├── nlp_analysis.py               # Skills extraction, clustering, word clouds
+└── predictive_dashboard.py       # Interactive dashboards and reporting
+```
+
+**Module Interface Functions**:
+- `create_analytics_report()`: Generate comprehensive analytics report
+- `run_predictive_analysis()`: Execute complete ML pipeline
+- `run_nlp_analysis()`: Execute complete NLP pipeline
+
+### Integration with Existing QMD Files
+
+**New File**: `predictive-analytics.qmd`
+- Follows existing abstraction layer patterns
+- Uses `fig.show()` for all visualizations
+- Implements proper error handling with educational value
+- No business logic in presentation layer
+- All complex processing handled by analytics classes
+
+**Existing Files**: No changes required
+- Analytics models are completely separate
+- Existing visualization and analysis patterns unchanged
+- No conflicts with current architecture
 
 ---
 
@@ -168,9 +378,9 @@ flowchart TD
 
 ### Explicit Data Loading Details
 
-#### **1. Intelligent Data Source Selection**
+#### Intelligent Data Source Selection
 
-**Auto-Processing Approach:**
+##### Auto-Processing Approach:
 
 ```python
 # Single function call handles all data loading and processing
@@ -184,14 +394,15 @@ summary = get_data_summary(df_pandas)
 print(f"Data Summary: {summary['total_records']:,} records, {summary['salary_coverage']:.1f}% salary coverage")
 ```
 
-**Data Source Priority:**
+##### Data Source Priority:
+
 1. **Clean Sample Data** (`data/processed/job_market_clean_sample.csv`) - Pre-processed, highest quality
 2. **Sample Data** (`data/processed/job_market_sample.csv`) - Basic cleaning applied
 3. **Raw Data** (`data/raw/lightcast_job_postings.csv`) - Full processing pipeline applied
 
-#### **2. Data Processing Pipeline**
+#### Data Processing Pipeline
 
-#### Step 1: Data Validation
+##### Step 1: Data Validation
 
 ```python
 # Check required columns exist
@@ -219,9 +430,9 @@ stats_analyzer = JobMarketStatistics()
 stats_analyzer.df = df_pandas  # Set data for analysis
 ```
 
-#### **3. Analysis Execution**
+#### Analysis Execution
 
-**Education Analysis:**
+##### Education Analysis:
 
 ```python
 try:
@@ -233,7 +444,7 @@ except Exception as e:
     raise e  # Show real error to student
 ```
 
-**Skills Analysis:**
+##### Skills Analysis:
 
 ```python
 try:
@@ -245,7 +456,7 @@ except Exception as e:
     raise e  # Show real error to student
 ```
 
-**Experience Analysis:**
+##### Experience Analysis:
 
 ```python
 try:
@@ -256,16 +467,16 @@ except Exception as e:
     raise e  # Show real error to student
 ```
 
-#### **4. Error Handling Strategy**
+#### Error Handling Strategy
 
-**No Fallback Data Policy:**
+##### No Fallback Data Policy:
 
 - All analysis methods throw real errors when data is insufficient
 - Students see actual data quality issues that need to be addressed
 - No dummy data masks real problems
 - Educational value through authentic data analysis challenges
 
-**Error Message Format:**
+##### Error Message Format:
 
 ```python
 except Exception as e:
@@ -274,9 +485,10 @@ except Exception as e:
     raise e  # Re-raise so students can see the full error
 ```
 
-#### **5. Chart Generation**
+#### Chart Generation
 
-**Dynamic Chart Creation:**
+##### Dynamic Chart Creation:
+
 ```python
 # Charts are generated from real analysis results
 if 'analysis' in edu_result:
@@ -285,7 +497,8 @@ if 'analysis' in edu_result:
     fig.show()
 ```
 
-**No Static Charts:**
+##### No Static Charts:
+
 - All charts generated from actual data
 - No hardcoded values or fallback visualizations
 - Charts reflect real dataset characteristics
@@ -298,7 +511,7 @@ if 'analysis' in edu_result:
 4. **Professional Practice**: Mirrors real-world data analysis workflows
 5. **Transparency**: All analysis based on actual dataset characteristics
 
-**Website Generation:**
+#### Website Generation:
 
 1. **Chart Integration**: Embed interactive charts in pages
 2. **Static Fallbacks**: PNG images for email/print versions
@@ -1633,3 +1846,77 @@ data/processed/
 | **Salary Statistics** | ~20 sec | ~1 sec | **20x faster** |
 
 This architecture provides a **production-ready, fault-tolerant, and high-performance** foundation for job market analytics that gracefully handles data availability scenarios while maintaining optimal performance when fully processed data exists.
+
+---
+
+## Homepage Metrics Methodology
+
+### Real Data-Driven Metrics Calculation
+
+The key metrics displayed on the homepage are calculated from actual job market data, replacing previous placeholder values with statistically validated results.
+
+#### Data Source & Sample
+- **Dataset**: Lightcast Job Postings Analytics
+- **Sample Size**: 3,441 job postings (clean sample)
+- **Data File**: `data/processed/job_market_clean_sample.csv`
+- **Salary Column**: `SALARY_AVG` (average salary for each posting)
+
+#### Calculated Metrics
+
+**1. Experience Gap: 90% (was 233%)**
+- **Method**: Compared median salaries between experience levels using `experience_level` column
+- **Entry Level**: $76,817 (Entry Level + Junior positions)
+- **Senior Level**: $145,642 (Senior + Principal positions)
+- **Calculation**: ((145,642 - 76,817) / 76,817) × 100 = 90%
+
+**2. Education Premium: 9% (was 177%)**
+- **Method**: Compared median salaries by education requirements using `EDUCATION_LEVELS_NAME`
+- **Bachelor's Degree**: $117,083 (2,430 jobs)
+- **Advanced Degree**: $127,550 (771 jobs)
+- **Calculation**: ((127,550 - 117,083) / 117,083) × 100 = 9%
+
+**3. Company Size Gap: 32% (was 40%)**
+- **Method**: Used job posting frequency as company size proxy with `COMPANY_NAME`
+- **Large Companies**: $125,050 (top 10% by job count, 152 companies)
+- **Small Companies**: $94,684 (bottom 50% by job count, 948 companies)
+- **Calculation**: ((125,050 - 94,684) / 94,684) × 100 = 32%
+
+**4. Salary Growth Potential: 3.0x (was 3.3x)**
+- **Method**: Ratio of 90th to 10th percentile salaries
+- **10th Percentile**: $57,500
+- **90th Percentile**: $175,000
+- **Growth Potential**: 175,000 / 57,500 = 3.0x
+
+**5. Remote Availability: 25% (was 75%)**
+- **Method**: Percentage of jobs offering remote/hybrid options using `REMOTE_TYPE_NAME`
+- **Remote/Hybrid Jobs**: 872 jobs containing "remote", "yes", or "hybrid"
+- **Total Jobs**: 3,441
+- **Availability**: (872 / 3,441) × 100 = 25%
+
+#### Statistical Validation
+- **Robust Statistics**: Used median values (resistant to outliers) rather than means
+- **Data Quality**: Applied consistent cleaning (removed null/zero salaries)
+- **Sample Size**: 3,441 records provide statistical reliability
+- **Error Handling**: Multiple column name variations checked for robustness
+
+#### Data Quality Assessment
+**Strengths:**
+- Real market data from actual job postings (not surveys)
+- Large sample size for statistical reliability
+- Comprehensive coverage across experience levels and education requirements
+- Recent data reflecting current market conditions
+
+**Limitations:**
+- Sample bias toward specific job posting platforms
+- Geographic scope may not represent all markets equally
+- Company size proxy based on job posting frequency
+- Education categorization uses text-based matching
+
+#### Impact on User Experience
+The real data provides more realistic expectations compared to placeholder values:
+- **Experience Gap**: 90% vs 233% - More achievable career progression expectations
+- **Education Premium**: 9% vs 177% - Realistic ROI for advanced degrees
+- **Company Size Gap**: 32% vs 40% - Accurate large company premium
+- **Remote Availability**: 25% vs 75% - Realistic remote work expectations
+
+This data-driven approach ensures users receive accurate information for career planning and salary negotiations, replacing aspirational placeholders with evidence-based insights.

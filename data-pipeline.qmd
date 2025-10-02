@@ -1,0 +1,784 @@
+---
+title: "Data Processing Pipeline Demo"
+subtitle: "How the Website Processes Data Automatically"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    css: styles.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Data Processing Pipeline
+
+This page demonstrates how the website automatically processes data according to the [DESIGN.md](DESIGN.md) specification. All data loading, cleaning, analysis, and figure generation happens automatically when the website loads.
+
+```{python}
+#| label: data-processing
+#| echo: false
+#| warning: false
+#| message: false
+
+# Import the website data processor
+from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
+
+# Configure global Plotly theme
+import plotly.io as pio
+pio.templates.default = "plotly_white"
+
+# Set consistent color palette
+COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+
+# Get processed data (this triggers the complete pipeline)
+website_data = get_website_data()
+df = get_processed_dataframe()
+analysis = get_analysis_results()
+figures = get_figure_paths()
+summary = get_website_data_summary()
+
+# Data processing completed successfully
+# Processed records, salary coverage, industries, locations, and figures are available
+```
+
+## Key Metrics
+
+```{python}
+#| label: key-metrics
+#| echo: false
+
+# Create interactive key metrics visualization
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Create metrics cards with better spacing and responsive layout
+fig = make_subplots(
+    rows=2, cols=2,
+    subplot_titles=[
+        f"<b>${summary['salary_range']['median']:,.0f}</b><br>Median Salary",
+        f"<b>{summary['total_records']:,}</b><br>Total Records",
+        f"<b>{summary['salary_coverage']:.1f}%</b><br>Data Quality",
+        f"<b>${summary['salary_range']['min']:,.0f} - ${summary['salary_range']['max']:,.0f}</b><br>Salary Range"
+    ],
+    specs=[[{"type": "indicator"}, {"type": "indicator"}],
+           [{"type": "indicator"}, {"type": "indicator"}]],
+    vertical_spacing=0.3,
+    horizontal_spacing=0.2
+)
+
+# Add indicators
+fig.add_trace(go.Indicator(
+    mode="number",
+    value=summary['salary_range']['median'],
+    number={'prefix': '$', 'suffix': ''},
+    title={'text': "Median Salary"},
+    domain={'row': 0, 'column': 0}
+), row=1, col=1)
+
+fig.add_trace(go.Indicator(
+    mode="number",
+    value=summary['total_records'],
+    number={'suffix': ''},
+    title={'text': "Total Records"},
+    domain={'row': 0, 'column': 1}
+), row=1, col=2)
+
+fig.add_trace(go.Indicator(
+    mode="number",
+    value=summary['salary_coverage'],
+    number={'suffix': '%'},
+    title={'text': "Data Quality"},
+    domain={'row': 1, 'column': 0}
+), row=2, col=1)
+
+fig.add_trace(go.Indicator(
+    mode="number",
+    value=summary['salary_range']['max'] - summary['salary_range']['min'],
+    number={'prefix': '$', 'suffix': ''},
+    title={'text': "Salary Range"},
+    domain={'row': 1, 'column': 1}
+), row=2, col=2)
+
+fig.update_layout(
+    height=650,
+    showlegend=False,
+    title_text="Key Salary Metrics Dashboard",
+    title_x=0.7,
+    font=dict(size=13),
+    margin=dict(l=80, r=80, t=120, b=80),
+    # Apply consistent theme
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    # Improve subplot title spacing
+    annotations=[
+        dict(
+            text="<b>Key Salary Metrics</b>",
+            xref="paper", yref="paper",
+            x=0.5, y=1.5,
+            showarrow=False,
+            font=dict(size=24, color="#2c3e50")
+        )
+    ]
+)
+
+# Update subplot titles with better positioning and styling
+fig.update_annotations(
+    font=dict(size=18, color="#34495e"),
+    yshift=30
+)
+
+# Ensure responsive layout
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=700
+)
+
+fig.show()
+```
+
+## Experience Analysis
+
+```{python}
+#| label: experience-analysis
+#| echo: false
+
+import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+
+# Calculate dynamic salary quartiles and experience-based analysis from actual data
+try:
+    # Extract salary and experience data from the processed dataframe
+    if df is not None and len(df) > 0:
+        # Use standardized column names from config
+        from src.config.column_mapping import get_analysis_column
+
+        # Get salary column using standard mapping
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg_imputed'
+        if salary_col not in df.columns:
+            # Fallback to common alternatives
+            for col in ['salary_avg', 'salary', 'SALARY_AVG', 'SALARY']:
+                if col in df.columns:
+                    salary_col = col
+                    break
+
+        # Get experience column using standard mapping
+        experience_col = get_analysis_column('experience')  # Returns 'experience_years'
+        if experience_col not in df.columns:
+            # Fallback to common alternatives
+            for col in ['experience_level', 'EXPERIENCE_LEVEL', 'experience']:
+                if col in df.columns:
+                    experience_col = col
+                    break
+
+        if salary_col is not None and experience_col is not None:
+            # Filter out null values and create clean dataset
+            clean_data = df[[salary_col, experience_col]].dropna()
+
+            # Calculate quartile-based salary ranges instead of hard-coded values
+            salary_quartiles = clean_data[salary_col].quantile([0.25, 0.5, 0.75]).values
+            salary_min = clean_data[salary_col].min()
+            salary_max = clean_data[salary_col].max()
+
+            # Group by experience level and calculate statistics
+            exp_stats = clean_data.groupby(experience_col)[salary_col].agg([
+                'count', 'median', 'mean', 'std'
+            ]).round(0).reset_index()
+
+            # Sort by median salary for better visualization
+            exp_stats = exp_stats.sort_values('median')
+
+            # Create focused visualization: Single comprehensive chart
+            fig = go.Figure()
+
+            # Add median salary bars
+            fig.add_trace(go.Bar(
+                x=exp_stats[experience_col],
+                y=exp_stats['median'],
+                name='Median Salary',
+                marker_color='#2E86AB',
+                text=[f'${int(val):,}' for val in exp_stats['median']],
+                textposition='auto',
+                hovertemplate='<b>%{x}</b><br>' +
+                             'Median Salary: $%{y:,.0f}<br>' +
+                             '<extra></extra>'
+            ))
+
+            # Add quartile reference lines
+            fig.add_hline(y=salary_quartiles[0], line_dash="dash", line_color="orange",
+                         annotation_text=f"25th Percentile: ${salary_quartiles[0]:,.0f}")
+            fig.add_hline(y=salary_quartiles[1], line_dash="dash", line_color="green",
+                         annotation_text=f"50th Percentile: ${salary_quartiles[1]:,.0f}")
+            fig.add_hline(y=salary_quartiles[2], line_dash="dash", line_color="red",
+                         annotation_text=f"75th Percentile: ${salary_quartiles[2]:,.0f}")
+
+            # Update layout for focused, meaningful analysis
+            fig.update_layout(
+                title={
+                    'text': "Experience Level Salary Analysis<br><sub>Based on Data Quartiles - Not Hard-Coded Values</sub>",
+                    'x': 0.5,
+                    'font': {'size': 20}
+                },
+                xaxis_title="Experience Level",
+                yaxis_title="Median Salary ($)",
+                height=600,
+                showlegend=True,
+                font=dict(size=14),
+                margin=dict(l=80, r=80, t=120, b=80),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                autosize=True,
+                width=None,
+                # Add annotations for insights
+                annotations=[
+                    dict(
+                        text=f"📊 Analysis based on {len(clean_data):,} job records<br>" +
+                             f"💰 Salary range: ${salary_min:,.0f} - ${salary_max:,.0f}<br>" +
+                             f"📈 Data-driven quartile analysis",
+                        xref="paper", yref="paper",
+                        x=0.02, y=0.98,
+                        showarrow=False,
+                        font=dict(size=12, color="#666"),
+                        align="left",
+                        bgcolor="rgba(255,255,255,0.8)",
+                        bordercolor="#ddd",
+                        borderwidth=1
+                    )
+                ]
+            )
+
+            # Format y-axis as currency
+            fig.update_yaxes(tickformat='$,.0f')
+            fig.update_xaxes(tickangle=45)
+
+            fig.show()
+
+            # Create a second focused chart: Experience Level Distribution
+            fig2 = go.Figure()
+
+            fig2.add_trace(go.Bar(
+                x=exp_stats[experience_col],
+                y=exp_stats['count'],
+                name='Job Count',
+                marker_color='#A23B72',
+                text=[f'{int(val):,}' for val in exp_stats['count']],
+                textposition='auto',
+                hovertemplate='<b>%{x}</b><br>' +
+                             'Job Count: %{y:,}<br>' +
+                             'Market Share: %{customdata:.1f}%<br>' +
+                             '<extra></extra>',
+                customdata=[(count/exp_stats['count'].sum())*100 for count in exp_stats['count']]
+            ))
+
+            fig2.update_layout(
+                title={
+                    'text': "Job Market Distribution by Experience Level<br><sub>Actual Market Demand Analysis</sub>",
+                    'x': 0.5,
+                    'font': {'size': 20}
+                },
+                xaxis_title="Experience Level",
+                yaxis_title="Number of Job Postings",
+                height=500,
+                showlegend=False,
+        font=dict(size=14),
+        margin=dict(l=80, r=80, t=120, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None
+    )
+
+            fig2.update_xaxes(tickangle=45)
+            fig2.show()
+
+        else:
+            # Data available but columns not found
+            available_cols = list(df.columns)[:10]  # Show first 10 columns
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"⚠️ Required columns not found<br>" +
+                     f"Looking for: salary and experience columns<br>" +
+                     f"Available columns: {', '.join(available_cols)}...",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=14, color="orange")
+            )
+            fig.update_layout(
+                height=400,
+                showlegend=False,
+                title_text="Experience Analysis - Column Mapping Issue",
+                plot_bgcolor='white',
+                paper_bgcolor='white'
+            )
+            fig.show()
+    else:
+        # No data available
+        fig = go.Figure()
+        fig.add_annotation(
+            text="❌ No data available for experience analysis",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=16, color="red")
+        )
+    fig.update_layout(
+            height=400,
+            showlegend=False,
+            title_text="Experience Analysis - No Data Available",
+            plot_bgcolor='white',
+            paper_bgcolor='white'
+        )
+    fig.show()
+
+except Exception as e:
+    # Error handling with detailed information
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"🔧 Analysis Error: {str(e)[:100]}...<br>" +
+             "Check data processing pipeline",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="red")
+    )
+    fig.update_layout(
+        height=400,
+        showlegend=False,
+        title_text="Experience Analysis - Processing Error",
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    fig.show()
+```
+
+## Industry Analysis
+
+```{python}
+#| label: industry-analysis
+#| echo: false
+
+# Display industry salary analysis using processed data
+from src.visualization import SalaryVisualizer
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Create interactive industry analysis using standardized column name
+    from src.config.column_mapping import get_analysis_column
+    industry_col = get_analysis_column('industry')  # Returns 'industry'
+
+    industry_fig = visualizer.plot_salary_by_category(industry_col)
+    industry_fig.update_layout(
+        title="Industry Salary Analysis: Top Industries by Median Salary",
+        height=600,
+        margin=dict(l=120, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None
+    )
+    industry_fig.show()
+
+    # Additional industry insights
+    if hasattr(visualizer, 'get_industry_salary_analysis'):
+        industry_analysis = visualizer.get_industry_salary_analysis(top_n=10)
+        if not industry_analysis.empty:
+            print("Top Paying Industries:")
+            for idx, row in industry_analysis.head(5).iterrows():
+                print(f"   {idx+1}. {row.get('Industry', 'N/A')}: ${row.get('Median Salary', 0):,.0f} ({row.get('Job Count', 0):,} jobs)")
+
+except Exception as e:
+    # Create error visualization
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Industry Analysis Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=400,
+        showlegend=False,
+        title_text="Industry Analysis - Error",
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    fig.show()
+```
+
+## Geographic Analysis
+
+```{python}
+#| label: geographic-analysis
+#| echo: false
+
+# Display geographic salary analysis using processed data
+from src.visualization import SalaryVisualizer
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Create interactive geographic analysis using processed data
+    from src.config.column_mapping import get_analysis_column
+
+    # Use standardized city column (data processor ensures this exists)
+    city_col = get_analysis_column('city')  # Returns 'city_name'
+
+    geo_fig = visualizer.plot_salary_by_category(city_col)
+    geo_fig.update_layout(
+        title="Geographic Salary Analysis: Top Cities by Median Salary",
+        height=600,
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None
+    )
+    geo_fig.show()
+
+    # Additional geographic insights
+    geo_analysis = visualizer.get_geographic_salary_analysis(top_n=15)
+    if not geo_analysis.empty:
+        print("Top Geographic Markets:")
+        for idx, row in geo_analysis.head(5).iterrows():
+            location_name = row.get('Location', 'Unknown')
+            salary = row.get('Median Salary', 0)
+            count = row.get('Job Count', 0)
+            print(f"   {idx+1}. {location_name}: ${salary:,.0f} ({count:,} jobs)")
+
+except Exception as e:
+    # Create error visualization
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Geographic Analysis Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=400,
+        showlegend=False,
+        title_text="Geographic Analysis - Error",
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    fig.show()
+```
+
+## Correlation Analysis
+
+```{python}
+#| label: correlation-analysis
+#| echo: false
+
+# Display correlation matrix analysis using processed data
+from src.visualization import SalaryVisualizer
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Create interactive correlation matrix
+    corr_fig = visualizer.create_correlation_matrix()
+    corr_fig.update_layout(
+        title="Salary Correlation Matrix: Understanding Key Relationships",
+        height=700,
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None,
+        font=dict(size=14)
+    )
+    corr_fig.show()
+
+    # Display correlation insights
+    print("Key Correlation Insights:")
+    print("   Strong correlations indicate important salary drivers")
+    print("   Use this matrix to understand factor relationships")
+
+except Exception as e:
+    # Create error visualization
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Correlation Analysis Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=400,
+        showlegend=False,
+        title_text="Correlation Analysis - Error",
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    fig.show()
+```
+
+## Generated Visualizations
+
+```{python}
+#| label: key-findings-dashboard
+#| echo: false
+
+# Display the key findings dashboard
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+
+# Create a comprehensive dashboard overview
+# Key metrics cards
+dashboard.create_key_metrics_cards().show()
+
+try:
+    # Career progression analysis
+    dashboard.create_career_progression_analysis().show()
+except Exception as e:
+    # Create error visualization
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Career Progression Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=200,
+        showlegend=False,
+        title_text="Career Progression Analysis - Error"
+    )
+    fig.show()
+
+try:
+    # Company strategy analysis
+    dashboard.create_company_strategy_analysis().show()
+except Exception as e:
+    # Create error visualization
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Company Strategy Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=200,
+        showlegend=False,
+        title_text="Company Strategy Analysis - Error"
+    )
+    fig.show()
+
+try:
+    # Education ROI analysis
+    dashboard.create_education_roi_analysis().show()
+except Exception as e:
+    # Create error visualization
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Education ROI Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=200,
+        showlegend=False,
+        title_text="Education ROI Analysis - Error"
+    )
+    fig.show()
+
+try:
+    # Complete intelligence dashboard
+    dashboard.create_complete_intelligence_dashboard().show()
+except Exception as e:
+    # Create error visualization
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"Complete Dashboard Error: {str(e)[:100]}...",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=14, color="orange")
+    )
+    fig.update_layout(
+        height=200,
+        showlegend=False,
+        title_text="Complete Intelligence Dashboard - Error"
+    )
+    fig.show()
+```
+
+
+## Data Processing Statistics
+
+```{python}
+#| label: data-processing-stats
+#| echo: false
+
+# Comprehensive data processing statistics
+print("=" * 60)
+print("DATA PROCESSING PIPELINE STATISTICS")
+print("=" * 60)
+
+try:
+    # Raw data statistics
+    if 'analyzer' in locals() and analyzer is not None:
+        raw_df = analyzer.job_data
+        raw_record_count = raw_df.count()
+        raw_column_count = len(raw_df.columns)
+
+        print(f"\nRAW DATA STATISTICS:")
+        print(f"  Total Records: {raw_record_count:,}")
+        print(f"  Total Columns: {raw_column_count}")
+
+        # Show column types in raw data
+        raw_schema_summary = {}
+        for field in raw_df.schema.fields:
+            field_type = str(field.dataType)
+            raw_schema_summary[field_type] = raw_schema_summary.get(field_type, 0) + 1
+
+        print(f"  Column Types:")
+        for dtype, count in sorted(raw_schema_summary.items()):
+            print(f"    {dtype}: {count} columns")
+
+        # Check specific columns (raw data uses UPPER_CASE)
+        location_columns = [col for col in raw_df.columns if 'CITY' in col or 'LOCATION' in col]
+        salary_columns = [col for col in raw_df.columns if 'SALARY' in col]
+
+        print(f"  Location-related columns: {len(location_columns)}")
+        for col in location_columns:
+            print(f"    - {col}")
+
+        print(f"  Salary-related columns: {len(salary_columns)}")
+        for col in salary_columns:
+            print(f"    - {col}")
+
+        # Sample location column to understand JSON structure
+        if 'LOCATION' in raw_df.columns:
+            print(f"\n  location Column Analysis (JSON data):")
+            location_samples = raw_df.select('LOCATION').filter(raw_df['LOCATION'].isNotNull()).limit(3).collect()
+            for i, row in enumerate(location_samples, 1):
+                location_value = row['LOCATION']
+                print(f"    Sample {i}: {str(location_value)[:100]}...")
+
+                # Try to parse as JSON
+                try:
+                    import json
+                    parsed = json.loads(location_value)
+                    print(f"      json_keys: {list(parsed.keys()) if isinstance(parsed, dict) else 'not_a_dict'}")
+                except:
+                    print(f"      not_valid_json")
+    else:
+        print("\nRAW DATA STATISTICS: Not available (analyzer not initialized)")
+
+    # Processed data statistics
+    if df is not None and len(df) > 0:
+        processed_record_count = len(df)
+        processed_column_count = len(df.columns)
+
+        print(f"\nPROCESSED DATA STATISTICS:")
+        print(f"  Total Records: {processed_record_count:,}")
+        print(f"  Total Columns: {processed_column_count}")
+
+        # Show column types in processed data
+        processed_dtypes = df.dtypes.value_counts()
+        print(f"  Column Types:")
+        for dtype, count in processed_dtypes.items():
+            print(f"    {dtype}: {count} columns")
+
+        # Show derived columns created
+        from src.config.column_mapping import DERIVED_COLUMNS
+        derived_found = [col for col in DERIVED_COLUMNS if col in df.columns]
+        print(f"  Derived Columns Created: {len(derived_found)}")
+        for col in derived_found:
+            print(f"    - {col}")
+
+        # Data quality metrics
+        print(f"\n  DATA QUALITY METRICS:")
+
+        # Check key columns completeness
+        key_columns = ['title', 'company', 'location', 'industry']
+        for col in key_columns:
+            if col in df.columns:
+                non_null_count = df[col].notna().sum()
+                completeness = (non_null_count / processed_record_count) * 100
+                print(f"    {col}: {completeness:.1f}% complete ({non_null_count:,}/{processed_record_count:,})")
+
+        # Salary data completeness
+        salary_columns = [col for col in df.columns if 'salary' in col.lower()]
+        if salary_columns:
+            print(f"    Salary columns available: {len(salary_columns)}")
+            for col in salary_columns:
+                non_null_count = df[col].notna().sum()
+                completeness = (non_null_count / processed_record_count) * 100
+                print(f"      {col}: {completeness:.1f}% complete")
+    else:
+        print("\nPROCESSED DATA STATISTICS: Not available (df not loaded)")
+
+    # Relations/transformations created
+    print(f"\nDATA TRANSFORMATIONS SUMMARY:")
+
+    # Column mapping transformations
+    from src.config.column_mapping import LIGHTCAST_COLUMN_MAPPING, DERIVED_COLUMNS
+
+    print(f"  Raw → Standardized Mappings: {len(LIGHTCAST_COLUMN_MAPPING)}")
+    print(f"  Derived Columns Created: {len(DERIVED_COLUMNS)}")
+
+    # Show key transformations (using consistent snake_case)
+    print(f"  key_transformations:")
+    print(f"    - city_name/city → location (with base64 decoding)")
+    print(f"    - location_json → location (with json parsing)")
+    print(f"    - salary_from/salary_to → salary_min/salary_max → salary_avg")
+    print(f"    - min_years_experience → experience_years → experience_level")
+    print(f"    - naics2_name → industry → industry_clean")
+    print(f"    - remote_type_name → remote_type → remote_allowed")
+
+    # Processing efficiency
+    if 'raw_record_count' in locals() and 'processed_record_count' in locals():
+        retention_rate = (processed_record_count / raw_record_count) * 100
+        print(f"\n  PROCESSING EFFICIENCY:")
+        print(f"    Data Retention Rate: {retention_rate:.1f}%")
+        print(f"    Records Filtered: {raw_record_count - processed_record_count:,}")
+
+        if 'raw_column_count' in locals() and 'processed_column_count' in locals():
+            column_change = processed_column_count - raw_column_count
+            print(f"    Column Count Change: {column_change:+d} ({raw_column_count} → {processed_column_count})")
+
+except Exception as e:
+    print(f"Error generating statistics: {e}")
+    import traceback
+    traceback.print_exc()
+
+print("\n" + "=" * 60)
+```
+
+## Data Processing Flow
+
+According to DESIGN.md, the website follows this intelligent auto-processing pipeline:
+
+1. **Data Loading**: Tries clean sample data first, then sample data, then raw data with processing
+2. **Data Cleaning**: Applies appropriate cleaning based on data source (including base64 decoding)
+3. **Analysis**: Generates comprehensive analysis results
+4. **Visualization**: Creates all figures automatically using abstraction layer
+5. **Display**: Shows final results without visible processing complexity
+
+This ensures that:
+
+- **No duplicate content** - Each page has a specific purpose
+- **Figures generated as part of data flow** - Not separate scripts
+- **Clean website display** - Only final results shown
+- **Automatic processing** - No manual intervention required
+- **Abstraction layer respected** - Complex logic stays in src/ modules
+
+---
+
+*This demonstrates the proper implementation of the data processing pipeline as specified in DESIGN.md.*

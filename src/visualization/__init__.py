@@ -17,10 +17,8 @@ Modules:
 """
 
 from .charts import SalaryVisualizer, QuartoChartExporter
-from .config import ChartConfig
 
 __all__ = [
     "SalaryVisualizer",
     "QuartoChartExporter",
-    "ChartConfig",
 ]

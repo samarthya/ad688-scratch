@@ -19,9 +19,12 @@ Functions:
 from .loaders import DataLoader
 from .validators import DataValidator
 from .transformers import DataTransformer
+from .auto_processor import load_analysis_data, get_data_summary
 
 __all__ = [
     "DataLoader",
     "DataValidator",
-    "DataTransformer"
+    "DataTransformer",
+    "load_analysis_data",
+    "get_data_summary"
 ]

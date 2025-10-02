@@ -1,0 +1,231 @@
+---
+title: "Key Findings Dashboard"
+subtitle: "Interactive Job Market Intelligence"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    css: styles.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Executive Summary
+
+This dashboard provides comprehensive job market intelligence with key metrics, career progression insights, and strategic recommendations. All data processing and visualization happens automatically when the website loads.
+
+```{python}
+#| label: data-loading
+#| echo: false
+
+# Load data using the website processor
+from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
+
+# Get processed data
+website_data = get_website_data()
+df = get_processed_dataframe()
+analysis = get_analysis_results()
+figures = get_figure_paths()
+summary = get_website_data_summary()
+
+print(f"Loaded {summary['total_records']:,} records")
+print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
+print(f"Generated {len(figures)} figures")
+```
+
+## Key Metrics Overview
+
+```{python}
+#| label: key-metrics
+#| echo: false
+
+# Display key metrics cards
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_key_metrics_cards()
+fig.show()
+```
+
+## Executive Market Overview
+
+```{python}
+#| label: executive-overview
+#| echo: false
+
+# Display executive market overview - different from career progression
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_complete_intelligence_dashboard()
+fig.show()
+```
+
+## Salary Insights
+
+```{python}
+#| label: salary-insights
+#| echo: false
+
+# Display salary insights
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_company_strategy_analysis()
+fig.show()
+```
+
+## Geographic Analysis
+
+```{python}
+#| label: geographic-analysis
+#| echo: false
+
+# Display geographic salary analysis using proper abstraction layer
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+
+# Use the complete intelligence dashboard which includes geographic analysis
+# Or we could create a dedicated geographic method
+try:
+    from src.visualization import SalaryVisualizer
+    visualizer = SalaryVisualizer(df)
+
+    # Create interactive geographic analysis with decoded location data
+    geo_fig = visualizer.plot_salary_by_category('location')
+    geo_fig.update_layout(
+        title="Geographic Salary Analysis: Top Locations by Median Salary",
+        height=600,
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None,
+        font=dict(size=14)
+    )
+    geo_fig.show()
+except Exception as e:
+    print(f"Geographic analysis error: {e}")
+    print("Using location data from processed pipeline...")
+```
+
+## AI & Technology Salary Analysis
+
+```{python}
+#| label: ai-analysis
+#| echo: false
+
+# Display AI salary comparison analysis using proper abstraction layer
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_ai_technology_analysis()
+fig.show()
+```
+
+## Career Progression Analysis
+
+```{python}
+#| label: career-progression
+#| echo: false
+
+# Display career progression analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_career_progression_analysis()
+fig.show()
+```
+
+## Education ROI Analysis
+
+```{python}
+#| label: education-roi
+#| echo: false
+
+# Display education ROI analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_education_roi_analysis()
+fig.show()
+```
+
+## Company Strategy Analysis
+
+```{python}
+#| label: company-strategy
+#| echo: false
+
+# Display company strategy analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_company_strategy_analysis()
+fig.show()
+```
+
+## Complete Intelligence Dashboard
+
+```{python}
+#| label: complete-dashboard
+#| echo: false
+
+# Display the complete intelligence dashboard
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_complete_intelligence_dashboard()
+fig.show()
+```
+
+## Key Findings Summary
+
+Based on the comprehensive analysis of job market data:
+
+```{python}
+#| label: summary-stats
+#| echo: false
+
+# Display summary statistics using Python formatting with error handling
+try:
+    print("### Market Overview")
+    print()
+    print(f"- **Total Records**: {summary.get('total_records', 'N/A'):,} job postings analyzed")
+    print(f"- **Salary Coverage**: {summary.get('salary_coverage', 0):.1f}% of records have salary data")
+    print(f"- **Industries**: {summary.get('unique_industries', 'N/A')} unique industries represented")
+    print(f"- **Locations**: {summary.get('unique_locations', 'N/A')} unique locations analyzed")
+    print()
+    print("### Salary Insights")
+    print()
+
+    salary_range = summary.get('salary_range', {})
+    median_salary = salary_range.get('median', 0)
+    min_salary = salary_range.get('min', 0)
+    max_salary = salary_range.get('max', 0)
+
+    print(f"- **Median Salary**: ${median_salary:,.0f}")
+    print(f"- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}")
+    print("- **Data Quality**: High-quality dataset with comprehensive coverage")
+    print()
+    print("### Strategic Recommendations")
+    print()
+    print("1. **Career Development**: Focus on experience progression for salary growth")
+    print("2. **Industry Selection**: Consider high-paying industries for career advancement")
+    print("3. **Location Strategy**: Geographic factors significantly impact compensation")
+    print("4. **Education Investment**: ROI varies by industry and experience level")
+
+except Exception as e:
+    print("### Summary Information")
+    print()
+    print(f"**Debug Info**: Error rendering summary - {str(e)}")
+    print(f"**Summary keys**: {list(summary.keys()) if isinstance(summary, dict) else 'Not a dictionary'}")
+    print(f"**Summary type**: {type(summary)}")
+    print()
+    print("### Basic Statistics")
+    print()
+    print(f"- **Dataset Shape**: {df.shape}")
+    print(f"- **Available Columns**: {len(df.columns)}")
+    print("- **Data Quality**: Processing complete")
+```
+
+---
+
+*This dashboard provides real-time job market intelligence with automatic data processing and visualization updates.*

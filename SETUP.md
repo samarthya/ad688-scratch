@@ -7,6 +7,7 @@
 #### Java Installation (Required for PySpark)
 
 **Linux/Ubuntu:**
+
 ```bash
 # Install OpenJDK 11 or 17 (recommended for PySpark 4.0.1)
 sudo apt update
@@ -198,7 +199,7 @@ ConnectionRefusedError: [Errno 111] Connection refused
 2. **Manual Spark configuration:**
    ```python
    from pyspark.sql import SparkSession
-   
+
    spark = SparkSession.builder \
        .appName("JobMarketLocal") \
        .master("local[2]") \

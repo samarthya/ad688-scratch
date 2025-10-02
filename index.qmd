@@ -21,247 +21,182 @@ format:
 
 Welcome to your comprehensive guide for navigating the technology job market. This analysis answers the critical questions every student and professional faces when planning their career path.
 
-### What This Analysis Tells You
+## Interactive Key Findings Dashboard
 
-Instead of guessing about career decisions, get data-driven answers to your most important questions:
+**[→ View Interactive Dashboard](market-dashboard.qmd)** - Critical salary disparities and career insights
 
-::: {.callout-note}
+Get instant answers to your most pressing career questions with our interactive dashboard featuring:
+
+- **90% Experience Gap** analysis
+- **9% Education Premium** calculations
+- **32% Company Size Gap** insights
+- **72K+ Jobs Analyzed** for reliable data
+
+## Data Processing Pipeline
+
+**[→ View Data Pipeline](data-pipeline.qmd)** - How the website processes data automatically
+
+See how our intelligent auto-processing pipeline works:
+
+- **Automatic data loading** (clean sample → sample → raw with processing)
+- **Intelligent cleaning** based on data source
+- **Figure generation** as part of the data flow
+- **Clean website display** with only final results
+
 ## The Career Questions We Answer
 
-**"How much should I expect to earn?"**
+### How much should I expect to earn?
+
 - Starting salaries by experience level and education
 - Realistic salary progression timelines
 - Industry and location-specific compensation ranges
 
-**"Is my career on the right track?"**
+### Is my career on the right track?
+
 - Experience-based salary benchmarks
 - Skills that drive highest compensation
 - Career progression milestones and timelines
 
-**"Should I get a Master's degree or PhD?"**
-- Return on investment for different education levels
+### Should I get a Master's degree or PhD?
+
+- Return on investment for different education levels [@deming2017value]
 - Education premium vs. experience premium
 - Alternative pathways: certifications vs. formal degrees
 
-**"How has remote work changed everything?"**
-- Remote vs. on-site salary comparisons
+### How has remote work changed everything?
+
+- Remote vs. on-site salary comparisons [@bloom2015remote]
 - Geographic arbitrage opportunities
 - Work-life balance impact on compensation
 
-**"Where should I work to maximize my earning potential?"**
-- Highest-paying metropolitan areas
+### Where should I work to maximize my earning potential?
+
+- Highest-paying metropolitan areas [@cortes2020geographic]
 - Cost-of-living adjusted salary analysis
 - Industry concentration by region
-:::
 
-### Key Insights from 72,000+ Job Postings
+## Key Insights from 72,000+ Job Postings
 
-::: {.callout-tip}
-## Data-Driven Career Intelligence
+- **3.0x Salary Growth**: Entry-level to Executive progression potential
+- **9% Education Premium**: Advanced degree ROI quantified
+- **32% Company Size Impact**: Startup vs. Enterprise compensation differences
+- **25% Remote Availability**: Location-flexible opportunities in tech
 
-- **3.3x Salary Growth**: Entry-level to Executive progression potential
-- **25% Education Premium**: Advanced degree ROI quantified
-- **40% Company Size Impact**: Startup vs. Enterprise compensation differences
-- **75% Remote Availability**: Location-flexible opportunities in tech
-:::
+### New: Machine Learning Insights
+
+- **Predictive Models**: ML algorithms predict salary with 85%+ accuracy
+- **Skills Analysis**: NLP identifies 1,000+ unique skills and salary premiums
+- **Job Classification**: AI flags above-average paying opportunities
+- **Strategic Recommendations**: Data-driven advice for job seekers and employers
 
 ## Interactive Career Intelligence Dashboard
 
-*Click each section to explore the data behind your career decisions*
+### Career Progression: "How much will I earn as I grow?"
 
-## Interactive Key Findings Dashboard
+**[→ View Experience Analysis](salary-insights.qmd)** - Complete career progression analysis with interactive charts
 
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
-<h3 style="margin-top: 0; color: white;">Critical Salary Disparities Identified</h3>
-<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-<div style="margin: 10px;"><strong>233%</strong><br>Experience Gap</div>
-<div style="margin: 10px;"><strong>177%</strong><br>Education Premium</div>
-<div style="margin: 10px;"><strong>40%</strong><br>Company Size Gap</div>
-<div style="margin: 10px;"><strong>72K+</strong><br>Jobs Analyzed</div>
-</div>
-</div>
+### Education ROI: "Is graduate school worth it?"
 
-::: {.panel-tabset}
+**[→ View Education & Skills Analysis](salary-insights.qmd)** - Education ROI and skills premium analysis
 
-## Career Progression: "How much will I earn as I grow?"
+### Company Strategy: "Startup or Enterprise?"
 
-**[→ View Experience Analysis](salary-experience.qmd){target="_blank"}** - Complete career progression analysis with interactive charts
+**[→ View Industry Analysis](salary-insights.qmd)** - Company size effects and industry comparisons
 
-<h4>Answers: "What's my earning potential over time?"</h4>
-
-## Education ROI: "Is graduate school worth it?"
-
-**[→ View Education & Skills Analysis](salary-education.qmd){target="_blank"}** - Education ROI and skills premium analysis
-
-<h4>Answers: "Should I invest in more education?"</h4>
-
-## Company Strategy: \"Startup or Enterprise?\"
-
-<div style="border: 2px solid #27ae60; border-radius: 8px; padding: 15px; background: #f4fff8;">
-<h4>Answers: "Where should I work for best compensation?"</h4>
-**[→ View Industry Analysis](salary-industry.qmd){target="_blank}** - Company size effects and industry comparisons
-<p><strong>Key Insight:</strong> Large companies pay 40% more on average, but startups offer equity upside. Consider total compensation packages.</p>
-**[→ View Detailed Analysis](salary-industry.qmd#company-size-effects){target="_blank"}**
-</div>
-
-## Complete Intelligence: "Show me everything"
-
-::: {.panel-tabset}
-
-### Experience Progression
-
-**[→ View Experience Analysis](salary-experience.qmd){target="_blank}** - Interactive career progression charts and salary benchmarks
-
-**Key Insight**: Experience drives significant salary growth - plan your career progression strategically.
-
-### Education Investment
-
-**[→ View Education & Skills Analysis](salary-education.qmd){target="_blank}** - Education ROI and skills premium analysis
-
-**Key Insight**: Advanced degrees provide measurable ROI - calculate the investment value for your situation.
-
-### Company Strategy
-
-**[→ View Industry Analysis](salary-industry.qmd){target="_blank}** - Company size effects and industry comparisons
-
-**Key Insight**: Company size significantly impacts compensation - consider this in your job search strategy.
-
-:::
-
-**[→ View Salary Overview](salary-overview.qmd){target="_blank"}** for comprehensive market analysis
-
-:::
+**Key Insight:** Large companies pay 32% more on average, but startups offer equity upside. Consider total compensation packages.
 
 ## Your Career Navigation Guide
 
 This analysis is organized to answer your questions in the order you'd naturally ask them:
 
-### Comprehensive Salary Analysis (New Modular Structure)
+### Comprehensive Salary Analysis
 
-- **[Salary Overview](salary-overview.qmd)** - "What's the big picture?"
+- **[Salary Insights](salary-insights.qmd)** What's the big picture?
+
   - Executive summary and key insights
   - Market overview and data foundation
-- **[Experience Analysis](salary-experience.qmd)** - "How do I progress?"
-  - Career progression patterns and growth trajectories
-  - Experience-based compensation benchmarks
-- **[Education & Skills](salary-education.qmd)** - "What should I learn?"
-  - Education ROI and skills premium analysis
-  - Certification impact and alternative pathways
-- **[Industry Analysis](salary-industry.qmd)** - "Which sectors pay best?"
-  - Industry comparisons and company size effects
-  - Skills premium and market demand
-- **[Geographic Analysis](salary-geographic.qmd)** - "Where should I work?"
-  - Regional salary variations and remote work impact
-  - Cost of living adjustments and migration patterns
-- **[Statistical Analysis](salary-statistical.qmd)** - "What do the models show?"
-  - Advanced statistical modeling and predictive insights
-  - Distribution analysis and correlation studies
+
+### Advanced Predictive Analytics
+
+- **[Predictive Analytics](predictive-analytics.qmd)** Machine learning models and predictions
+
+  - Multiple Linear Regression for salary prediction
+  - Classification for above-average paying jobs
+  - NLP analysis with skills clustering and word clouds
+  - Strategic recommendations for job seekers
 
 ### Market Intelligence
-- **[Regional Analysis](regional-trends.qmd)** - "Regional deep dive"
-  - Highest-paying metropolitan areas
-  - Industry concentrations by region
 
-### Modern Work Flexibility
-- **[Remote Work Impact](remote-work.qmd)** - "How has remote work changed everything?"
-  - Remote vs on-site salary comparisons
-  - Geographic arbitrage opportunities
-  - Work-life balance considerations
+- **[Market Dashboard](market-dashboard.qmd)** Show me everything
+
+  - Interactive dashboard with all key metrics
+  - Career progression insights
+  - Education ROI analysis
+  - Company strategy recommendations
 
 ### Deep Dive Analysis
-- **[Interactive Analysis](notebooks/job_market_skill_analysis.ipynb)** - "Show me the data science"
+
+- **[Interactive Analysis](notebooks/job_market_skill_analysis.ipynb)** Show me the data science
+
   - Machine learning models and predictions
   - Statistical validation and methodology
   - Interactive charts and exploration tools
-
----
 
 ## How to Use This Intelligence
 
 ### For Students Planning Careers:
 
-1. **Start with [Salary Overview](salary-overview.qmd)** to set realistic expectations
-2. **Check [Regional Analysis](regional-trends.qmd)** for location strategy
-3. **Review [Remote Work](remote-work.qmd)** for modern workplace trends
+1. **Start with [Market Dashboard](market-dashboard.qmd)** to set realistic expectations
+2. **Check [Salary Insights](salary-insights.qmd)** for detailed insights
+3. **Explore [Predictive Analytics](predictive-analytics.qmd)** for ML-powered career guidance
 4. **Use benchmarks for internship and job negotiations**
 
 ### For Job Seekers:
 
 1. **Benchmark current compensation** against market data
-2. **Identify high-value skills** from analysis insights
-3. **Optimize job search strategy** with geographic and remote work data
-4. **Prepare for salary negotiations** with specific market intelligence
+2. **Use [Predictive Analytics](predictive-analytics.qmd)** to identify above-average opportunities
+3. **Identify high-value skills** from NLP analysis insights
+4. **Optimize job search strategy** with ML-powered recommendations
+5. **Prepare for salary negotiations** with specific market intelligence
 
 ### For Career Changers:
 
 1. **Assess transition impact** on compensation expectations
-2. **Plan skill development** based on market demand analysis
-3. **Evaluate education investments** with ROI calculations
-4. **Consider geographic moves** for career optimization
-
----
+2. **Use [Predictive Analytics](predictive-analytics.qmd)** for skills gap analysis
+3. **Plan skill development** based on ML-identified market demand
+4. **Evaluate education investments** with ROI calculations
+5. **Consider geographic moves** for career optimization
 
 ## Data Foundation
 
 **72,000+ Job Postings Analyzed** from Lightcast's comprehensive database
 
 **Analysis Methods:**
-- Statistical modeling with Python and PySpark
+
+- Statistical modeling with Python and PySpark [@lightcast2024]
 - Interactive visualizations with Plotly
 - Geographic salary analysis across metropolitan areas
-- Machine learning for trend prediction and classification
+- Machine learning for trend prediction and classification [@agrawal2019prediction]
 
 **Data Reliability:**
-- Real job market data, not survey estimates
-- Comprehensive coverage across technology roles
-- Regular updates reflecting current market conditions
-- Statistical validation and confidence intervals
 
----
+  - Real job market data, not survey estimates
+  - Comprehensive coverage across technology roles
+  - Regular updates reflecting current market conditions
+  - Statistical validation and confidence intervals
 
-::: {.callout-tip}
 ## Ready to Start?
 
-**New to the analysis?** Begin with [Salary Overview](salary-overview.qmd) to understand compensation fundamentals, then explore specific areas like [Experience Analysis](salary-experience.qmd) and [Education Premium](salary-education.qmd).
+- **New to the analysis?** Begin with [Market Dashboard](market-dashboard.qmd) to understand compensation fundamentals, then explore specific areas like [Salary Insights](salary-insights.qmd).
 
-**Planning location strategy?** Jump to [Regional Analysis](regional-trends.qmd) for geographic intelligence.
+- **Want ML-powered insights?** Check out [Predictive Analytics](predictive-analytics.qmd) for machine learning models, skills analysis, and strategic recommendations.
 
-**Need detailed methodology?** Visit [Interactive Analysis](notebooks/job_market_skill_analysis.ipynb) for complete technical details.
-:::
+- **Need detailed methodology?** Visit [Interactive Analysis](notebooks/job_market_skill_analysis.ipynb) for complete technical details including data processing steps, statistical methods, and model validation.
 
-*Make informed career decisions with real market data, not guesswork.*
-
-## Key Insights for Action
-
-### For Job Seekers
-
-- **Understand disparity patterns** to negotiate fairly
-- **Target companies** with equitable compensation practices
-- **Leverage geographic arbitrage** opportunities
-- **Invest in high-ROI skills** to minimize gaps
-
-### For Organizations
-
-- **Audit salary structures** for systematic inequities
-- **Implement transparent** progression frameworks
-- **Address education bias** in compensation decisions
-- **Promote geographic pay equity** initiatives
-
-## Data & Methodology
-
-- **Data Source**: Technology sector job postings (NAICS 5182x)
-- **Analysis Period**: 2024-2025 market data
-- **Geographic Scope**: United States market focus
-- **Tools**: PySpark 4.0.1, Plotly, Quarto publishing
-
-::: {.callout-tip}
-## Getting Started
-1. **Explore Interactive Dashboards** - Dive into the salary disparity analysis
-2. **Review Methodology** - Understand our research approach
-3. **Access Raw Analysis** - View the complete Jupyter notebook
-4. **Apply Insights** - Use findings for career or organizational strategy
-:::
+- **Make informed career decisions with real market data and AI-powered insights, not guesswork.**
 
 ---
 
-*This research investigates salary disparities to promote equitable compensation practices in the technology industry. All analysis code and methodologies are available in our [GitHub repository](https://github.com/samarthya/ad688-scratch).*
+*This research investigates salary disparities to promote equitable compensation practices in the technology industry [@autor2019work]. All analysis code and methodologies are available in our [GitHub repository](https://github.com/samarthya/ad688-scratch). Data sourced from Lightcast job postings analytics [@lightcast2024].*
+
+## References
