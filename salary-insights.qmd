@@ -151,8 +151,12 @@ from IPython.display import Markdown, display
 visualizer = SalaryVisualizer(df)
 
 try:
+    # Use standardized column names from config
+    from src.config.column_mapping import get_analysis_column
+    industry_col = get_analysis_column('industry')  # Returns 'naics2_name'
+
     # Use abstraction layer for industry analysis
-    industry_fig = visualizer.plot_salary_by_category('industry')
+    industry_fig = visualizer.plot_salary_by_category(industry_col)
     industry_fig.update_layout(
         title="Industry Salary Analysis: Top Industries by Median Salary",
         height=600,

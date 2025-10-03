@@ -55,7 +55,7 @@ DERIVED_COLUMNS = [
 # Analysis-ready column names (for consistent usage across all modules)
 ANALYSIS_COLUMNS = {
     'salary': 'salary_avg',        # Standardized salary column (already clean from pipeline)
-    'industry': 'industry',
+    'industry': 'naics2_name',     # Industry classification (NAICS level 2)
     'experience': 'experience_years',
     'title': 'title',
     'location': 'location',

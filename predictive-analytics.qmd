@@ -94,46 +94,13 @@ Where you work significantly impacts compensation.
 ```{python}
 #| label: geographic-analysis
 
-# Top 15 cities by job count
-top_cities = df[city_col].value_counts().head(15).index
+# Use abstraction layer for geographic analysis
+from src.visualization import SalaryVisualizer
 
-# Filter to top cities and calculate median salaries
-city_data = df[df[city_col].isin(top_cities)].groupby(city_col).agg({
-    salary_col: ['median', 'count']
-}).reset_index()
-
-city_data.columns = ['city', 'median_salary', 'job_count']
-city_data = city_data.sort_values('median_salary', ascending=False)
-
-# Create visualization
-fig = go.Figure()
-
-fig.add_trace(go.Bar(
-    x=city_data['median_salary'],
-    y=city_data['city'],
-    orientation='h',
-    marker_color='#2ecc71',
-    text=[f"${x:,.0f}" for x in city_data['median_salary']],
-    textposition='outside',
-    hovertemplate='<b>%{y}</b><br>Median: $%{x:,.0f}<br>Jobs: %{customdata}<extra></extra>',
-    customdata=city_data['job_count']
-))
-
-fig.update_layout(
-    title="Top 15 Cities by Median Salary",
-    xaxis_title="Median Annual Salary ($)",
-    yaxis_title="City",
-    height=600,
-    showlegend=False
-)
-
+visualizer = SalaryVisualizer(df)
+fig = visualizer.plot_salary_by_category(city_col)
+fig.update_layout(title="Top Cities by Median Salary", height=600)
 fig.show()
-
-# Print insights
-highest_city = city_data.iloc[0]
-print(f"\n🏆 Highest paying city: {highest_city['city']}")
-print(f"   Median salary: ${highest_city['median_salary']:,.0f}")
-print(f"   Number of jobs: {int(highest_city['job_count']):,}")
 ```
 
 ## Simple Salary Prediction

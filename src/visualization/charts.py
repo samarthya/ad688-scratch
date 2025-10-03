@@ -41,13 +41,13 @@ class SalaryVisualizer:
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            # Fallback to available salary columns
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            # Fallback to available salary columns (all snake_case after processing)
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
             else:
-                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG. Available columns: {list(self.df.columns)[:20]}')
+                raise ValueError(f'salary_avg column not found in dataset. Cannot perform experience analysis without salary data. Available: {list(self.df.columns)[:20]}')
 
         # Verify we have valid salary data
         if salary_col not in self.df.columns:
@@ -124,12 +124,57 @@ class SalaryVisualizer:
 
     def get_industry_salary_analysis(self, top_n: int = 10) -> pd.DataFrame:
         """Get industry salary analysis."""
-        # Simple implementation
-        return pd.DataFrame({
-            'Industry': ['Technology', 'Finance', 'Healthcare'],
-            'Median Salary': [95000, 85000, 75000],
-            'Job Count': [500, 300, 400]
-        })
+        try:
+            # Use standardized column names from config
+            from src.config.column_mapping import get_analysis_column
+
+            # Get industry column (returns 'naics2_name' after processing)
+            industry_col = get_analysis_column('industry')
+            if industry_col not in self.df.columns:
+                # Fallback to common industry columns (all snake_case)
+                for col in ['naics2_name', 'industry', 'naics3_name']:
+                    if col in self.df.columns:
+                        industry_col = col
+                        break
+                else:
+                    print("No industry column found for analysis")
+                    return pd.DataFrame()
+
+            # Get salary column (returns 'salary_avg' after processing)
+            salary_col = get_analysis_column('salary')
+            if salary_col not in self.df.columns:
+                salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'salary'
+
+            # Group by industry and calculate salary statistics
+            industry_analysis = self.df.groupby(industry_col)[salary_col].agg([
+                'count', 'mean', 'median', 'std', 'min', 'max'
+            ]).reset_index()
+
+            # Filter out invalid industries
+            industry_analysis = industry_analysis[
+                (industry_analysis[industry_col].notna()) &
+                (industry_analysis['count'] >= 5)  # At least 5 jobs per industry
+            ]
+
+            # Sort by median salary and get top N
+            industry_analysis = industry_analysis.sort_values('median', ascending=False).head(top_n)
+
+            # Rename columns for consistency
+            industry_analysis = industry_analysis.rename(columns={
+                industry_col: 'Industry',
+                'mean': 'Average Salary',
+                'median': 'Median Salary',
+                'count': 'Job Count',
+                'std': 'Salary Std Dev',
+                'min': 'Min Salary',
+                'max': 'Max Salary'
+            })
+
+            return industry_analysis
+
+        except Exception as e:
+            print(f"Industry analysis error: {e}")
+            return pd.DataFrame()
 
     def get_overall_statistics(self) -> Dict[str, Any]:
         """Get overall statistics for the dataset."""
@@ -552,15 +597,16 @@ class SalaryVisualizer:
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            # Only snake_case fallbacks (data is processed)
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
             else:
-                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG')
+                raise ValueError(f'salary_avg column not found in dataset. Available columns: {list(self.df.columns)[:20]}')
 
         if category_col not in self.df.columns:
-            raise ValueError(f'Category column {category_col} not found in dataset')
+            raise ValueError(f'Category column {category_col} not found in dataset. Available columns: {list(self.df.columns)[:20]}')
 
         # Clean data - pipeline should have already processed salary data
         clean_df = self.df[[salary_col, category_col]].copy()
@@ -963,31 +1009,38 @@ class SalaryVisualizer:
     def get_geographic_salary_analysis(self, top_n: int = 10) -> pd.DataFrame:
         """Get geographic salary analysis with decoded location data."""
         try:
-            # Find location column
-            location_cols = ['location', 'CITY', 'city', 'LOCATION']
-            location_col = None
+            # Use standardized column names from config
+            from src.config.column_mapping import get_analysis_column
 
-            for col in location_cols:
-                if col in self.df.columns:
-                    location_col = col
-                    break
+            # Get city column (returns 'city_name' after processing)
+            city_col = get_analysis_column('city')
+            if city_col not in self.df.columns:
+                # Fallback to common location columns (all snake_case)
+                for col in ['city_name', 'city', 'location']:
+                    if col in self.df.columns:
+                        city_col = col
+                        break
+                else:
+                    print("No location column found for geographic analysis")
+                    return pd.DataFrame()
 
-            if location_col is None:
-                print("No location column found for geographic analysis")
-                return pd.DataFrame()
+            # Get salary column (returns 'salary_avg' after processing)
+            salary_col = get_analysis_column('salary')
+            if salary_col not in self.df.columns:
+                salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'salary'
 
             # Group by location and calculate salary statistics
-            geo_analysis = self.df.groupby(location_col)['salary_avg'].agg([
+            geo_analysis = self.df.groupby(city_col)[salary_col].agg([
                 'count', 'mean', 'median', 'std', 'min', 'max'
             ]).reset_index()
 
             # Clean location names (remove any remaining encoded characters)
-            geo_analysis[location_col] = geo_analysis[location_col].astype(str).str.strip()
+            geo_analysis[city_col] = geo_analysis[city_col].astype(str).str.strip()
 
             # Filter out invalid locations
             geo_analysis = geo_analysis[
-                (geo_analysis[location_col] != 'nan') &
-                (geo_analysis[location_col] != '') &
+                (geo_analysis[city_col] != 'nan') &
+                (geo_analysis[city_col] != '') &
                 (geo_analysis['count'] >= 5)  # At least 5 jobs per location
             ]
 
@@ -996,7 +1049,7 @@ class SalaryVisualizer:
 
             # Rename columns for consistency
             geo_analysis = geo_analysis.rename(columns={
-                location_col: 'Location',
+                city_col: 'Location',
                 'mean': 'Average Salary',
                 'median': 'Median Salary',
                 'count': 'Job Count',
