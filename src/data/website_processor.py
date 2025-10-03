@@ -230,27 +230,27 @@ def process_website_data() -> Dict[str, Any]:
 
 def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Load data using the intelligent auto-processing pipeline from DESIGN.md.
+    Load processed data directly - NO runtime processing!
 
     Data Source Priority:
-    1. Clean Sample Data (data/processed/job_market_clean_sample.csv)
-    2. Sample Data (data/processed/job_market_sample.csv)
-    3. Raw Data (data/raw/lightcast_job_postings.csv) with full processing
-    """
-    print("📊 Loading data using intelligent auto-processing...")
+    1. Processed Parquet (already standardized, fastest)
+    2. Clean Sample CSV (fallback, requires minor standardization)
 
-    # Try clean sample data first
-    clean_sample_path = Path("data/processed/job_market_clean_sample.csv")
-    if clean_sample_path.exists():
+    If neither exists, run: python scripts/create_processed_data.py
+    """
+    print("📊 Loading job market data...")
+
+    # Priority 1: Load processed Parquet (preferred - already standardized)
+    parquet_path = Path("data/processed/job_market_processed.parquet")
+    if parquet_path.exists():
         try:
-            print("  → Loading clean sample data...")
-            df = pd.read_csv(clean_sample_path)
-            df = standardize_columns(df)
+            print(f"  ✅ Loading processed Parquet ({parquet_path})...")
+            df = pd.read_parquet(parquet_path)
+            print(f"  ✅ Loaded {len(df):,} records (already standardized, no processing needed)")
             summary = get_data_summary(df)
-            print(f"  ✅ Loaded {summary['total_records']:,} clean records")
             return df, summary
         except Exception as e:
-            print(f"  ⚠️  Clean sample failed: {e}")
+            print(f"  ⚠️  Failed to load Parquet: {e}")
 
     # Try sample data
     sample_path = Path("data/processed/job_market_sample.csv")
@@ -280,13 +280,12 @@ def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
         except Exception as e:
             print(f"  ⚠️  Raw data failed: {e}")
 
-    # No fallback - fail with clear error message
+    # No data found
     raise FileNotFoundError(
-        "No data files found. Please ensure you have at least one of the following files:\n"
-        "- data/processed/job_market_clean_sample.csv\n"
-        "- data/processed/job_market_sample.csv\n"
-        "- data/raw/lightcast_job_postings.csv\n\n"
-        "This is a student project that requires real data analysis."
+        "No processed data found.\n\n"
+        "Run this command to create it:\n"
+        "  python scripts/create_processed_data.py\n\n"
+        "This will process the raw data and create data/processed/job_market_processed.parquet"
     )
 
 def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -343,13 +342,18 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
     mapping_to_apply = {k: v for k, v in LIGHTCAST_COLUMN_MAPPING.items()
                        if k not in location_columns_to_exclude and k in df.columns}
 
+    # Track which columns were explicitly mapped to avoid duplicates
+    mapped_source_columns = set(mapping_to_apply.keys())
+
     if mapping_to_apply:
         print(f"    Applying {len(mapping_to_apply)} column mappings")
         df = df.rename(columns=mapping_to_apply)
 
     # Standardize ALL remaining UPPERCASE columns to snake_case
+    # Exclude: location columns, salary columns, and already-mapped columns
     print("    Standardizing all remaining UPPERCASE columns to snake_case...")
-    uppercase_columns = [col for col in df.columns if col.isupper() and col not in location_columns_to_exclude]
+    columns_to_exclude = location_columns_to_exclude | {'SALARY_AVG'} | mapped_source_columns
+    uppercase_columns = [col for col in df.columns if col.isupper() and col not in columns_to_exclude]
 
     if uppercase_columns:
         snake_case_mapping = {}
@@ -395,10 +399,12 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     # Check if SALARY_AVG already exists (clean sample data case)
     if 'SALARY_AVG' in df.columns:
-        print("    Found existing SALARY_AVG - using pre-computed values")
+        valid_count = df['SALARY_AVG'].notna().sum()
+        print(f"    Found existing SALARY_AVG - using pre-computed values ({valid_count:,} valid)")
         df['salary_avg'] = df['SALARY_AVG'].copy()
         # Drop the original uppercase column to avoid confusion
         df = df.drop(columns=['SALARY_AVG'])
+        print(f"    salary_avg created with {df['salary_avg'].notna().sum():,} values")
     else:
         # Raw data processing - compute from SALARY_FROM and SALARY_TO with imputation
         print("    Computing salary_avg from SALARY_FROM and SALARY_TO with intelligent imputation...")
@@ -504,30 +510,73 @@ def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
             print(f"    🧹 Marking {invalid_count:,} unrealistic salary values as missing")
             df.loc[~valid_salary_mask, 'salary_avg'] = np.nan
 
-    # Create salary_avg_imputed (the derived column expected by analysis)
-    df['salary_avg_imputed'] = df['salary_avg'].copy()
+    # Final data quality assurance - ensure salary_avg is clean and numeric
+    print("  🔍 Final salary validation...")
 
-    # Apply final imputation for any remaining missing salary_avg_imputed values
-    missing_salary_mask = df['salary_avg_imputed'].isna()
-    if missing_salary_mask.sum() > 0:
-        print(f"  💡 Final imputation for {missing_salary_mask.sum():,} remaining missing salary values...")
+    # Ensure salary_avg is numeric
+    df['salary_avg'] = pd.to_numeric(df['salary_avg'], errors='coerce')
 
-        # Use overall median as final fallback
-        overall_median = df['salary_avg_imputed'].median()
-        if pd.notna(overall_median):
-            df.loc[missing_salary_mask, 'salary_avg_imputed'] = overall_median
-            print(f"    Applied overall median: ${overall_median:,.0f}")
-        else:
-            # Ultimate fallback to reasonable default
-            df.loc[missing_salary_mask, 'salary_avg_imputed'] = 75000
-            print(f"    Applied fallback salary of $75,000")
+    # Remove records with invalid salary data (missing, zero, or unrealistic)
+    valid_salary_mask = (df['salary_avg'].notna()) & (df['salary_avg'] > 0) & (df['salary_avg'] >= 20000) & (df['salary_avg'] <= 500000)
+    invalid_count = (~valid_salary_mask).sum()
+    if invalid_count > 0:
+        print(f"    Removing {invalid_count:,} records with invalid salary values")
+        df = df[valid_salary_mask].copy()
 
-    # Final validation: Remove records with still unrealistic salary values
-    final_valid_mask = (df['salary_avg_imputed'] >= 20000) & (df['salary_avg_imputed'] <= 500000)
-    final_invalid_count = (~final_valid_mask).sum()
-    if final_invalid_count > 0:
-        print(f"  🧹 Removing {final_invalid_count:,} records with unrealistic salary values after imputation")
-        df = df[final_valid_mask].copy()
+    print(f"  ✅ Salary validation complete: {len(df):,} records with clean salary_avg")
+
+    # Standardize experience columns and ensure they are numeric
+    print("  📊 Processing experience data...")
+    experience_columns = ['experience_min', 'experience_max', 'min_experience', 'max_experience', 'MIN_YEARS_EXPERIENCE', 'MAX_YEARS_EXPERIENCE']
+
+    for col in experience_columns:
+        if col in df.columns:
+            print(f"    Processing {col}...")
+            # Convert to numeric, replacing non-numeric values with NaN
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Fill negative or unrealistic values with NaN
+            df.loc[df[col] < 0, col] = np.nan
+            df.loc[df[col] > 50, col] = np.nan  # Cap at 50 years experience
+
+            # Fill NaN values with reasonable defaults based on column type
+            if 'min' in col.lower():
+                df[col] = df[col].fillna(0)  # Minimum experience defaults to 0
+            elif 'max' in col.lower():
+                df[col] = df[col].fillna(df[col].median() if df[col].notna().any() else 5)  # Use median or default to 5
+
+    # Ensure experience_min <= experience_max
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        # Swap values where min > max
+        swap_mask = df['experience_min'] > df['experience_max']
+        if swap_mask.any():
+            print(f"    Swapping {swap_mask.sum()} records where min > max experience")
+            df.loc[swap_mask, ['experience_min', 'experience_max']] = df.loc[swap_mask, ['experience_max', 'experience_min']].values
+
+    # Create derived numeric columns for analysis
+    print("  🔢 Creating derived numeric columns...")
+
+    # Company size numeric (if exists)
+    if 'company_size' in df.columns:
+        df['company_size_numeric'] = pd.to_numeric(df['company_size'], errors='coerce')
+        df['company_size_numeric'] = df['company_size_numeric'].fillna(df['company_size_numeric'].median() if df['company_size_numeric'].notna().any() else 100)
+
+    # Job ID numeric (if exists)
+    if 'job_id' in df.columns:
+        df['job_id_numeric'] = pd.to_numeric(df['job_id'], errors='coerce')
+
+    # Experience range (max - min)
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        df['experience_range'] = df['experience_max'] - df['experience_min']
+        df['experience_range'] = df['experience_range'].fillna(0)
+
+    # Average experience
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        df['experience_avg'] = (df['experience_min'] + df['experience_max']) / 2
+        df['experience_avg'] = df['experience_avg'].fillna(df['experience_min'].fillna(df['experience_max'].fillna(2)))
+
+    print(f"  ✅ Experience data processing completed")
+    print(f"  ✅ Final dataset: {len(df):,} records with clean data")
 
     return df
 
@@ -712,33 +761,59 @@ def generate_website_figures(df: pd.DataFrame, analysis_results: Dict[str, Any])
         visualizer = SalaryVisualizer(df)
         dashboard = KeyFindingsDashboard(df)
 
+        def save_figure_multiple_formats(fig, base_name: str, figure_paths: dict, key: str):
+            """Save figure in multiple formats for different use cases."""
+            try:
+                # HTML for web (interactive)
+                html_path = figures_dir / f"{base_name}.html"
+                fig.write_html(html_path)
+                figure_paths[f'{key}_html'] = f"figures/{base_name}.html"
+
+                # SVG for DOCX (vector, scalable)
+                svg_path = figures_dir / f"{base_name}.svg"
+                fig.write_image(svg_path, format="svg", width=1200, height=800)
+                figure_paths[f'{key}_svg'] = f"figures/{base_name}.svg"
+
+                # PNG for DOCX fallback (raster, compatible)
+                png_path = figures_dir / f"{base_name}.png"
+                fig.write_image(png_path, format="png", width=1200, height=800, scale=2)
+                figure_paths[f'{key}_png'] = f"figures/{base_name}.png"
+
+                # Keep the original key for backward compatibility
+                figure_paths[key] = f"figures/{base_name}.html"
+
+            except Exception as e:
+                print(f"    ⚠️  Failed to save {base_name} in some formats: {e}")
+                # At least try to save HTML
+                try:
+                    html_path = figures_dir / f"{base_name}.html"
+                    fig.write_html(html_path)
+                    figure_paths[key] = f"figures/{base_name}.html"
+                except Exception as e2:
+                    print(f"    ❌ Failed to save {base_name} completely: {e2}")
+
         # Generate key findings dashboard figures
         print("  📊 Creating key findings dashboard...")
         try:
             # Key metrics cards
             metrics_fig = dashboard.create_key_metrics_cards()
-            metrics_fig.write_html(figures_dir / "key_metrics_cards.html")
-            figure_paths['key_metrics'] = "figures/key_metrics_cards.html"
+            save_figure_multiple_formats(metrics_fig, "key_metrics_cards", figure_paths, "key_metrics")
 
             # Career progression
             career_fig = dashboard.create_career_progression_analysis()
-            career_fig.write_html(figures_dir / "career_progression_analysis.html")
-            figure_paths['career_progression'] = "figures/career_progression_analysis.html"
+            save_figure_multiple_formats(career_fig, "career_progression_analysis", figure_paths, "career_progression")
 
             # Education ROI
             education_fig = dashboard.create_education_roi_analysis()
-            education_fig.write_html(figures_dir / "education_roi_analysis.html")
-            figure_paths['education_roi'] = "figures/education_roi_analysis.html"
+            save_figure_multiple_formats(education_fig, "education_roi_analysis", figure_paths, "education_roi")
 
             # Company strategy
             company_fig = dashboard.create_company_strategy_analysis()
-            company_fig.write_html(figures_dir / "company_strategy_analysis.html")
-            figure_paths['company_strategy'] = "figures/company_strategy_analysis.html"
+            save_figure_multiple_formats(company_fig, "company_strategy_analysis", figure_paths, "company_strategy")
 
             # Complete intelligence
             intelligence_fig = dashboard.create_complete_intelligence_dashboard()
-            intelligence_fig.write_html(figures_dir / "complete_intelligence_dashboard.html")
-            figure_paths['complete_intelligence'] = "figures/complete_intelligence_dashboard.html"
+            save_figure_multiple_formats(intelligence_fig, "complete_intelligence_dashboard", figure_paths, "complete_intelligence")
 
             print("  ✅ Key findings dashboard created")
         except Exception as e:
@@ -749,18 +824,15 @@ def generate_website_figures(df: pd.DataFrame, analysis_results: Dict[str, Any])
         try:
             # Market overview
             market_fig = visualizer.plot_salary_distribution()
-            market_fig.write_html(figures_dir / "executive_market_overview.html")
-            figure_paths['market_overview'] = "figures/executive_market_overview.html"
+            save_figure_multiple_formats(market_fig, "executive_market_overview", figure_paths, "market_overview")
 
             # Industry analysis
             industry_fig = visualizer.plot_salary_by_category('industry')
-            industry_fig.write_html(figures_dir / "executive_salary_insights.html")
-            figure_paths['salary_insights'] = "figures/executive_salary_insights.html"
+            save_figure_multiple_formats(industry_fig, "executive_salary_insights", figure_paths, "salary_insights")
 
             # Remote work analysis
             remote_fig = visualizer.plot_remote_salary_analysis()
-            remote_fig.write_html(figures_dir / "executive_remote_work.html")
-            figure_paths['remote_work'] = "figures/executive_remote_work.html"
+            save_figure_multiple_formats(remote_fig, "executive_remote_work", figure_paths, "remote_work")
 
             print("  ✅ Executive figures created")
         except Exception as e:
@@ -771,18 +843,15 @@ def generate_website_figures(df: pd.DataFrame, analysis_results: Dict[str, Any])
         try:
             # Geographic analysis
             geo_fig = visualizer.plot_salary_by_category('location')
-            geo_fig.write_html(figures_dir / "interactive_geographic_analysis.html")
-            figure_paths['geographic_analysis'] = "figures/interactive_geographic_analysis.html"
+            save_figure_multiple_formats(geo_fig, "interactive_geographic_analysis", figure_paths, "geographic_analysis")
 
             # AI analysis
             ai_fig = visualizer.plot_ai_salary_comparison()
-            ai_fig.write_html(figures_dir / "interactive_ai_analysis.html")
-            figure_paths['ai_analysis'] = "figures/interactive_ai_analysis.html"
+            save_figure_multiple_formats(ai_fig, "interactive_ai_analysis", figure_paths, "ai_analysis")
 
             # Correlation matrix
             corr_fig = visualizer.create_correlation_matrix()
-            corr_fig.write_html(figures_dir / "interactive_correlation_matrix.html")
-            figure_paths['correlation_matrix'] = "figures/interactive_correlation_matrix.html"
+            save_figure_multiple_formats(corr_fig, "interactive_correlation_matrix", figure_paths, "correlation_matrix")
 
             print("  ✅ Interactive figures created")
         except Exception as e:
@@ -791,7 +860,7 @@ def generate_website_figures(df: pd.DataFrame, analysis_results: Dict[str, Any])
     except Exception as e:
         print(f"  ⚠️  Figure generation failed: {e}")
 
-    print(f"  ✅ Generated {len(figure_paths)} figures")
+    print(f"  ✅ Generated {len([k for k in figure_paths.keys() if not k.endswith('_svg') and not k.endswith('_png')])} base figures in multiple formats")
     return figure_paths
 
 # Global variable to store processed data

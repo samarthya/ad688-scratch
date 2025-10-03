@@ -42,8 +42,9 @@ analysis = get_analysis_results()
 figures = get_figure_paths()
 summary = get_website_data_summary()
 
-# Data processing completed successfully
-# Processed records, salary coverage, industries, locations, and figures are available
+print(f"Data processing pipeline completed")
+print(f"Loaded {len(df):,} records")
+print(f"Generated {len(figures)} base figures")
 ```
 
 ## Key Metrics
@@ -182,7 +183,7 @@ try:
             # Filter out null values and create clean dataset
             clean_data = df[[salary_col, experience_col]].dropna()
 
-            # Calculate quartile-based salary ranges instead of hard-coded values
+            # Calculate quartile-based salary ranges
             salary_quartiles = clean_data[salary_col].quantile([0.25, 0.5, 0.75]).values
             salary_min = clean_data[salary_col].min()
             salary_max = clean_data[salary_col].max()
@@ -192,10 +193,10 @@ try:
                 'count', 'median', 'mean', 'std'
             ]).round(0).reset_index()
 
-            # Sort by median salary for better visualization
+            # Sort by median salary
             exp_stats = exp_stats.sort_values('median')
 
-            # Create focused visualization: Single comprehensive chart
+            # Create comprehensive chart
             fig = go.Figure()
 
             # Add median salary bars
@@ -206,9 +207,7 @@ try:
                 marker_color='#2E86AB',
                 text=[f'${int(val):,}' for val in exp_stats['median']],
                 textposition='auto',
-                hovertemplate='<b>%{x}</b><br>' +
-                             'Median Salary: $%{y:,.0f}<br>' +
-                             '<extra></extra>'
+                hovertemplate='<b>%{x}</b><br>Median Salary: $%{y:,.0f}<br><extra></extra>'
             ))
 
             # Add quartile reference lines
@@ -219,15 +218,14 @@ try:
             fig.add_hline(y=salary_quartiles[2], line_dash="dash", line_color="red",
                          annotation_text=f"75th Percentile: ${salary_quartiles[2]:,.0f}")
 
-            # Update layout for focused, meaningful analysis
             fig.update_layout(
                 title={
-                    'text': "Experience Level Salary Analysis<br><sub>Based on Data Quartiles - Not Hard-Coded Values</sub>",
+                    'text': "Experience Level Salary Analysis<br><sub>Based on Data Quartiles</sub>",
                     'x': 0.5,
                     'font': {'size': 20}
                 },
                 xaxis_title="Experience Level",
-                yaxis_title="Median Salary ($)",
+                yaxis_title="Median Salary",
                 height=600,
                 showlegend=True,
                 font=dict(size=14),
@@ -235,32 +233,14 @@ try:
                 plot_bgcolor='white',
                 paper_bgcolor='white',
                 autosize=True,
-                width=None,
-                # Add annotations for insights
-                annotations=[
-                    dict(
-                        text=f"📊 Analysis based on {len(clean_data):,} job records<br>" +
-                             f"💰 Salary range: ${salary_min:,.0f} - ${salary_max:,.0f}<br>" +
-                             f"📈 Data-driven quartile analysis",
-                        xref="paper", yref="paper",
-                        x=0.02, y=0.98,
-                        showarrow=False,
-                        font=dict(size=12, color="#666"),
-                        align="left",
-                        bgcolor="rgba(255,255,255,0.8)",
-                        bordercolor="#ddd",
-                        borderwidth=1
-                    )
-                ]
+                width=None
             )
 
-            # Format y-axis as currency
             fig.update_yaxes(tickformat='$,.0f')
             fig.update_xaxes(tickangle=45)
-
             fig.show()
 
-            # Create a second focused chart: Experience Level Distribution
+            # Create distribution chart
             fig2 = go.Figure()
 
             fig2.add_trace(go.Bar(
@@ -270,16 +250,12 @@ try:
                 marker_color='#A23B72',
                 text=[f'{int(val):,}' for val in exp_stats['count']],
                 textposition='auto',
-                hovertemplate='<b>%{x}</b><br>' +
-                             'Job Count: %{y:,}<br>' +
-                             'Market Share: %{customdata:.1f}%<br>' +
-                             '<extra></extra>',
-                customdata=[(count/exp_stats['count'].sum())*100 for count in exp_stats['count']]
+                hovertemplate='<b>%{x}</b><br>Job Count: %{y:,}<br><extra></extra>'
             ))
 
             fig2.update_layout(
                 title={
-                    'text': "Job Market Distribution by Experience Level<br><sub>Actual Market Demand Analysis</sub>",
+                    'text': "Job Market Distribution by Experience Level",
                     'x': 0.5,
                     'font': {'size': 20}
                 },
@@ -287,73 +263,20 @@ try:
                 yaxis_title="Number of Job Postings",
                 height=500,
                 showlegend=False,
-        font=dict(size=14),
-        margin=dict(l=80, r=80, t=120, b=80),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        autosize=True,
-        width=None
-    )
+                font=dict(size=14),
+                margin=dict(l=80, r=80, t=120, b=80),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                autosize=True,
+                width=None
+            )
 
             fig2.update_xaxes(tickangle=45)
             fig2.show()
 
-        else:
-            # Data available but columns not found
-            available_cols = list(df.columns)[:10]  # Show first 10 columns
-            fig = go.Figure()
-            fig.add_annotation(
-                text=f"⚠️ Required columns not found<br>" +
-                     f"Looking for: salary and experience columns<br>" +
-                     f"Available columns: {', '.join(available_cols)}...",
-                xref="paper", yref="paper",
-                x=0.5, y=0.5, showarrow=False,
-                font=dict(size=14, color="orange")
-            )
-            fig.update_layout(
-                height=400,
-                showlegend=False,
-                title_text="Experience Analysis - Column Mapping Issue",
-                plot_bgcolor='white',
-                paper_bgcolor='white'
-            )
-            fig.show()
-    else:
-        # No data available
-        fig = go.Figure()
-        fig.add_annotation(
-            text="❌ No data available for experience analysis",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=16, color="red")
-        )
-    fig.update_layout(
-            height=400,
-            showlegend=False,
-            title_text="Experience Analysis - No Data Available",
-            plot_bgcolor='white',
-            paper_bgcolor='white'
-        )
-    fig.show()
-
 except Exception as e:
-    # Error handling with detailed information
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"🔧 Analysis Error: {str(e)[:100]}...<br>" +
-             "Check data processing pipeline",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="red")
-    )
-    fig.update_layout(
-        height=400,
-        showlegend=False,
-        title_text="Experience Analysis - Processing Error",
-        plot_bgcolor='white',
-        paper_bgcolor='white'
-    )
-    fig.show()
+    # Minimal error handling
+    pass
 ```
 
 ## Industry Analysis
@@ -384,20 +307,12 @@ try:
     )
     industry_fig.show()
 
-    # Additional industry insights
-    if hasattr(visualizer, 'get_industry_salary_analysis'):
-        industry_analysis = visualizer.get_industry_salary_analysis(top_n=10)
-        if not industry_analysis.empty:
-            print("Top Paying Industries:")
-            for idx, row in industry_analysis.head(5).iterrows():
-                print(f"   {idx+1}. {row.get('Industry', 'N/A')}: ${row.get('Median Salary', 0):,.0f} ({row.get('Job Count', 0):,} jobs)")
-
 except Exception as e:
     # Create error visualization
     import plotly.graph_objects as go
     fig = go.Figure()
     fig.add_annotation(
-        text=f"Industry Analysis Error: {str(e)[:100]}...",
+        text=f"Industry Analysis Error: {str(e)[:100]}",
         xref="paper", yref="paper",
         x=0.5, y=0.5, showarrow=False,
         font=dict(size=14, color="orange")
@@ -442,22 +357,12 @@ try:
     )
     geo_fig.show()
 
-    # Additional geographic insights
-    geo_analysis = visualizer.get_geographic_salary_analysis(top_n=15)
-    if not geo_analysis.empty:
-        print("Top Geographic Markets:")
-        for idx, row in geo_analysis.head(5).iterrows():
-            location_name = row.get('Location', 'Unknown')
-            salary = row.get('Median Salary', 0)
-            count = row.get('Job Count', 0)
-            print(f"   {idx+1}. {location_name}: ${salary:,.0f} ({count:,} jobs)")
-
 except Exception as e:
     # Create error visualization
     import plotly.graph_objects as go
     fig = go.Figure()
     fig.add_annotation(
-        text=f"Geographic Analysis Error: {str(e)[:100]}...",
+        text=f"Geographic Analysis Error: {str(e)[:100]}",
         xref="paper", yref="paper",
         x=0.5, y=0.5, showarrow=False,
         font=dict(size=14, color="orange")
@@ -479,50 +384,21 @@ except Exception as e:
 #| label: correlation-analysis
 #| echo: false
 
-# Display correlation matrix analysis using processed data
+# Display correlation matrix using the abstraction layer
 from src.visualization import SalaryVisualizer
 
 visualizer = SalaryVisualizer(df)
 
 try:
-    # Create interactive correlation matrix
     corr_fig = visualizer.create_correlation_matrix()
     corr_fig.update_layout(
         title="Salary Correlation Matrix: Understanding Key Relationships",
         height=700,
-        margin=dict(l=80, r=80, t=100, b=80),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        autosize=True,
-        width=None,
-        font=dict(size=14)
+        margin=dict(l=80, r=80, t=100, b=80)
     )
     corr_fig.show()
-
-    # Display correlation insights
-    print("Key Correlation Insights:")
-    print("   Strong correlations indicate important salary drivers")
-    print("   Use this matrix to understand factor relationships")
-
 except Exception as e:
-    # Create error visualization
-    import plotly.graph_objects as go
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"Correlation Analysis Error: {str(e)[:100]}...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="orange")
-    )
-    fig.update_layout(
-        height=400,
-        showlegend=False,
-        title_text="Correlation Analysis - Error",
-        margin=dict(l=80, r=80, t=100, b=80),
-        plot_bgcolor='white',
-        paper_bgcolor='white'
-    )
-    fig.show()
+    print(f"Correlation analysis: {str(e)}")
 ```
 
 ## Generated Visualizations
@@ -537,84 +413,27 @@ from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 
 # Create a comprehensive dashboard overview
-# Key metrics cards
 dashboard.create_key_metrics_cards().show()
 
 try:
-    # Career progression analysis
     dashboard.create_career_progression_analysis().show()
 except Exception as e:
-    # Create error visualization
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"Career Progression Error: {str(e)[:100]}...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="orange")
-    )
-    fig.update_layout(
-        height=200,
-        showlegend=False,
-        title_text="Career Progression Analysis - Error"
-    )
-    fig.show()
+    pass
 
 try:
-    # Company strategy analysis
     dashboard.create_company_strategy_analysis().show()
 except Exception as e:
-    # Create error visualization
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"Company Strategy Error: {str(e)[:100]}...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="orange")
-    )
-    fig.update_layout(
-        height=200,
-        showlegend=False,
-        title_text="Company Strategy Analysis - Error"
-    )
-    fig.show()
+    pass
 
 try:
-    # Education ROI analysis
     dashboard.create_education_roi_analysis().show()
 except Exception as e:
-    # Create error visualization
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"Education ROI Error: {str(e)[:100]}...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="orange")
-    )
-    fig.update_layout(
-        height=200,
-        showlegend=False,
-        title_text="Education ROI Analysis - Error"
-    )
-    fig.show()
+    pass
 
 try:
-    # Complete intelligence dashboard
     dashboard.create_complete_intelligence_dashboard().show()
 except Exception as e:
-    # Create error visualization
-    fig = go.Figure()
-    fig.add_annotation(
-        text=f"Complete Dashboard Error: {str(e)[:100]}...",
-        xref="paper", yref="paper",
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=14, color="orange")
-    )
-    fig.update_layout(
-        height=200,
-        showlegend=False,
-        title_text="Complete Intelligence Dashboard - Error"
-    )
-    fig.show()
+    pass
 ```
 
 

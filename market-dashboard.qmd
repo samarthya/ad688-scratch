@@ -26,7 +26,7 @@ This dashboard provides comprehensive job market intelligence with key metrics, 
 # Load data using the website processor
 from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
 
-# Get processed data
+# Get processed data - this triggers the complete pipeline including figure generation
 website_data = get_website_data()
 df = get_processed_dataframe()
 analysis = get_analysis_results()
@@ -36,6 +36,22 @@ summary = get_website_data_summary()
 print(f"Loaded {summary['total_records']:,} records")
 print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
 print(f"Generated {len(figures)} figures")
+
+# Ensure figures are saved to disk
+import os
+figures_dir = "figures"
+if not os.path.exists(figures_dir):
+    os.makedirs(figures_dir)
+    print(f"Created {figures_dir} directory")
+
+# List generated figures
+if figures:
+    print("Figure files generated:")
+    for name, path in figures.items():
+        exists = os.path.exists(path)
+        print(f"  {name}: {path} - {'✅' if exists else '❌'}")
+else:
+    print("⚠️ No figures were generated")
 ```
 
 ## Key Metrics Overview
@@ -183,47 +199,61 @@ Based on the comprehensive analysis of job market data:
 ```{python}
 #| label: summary-stats
 #| echo: false
+#| output: asis
 
-# Display summary statistics using Python formatting with error handling
+# Display summary statistics using markdown output with error handling
 try:
-    print("### Market Overview")
-    print()
-    print(f"- **Total Records**: {summary.get('total_records', 'N/A'):,} job postings analyzed")
-    print(f"- **Salary Coverage**: {summary.get('salary_coverage', 0):.1f}% of records have salary data")
-    print(f"- **Industries**: {summary.get('unique_industries', 'N/A')} unique industries represented")
-    print(f"- **Locations**: {summary.get('unique_locations', 'N/A')} unique locations analyzed")
-    print()
-    print("### Salary Insights")
-    print()
+    from IPython.display import Markdown, display
+
+    # Build markdown content
+    markdown_content = f"""
+### Market Overview
+
+- **Total Records**: {summary.get('total_records', 'N/A'):,} job postings analyzed
+- **Salary Coverage**: {summary.get('salary_coverage', 0):.1f}% of records have salary data
+- **Industries**: {summary.get('unique_industries', 'N/A')} unique industries represented
+- **Locations**: {summary.get('unique_locations', 'N/A')} unique locations analyzed
+
+### Salary Insights
+"""
 
     salary_range = summary.get('salary_range', {})
     median_salary = salary_range.get('median', 0)
     min_salary = salary_range.get('min', 0)
     max_salary = salary_range.get('max', 0)
 
-    print(f"- **Median Salary**: ${median_salary:,.0f}")
-    print(f"- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}")
-    print("- **Data Quality**: High-quality dataset with comprehensive coverage")
-    print()
-    print("### Strategic Recommendations")
-    print()
-    print("1. **Career Development**: Focus on experience progression for salary growth")
-    print("2. **Industry Selection**: Consider high-paying industries for career advancement")
-    print("3. **Location Strategy**: Geographic factors significantly impact compensation")
-    print("4. **Education Investment**: ROI varies by industry and experience level")
+    markdown_content += f"""
+- **Median Salary**: ${median_salary:,.0f}
+- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}
+- **Data Quality**: High-quality dataset with comprehensive coverage
+
+### Strategic Recommendations
+
+1. **Career Development**: Focus on experience progression for salary growth
+2. **Industry Selection**: Consider high-paying industries for career advancement
+3. **Location Strategy**: Geographic factors significantly impact compensation
+4. **Education Investment**: ROI varies by industry and experience level
+"""
+
+    # Display as markdown
+    display(Markdown(markdown_content))
 
 except Exception as e:
-    print("### Summary Information")
-    print()
-    print(f"**Debug Info**: Error rendering summary - {str(e)}")
-    print(f"**Summary keys**: {list(summary.keys()) if isinstance(summary, dict) else 'Not a dictionary'}")
-    print(f"**Summary type**: {type(summary)}")
-    print()
-    print("### Basic Statistics")
-    print()
-    print(f"- **Dataset Shape**: {df.shape}")
-    print(f"- **Available Columns**: {len(df.columns)}")
-    print("- **Data Quality**: Processing complete")
+    # Fallback to basic information
+    from IPython.display import Markdown, display
+
+    fallback_content = f"""
+### Summary Information
+
+**Debug Info**: Error rendering summary - {str(e)}
+
+### Basic Statistics
+
+- **Dataset Shape**: {df.shape}
+- **Available Columns**: {len(df.columns)}
+- **Data Quality**: Processing complete
+"""
+    display(Markdown(fallback_content))
 ```
 
 ---

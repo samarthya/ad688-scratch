@@ -7,12 +7,18 @@ combining functionality from multiple visualization modules.
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from typing import Dict, List, Optional, Any
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# Optional dependencies
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
 from .theme import JobMarketTheme, apply_salary_theme, apply_industry_theme, apply_experience_theme, apply_geographic_theme
 
 
@@ -30,12 +36,24 @@ class SalaryVisualizer:
 
     def get_experience_progression_analysis(self) -> Dict[str, Dict[str, Any]]:
         """Get experience progression analysis."""
-        # Check required columns
-        if 'SALARY_AVG' not in self.df.columns:
-            raise ValueError('SALARY_AVG column not found in dataset. Cannot perform experience analysis without salary data.')
+        # Use standardized salary column from pipeline (should already be clean)
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
-        # Clean and convert salary data to numeric
-        salary_series = pd.to_numeric(self.df['SALARY_AVG'], errors='coerce')
+        if salary_col not in self.df.columns:
+            # Fallback to available salary columns
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG. Available columns: {list(self.df.columns)[:20]}')
+
+        # Verify we have valid salary data
+        if salary_col not in self.df.columns:
+            raise ValueError('Salary column not found in dataset. Cannot perform experience analysis without salary data.')
+
+        salary_series = self.df[salary_col].dropna()  # Pipeline should have cleaned this
         valid_salary_mask = salary_series.notna() & (salary_series > 0)
 
         if valid_salary_mask.sum() == 0:
@@ -170,12 +188,21 @@ class SalaryVisualizer:
 
         edu_col = education_columns[0]
 
-        # Check if SALARY_AVG column exists
-        if 'SALARY_AVG' not in self.df.columns:
-            raise ValueError('SALARY_AVG column not found in dataset. Cannot perform education analysis without salary data.')
+        # Get salary column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
+
+        # Fallback to available salary columns
+        if salary_col not in self.df.columns:
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Cannot perform education analysis without salary data.')
 
         # Analyze by education level
-        edu_analysis = self.df.groupby(edu_col)['SALARY_AVG'].agg([
+        edu_analysis = self.df.groupby(edu_col)[salary_col].agg([
             'count', 'median', 'mean', 'std'
         ]).round(0).reset_index()
 
@@ -207,12 +234,30 @@ class SalaryVisualizer:
 
     def get_skills_analysis(self) -> Dict[str, Any]:
         """Get skills premium analysis."""
-        # Check required columns
-        if 'TITLE_NAME' not in self.df.columns:
-            raise ValueError('TITLE_NAME column not found in dataset. Cannot perform skills analysis without job titles.')
+        # Get title column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        title_col = get_analysis_column('title')  # Returns 'title'
 
-        if 'SALARY_AVG' not in self.df.columns:
-            raise ValueError('SALARY_AVG column not found in dataset. Cannot perform skills analysis without salary data.')
+        # Fallback to available title columns
+        if title_col not in self.df.columns:
+            for candidate in ['title', 'title_name', 'title_clean', 'TITLE_NAME']:
+                if candidate in self.df.columns:
+                    title_col = candidate
+                    break
+            else:
+                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean, TITLE_NAME')
+
+        # Get salary column using standardized configuration
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
+
+        # Fallback to available salary columns
+        if salary_col not in self.df.columns:
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Cannot perform skills analysis without salary data.')
 
         # Define high-value skills to search for
         high_value_skills = {
@@ -227,11 +272,11 @@ class SalaryVisualizer:
         }
 
         skill_analysis = []
-        base_median = self.df['SALARY_AVG'].median()
+        base_median = self.df[salary_col].median()
 
         for skill_name, keywords in high_value_skills.items():
             # Search in job titles
-            title_matches = self.df['TITLE_NAME'].str.lower().str.contains('|'.join(keywords), na=False)
+            title_matches = self.df[title_col].str.lower().str.contains('|'.join(keywords), na=False)
 
             # Also search in skills columns if they exist
             skills_columns = [col for col in self.df.columns if 'skill' in col.lower()]
@@ -246,7 +291,7 @@ class SalaryVisualizer:
 
             if len(skill_jobs) > 10:  # Minimum threshold for analysis
                 # Calculate salary statistics
-                skill_salaries = skill_jobs['SALARY_AVG'].dropna()
+                skill_salaries = skill_jobs[salary_col].dropna()
                 if len(skill_salaries) > 0:
                     skill_median = skill_salaries.median()
                     premium = ((skill_median - base_median) / base_median * 100) if base_median > 0 else 0
@@ -272,12 +317,30 @@ class SalaryVisualizer:
 
     def get_skills_gap_analysis(self) -> Dict[str, Any]:
         """Get skills gap analysis (demand vs supply)."""
-        # Check required columns
-        if 'TITLE_NAME' not in self.df.columns:
-            raise ValueError('TITLE_NAME column not found in dataset. Cannot perform skills gap analysis without job titles.')
+        # Get title column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        title_col = get_analysis_column('title')  # Returns 'title'
 
-        if 'SALARY_AVG' not in self.df.columns:
-            raise ValueError('SALARY_AVG column not found in dataset. Cannot perform skills gap analysis without salary data.')
+        # Fallback to available title columns
+        if title_col not in self.df.columns:
+            for candidate in ['title', 'title_name', 'title_clean', 'TITLE_NAME']:
+                if candidate in self.df.columns:
+                    title_col = candidate
+                    break
+            else:
+                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean, TITLE_NAME')
+
+        # Get salary column using standardized configuration
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
+
+        # Fallback to available salary columns
+        if salary_col not in self.df.columns:
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Cannot perform skills gap analysis without salary data.')
 
         # Define skill categories to analyze
         skill_categories = {
@@ -295,11 +358,11 @@ class SalaryVisualizer:
 
         # Analyze each skill category
         skill_analysis = []
-        base_median_salary = self.df['SALARY_AVG'].median()
+        base_median_salary = self.df[salary_col].median()
 
         for category, keywords in skill_categories.items():
             # Search in job titles and other text fields
-            title_matches = self.df['TITLE_NAME'].str.lower().str.contains('|'.join(keywords), na=False)
+            title_matches = self.df[title_col].str.lower().str.contains('|'.join(keywords), na=False)
 
             # Also search in skills columns if they exist
             skills_matches = pd.Series([False] * len(self.df))
@@ -314,7 +377,7 @@ class SalaryVisualizer:
 
             if job_count > 0:
                 # Calculate salary statistics for this skill category
-                skill_salaries = self.df[total_matches]['SALARY_AVG'].dropna()
+                skill_salaries = self.df[total_matches][salary_col].dropna()
                 if len(skill_salaries) > 0:
                     median_salary = skill_salaries.median()
                     salary_premium = ((median_salary - base_median_salary) / base_median_salary * 100) if base_median_salary > 0 else 0
@@ -448,14 +511,21 @@ class SalaryVisualizer:
         """Create salary distribution plot."""
         import plotly.express as px
 
-        # Use salary_avg if available, otherwise use SALARY_AVG
-        salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'SALARY_AVG'
+        # Get salary column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            raise ValueError(f'Salary column {salary_col} not found in dataset')
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG')
 
         # Clean salary data
-        salary_data = pd.to_numeric(self.df[salary_col], errors='coerce')
+        # Use clean salary data from pipeline
+        salary_data = self.df[salary_col].dropna()  # Pipeline should have cleaned this
         salary_data = salary_data.dropna()
 
         if len(salary_data) == 0:
@@ -477,18 +547,23 @@ class SalaryVisualizer:
         """Create salary plot by category."""
         import plotly.express as px
 
-        # Use salary_avg if available, otherwise use SALARY_AVG
-        salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'SALARY_AVG'
+        # Get salary column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            raise ValueError(f'Salary column {salary_col} not found in dataset')
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG')
 
         if category_col not in self.df.columns:
             raise ValueError(f'Category column {category_col} not found in dataset')
 
-        # Clean data
+        # Clean data - pipeline should have already processed salary data
         clean_df = self.df[[salary_col, category_col]].copy()
-        clean_df[salary_col] = pd.to_numeric(clean_df[salary_col], errors='coerce')
         clean_df = clean_df.dropna()
 
         if len(clean_df) == 0:
@@ -629,14 +704,19 @@ class SalaryVisualizer:
             skills_related = [col for col in self.df.columns if 'skill' in col.lower()]
             raise ValueError(f"No skills data available. Expected column: {skills_col}. Available skill columns: {skills_related}")
 
-        # Prepare data for analysis - focus on skills, not titles
+        # Prepare data for analysis - data should already be clean from pipeline
         analysis_cols = [salary_col, skills_col]
         clean_df = self.df[analysis_cols].copy()
 
-        # Convert salary to numeric and clean
-        clean_df[salary_col] = pd.to_numeric(clean_df[salary_col], errors='coerce')
-        clean_df = clean_df.dropna(subset=[salary_col])
-        clean_df = clean_df[clean_df[salary_col] > 0]  # Remove zero/negative salaries
+        # Verify we have data (pipeline should have already cleaned this)
+        if len(clean_df) == 0:
+            raise ValueError(f'No data available for analysis. Check data processing pipeline.')
+
+        # Check for any remaining invalid salary data (should be rare after pipeline processing)
+        invalid_salary_count = clean_df[salary_col].isna().sum()
+        if invalid_salary_count > 0:
+            print(f"Warning: Found {invalid_salary_count:,} records with missing salary data after pipeline processing")
+            clean_df = clean_df.dropna(subset=[salary_col])
 
         if len(clean_df) == 0:
             raise ValueError(f'No valid salary data found in column {salary_col}. Check data processing pipeline.')
@@ -703,12 +783,25 @@ class SalaryVisualizer:
         """Create remote work salary analysis."""
         import plotly.express as px
 
-        # Use salary_avg if available, otherwise use SALARY_AVG
-        salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'SALARY_AVG'
-        remote_col = 'remote_available' if 'remote_available' in self.df.columns else 'REMOTE_AVAILABLE'
+        # Get salary column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            raise ValueError(f'Salary column {salary_col} not found in dataset')
+            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'Salary column not found in dataset. Checked: salary_avg, salary, SALARY_AVG')
+
+        # Get remote column
+        remote_col = get_analysis_column('remote')  # Returns 'remote_allowed'
+        if remote_col not in self.df.columns:
+            for candidate in ['remote_allowed', 'remote_available', 'remote_type', 'REMOTE_AVAILABLE']:
+                if candidate in self.df.columns:
+                    remote_col = candidate
+                    break
 
         # Clean data
         clean_df = self.df[[salary_col]].copy()
@@ -741,28 +834,81 @@ class SalaryVisualizer:
     def create_correlation_matrix(self):
         """Create correlation matrix heatmap."""
         import plotly.express as px
+        import plotly.graph_objects as go
         import numpy as np
 
-        # Select numeric columns
-        numeric_cols = self.df.select_dtypes(include=[np.number]).columns
+        try:
+            # Select only numeric columns directly
+            numeric_df = self.df.select_dtypes(include=[np.number])
 
-        if len(numeric_cols) < 2:
-            raise ValueError('Not enough numeric columns for correlation matrix')
+            if len(numeric_df.columns) < 2:
+                raise ValueError(f'Not enough numeric columns for correlation. Found {len(numeric_df.columns)} columns.')
 
-        # Calculate correlation
-        corr_matrix = self.df[numeric_cols].corr()
+            # Remove columns with too many nulls (keep if at least 50% valid)
+            valid_cols = []
+            for col in numeric_df.columns:
+                if numeric_df[col].notna().sum() > len(numeric_df) * 0.5:
+                    valid_cols.append(col)
 
-        # Create heatmap
-        fig = px.imshow(
-            corr_matrix,
-            title="Feature Correlation Matrix",
-            color_continuous_scale='RdBu_r',
-            aspect="auto"
-        )
+            if len(valid_cols) < 2:
+                raise ValueError(f'Not enough columns with sufficient data. Found {len(valid_cols)} valid columns.')
 
-        fig = apply_salary_theme(fig, "Feature Correlation Matrix", "heatmap")
+            # Create clean dataframe with only valid columns
+            clean_df = numeric_df[valid_cols].copy()
 
-        return fig
+            # Drop rows with any NaN (needed for correlation)
+            clean_df = clean_df.dropna()
+
+            if len(clean_df) < 10:
+                raise ValueError(f'Not enough rows after removing NaN. Only {len(clean_df)} rows remain.')
+
+            # Calculate correlation matrix
+            corr_matrix = clean_df.corr()
+
+            # Create heatmap
+            fig = px.imshow(
+                corr_matrix,
+                title="Feature Correlation Matrix",
+                color_continuous_scale='RdBu_r',
+                aspect="auto",
+                labels=dict(color="Correlation"),
+                text_auto='.2f'
+            )
+
+            # Update layout for better readability
+            fig.update_layout(
+                title={
+                    'text': "Feature Correlation Matrix",
+                    'x': 0.5,
+                    'font': {'size': 16}
+                },
+                xaxis_title="Features",
+                yaxis_title="Features",
+                height=max(400, len(valid_cols) * 50),
+                width=max(600, len(valid_cols) * 50)
+            )
+
+            fig = apply_salary_theme(fig, "Feature Correlation Matrix", "heatmap")
+
+            return fig
+
+        except Exception as e:
+            # Create error figure
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"Correlation Analysis Error:<br>{str(e)[:200]}",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=14, color="orange"),
+                align="center"
+            )
+            fig.update_layout(
+                height=400,
+                title_text="Correlation Analysis - Error",
+                plot_bgcolor='white',
+                paper_bgcolor='white'
+            )
+            return fig
 
     def create_key_findings_graphics(self, output_dir: str = 'figures/') -> Dict:
         """Create key findings graphics."""

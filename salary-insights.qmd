@@ -42,13 +42,30 @@ print(f"Locations: {summary['unique_locations']}")
 ```{python}
 #| label: salary-metrics
 #| echo: false
+#| output: asis
 
-# Display key salary metrics
-print("## Key Salary Metrics")
-print(f"- **Median Salary**: ${summary['salary_range']['median']:,.0f}")
-print(f"- **Salary Range**: ${summary['salary_range']['min']:,.0f} - ${summary['salary_range']['max']:,.0f}")
-print(f"- **Total Records**: {summary['total_records']:,}")
-print(f"- **Data Quality**: {summary['salary_coverage']:.1f}% salary coverage")
+# Display key salary metrics using proper markdown rendering
+from IPython.display import Markdown, display
+
+try:
+    salary_range = summary.get('salary_range', {})
+    median_salary = salary_range.get('median', 0)
+    min_salary = salary_range.get('min', 0)
+    max_salary = salary_range.get('max', 0)
+    total_records = summary.get('total_records', 0)
+    salary_coverage = summary.get('salary_coverage', 0)
+
+    markdown_content = f"""
+- **Median Salary**: ${median_salary:,.0f}
+- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}
+- **Total Records**: {total_records:,}
+- **Data Quality**: {salary_coverage:.1f}% salary coverage
+"""
+
+    display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Error displaying metrics: {str(e)}*"))
 ```
 
 ## Salary Distribution
@@ -72,10 +89,12 @@ fig.show()
 ```{python}
 #| label: experience-analysis
 #| echo: false
+#| output: asis
 
 # Create experience level analysis using abstraction layer
 from src.visualization import SalaryVisualizer
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+from IPython.display import Markdown, display
 
 # Use the abstraction layer for experience analysis
 visualizer = SalaryVisualizer(df)
@@ -97,21 +116,23 @@ try:
 
     # Display key insights from the analysis
     if exp_analysis and 'summary' in exp_analysis:
-        summary = exp_analysis['summary']
-        print("\n### Experience Level Insights:")
-        for level, data in summary.items():
+        summary_data = exp_analysis['summary']
+        markdown_content = "\n### Experience Level Insights:\n\n"
+        for level, data in summary_data.items():
             median_salary = data.get('median', 0)
             job_count = data.get('count', 0)
-            print(f"- **{level}**: ${median_salary:,.0f} median salary ({job_count:,} jobs)")
+            markdown_content += f"- **{level}**: ${median_salary:,.0f} median salary ({job_count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
 
 except Exception as e:
-    print(f"Experience analysis error: {e}")
+    display(Markdown(f"*Experience analysis error: {e}*"))
     # Fallback to simple visualization
     try:
         exp_fig = visualizer.plot_experience_salary_trend()
         exp_fig.show() if hasattr(exp_fig, 'show') else plt.show()
     except:
-        print("Experience analysis temporarily unavailable")
+        display(Markdown("*Experience analysis temporarily unavailable*"))
 ```
 
 **Career Growth Trajectory**: The data shows a clear progression path with significant salary increases at each level, demonstrating the value of experience and skill development in the tech industry.
@@ -121,9 +142,11 @@ except Exception as e:
 ```{python}
 #| label: industry-analysis
 #| echo: false
+#| output: asis
 
 # Display industry analysis using abstraction layer
 from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
 
 visualizer = SalaryVisualizer(df)
 
@@ -141,16 +164,17 @@ try:
     # Get industry analysis data
     industry_data = visualizer.get_industry_salary_analysis(top_n=10)
     if not industry_data.empty:
-        print("\n### Top Industries by Salary:")
+        markdown_content = "\n### Top Industries by Salary:\n\n"
         for _, row in industry_data.head(5).iterrows():
             industry = row.get('Industry', 'Unknown')
             salary = row.get('Median Salary', 0)
             count = row.get('Job Count', 0)
-            print(f"- **{industry}**: ${salary:,.0f} median salary ({count:,} jobs)")
+            markdown_content += f"- **{industry}**: ${salary:,.0f} median salary ({count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
 
 except Exception as e:
-    print(f"Industry analysis error: {e}")
-    print("Industry analysis temporarily unavailable")
+    display(Markdown(f"*Industry analysis error: {e}*\n\n*Industry analysis temporarily unavailable*"))
 ```
 
 ## Geographic Analysis
@@ -158,9 +182,11 @@ except Exception as e:
 ```{python}
 #| label: geographic-analysis
 #| echo: false
+#| output: asis
 
 # Display interactive geographic analysis
 from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
 
 visualizer = SalaryVisualizer(df)
 
@@ -185,16 +211,17 @@ try:
     # Get geographic analysis data from abstraction layer
     geo_data = visualizer.get_geographic_salary_analysis(top_n=15)
     if not geo_data.empty:
-        print("\n### Top Geographic Markets:")
+        markdown_content = "\n### Top Geographic Markets:\n\n"
         for _, row in geo_data.head(5).iterrows():
             location = row.get('Location', 'Unknown')
             salary = row.get('Median Salary', 0)
             count = row.get('Job Count', 0)
-            print(f"- **{location}**: ${salary:,.0f} median salary ({count:,} jobs)")
+            markdown_content += f"- **{location}**: ${salary:,.0f} median salary ({count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
 
 except Exception as e:
-    print(f"Geographic analysis error: {e}")
-    print("Geographic analysis temporarily unavailable")
+    display(Markdown(f"*Geographic analysis error: {e}*\n\n*Geographic analysis temporarily unavailable*"))
 ```
 
 ## Correlation Analysis
@@ -202,9 +229,11 @@ except Exception as e:
 ```{python}
 #| label: correlation-analysis
 #| echo: false
+#| output: asis
 
 # Display correlation matrix for salary insights
 from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
 
 visualizer = SalaryVisualizer(df)
 
@@ -223,15 +252,18 @@ try:
     )
     corr_fig.show()
 
-    print("\n### Key Insights from Correlation Analysis:")
-    print("- **Strong correlations** indicate factors that move together")
-    print("- **Weak correlations** suggest independent salary factors")
-    print("- **Negative correlations** show inverse relationships")
-    print("- Use this matrix to understand which factors most impact salary")
+    markdown_content = """
+### Key Insights from Correlation Analysis:
+
+- **Strong correlations** indicate factors that move together
+- **Weak correlations** suggest independent salary factors
+- **Negative correlations** show inverse relationships
+- Use this matrix to understand which factors most impact salary
+"""
+    display(Markdown(markdown_content))
 
 except Exception as e:
-    print(f"Correlation analysis error: {e}")
-    print("Correlation matrix visualization temporarily unavailable")
+    display(Markdown(f"*Correlation analysis error: {e}*\n\n*Correlation matrix visualization temporarily unavailable*"))
 ```
 
 ## Interactive Dashboard
@@ -243,6 +275,7 @@ except Exception as e:
 # Display the complete intelligence dashboard
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
+
 fig = dashboard.create_complete_intelligence_dashboard()
 fig.show()
 ```

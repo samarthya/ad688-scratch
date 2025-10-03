@@ -54,7 +54,7 @@ DERIVED_COLUMNS = [
 
 # Analysis-ready column names (for consistent usage across all modules)
 ANALYSIS_COLUMNS = {
-    'salary': 'salary_avg_imputed',
+    'salary': 'salary_avg',        # Standardized salary column (already clean from pipeline)
     'industry': 'industry',
     'experience': 'experience_years',
     'title': 'title',

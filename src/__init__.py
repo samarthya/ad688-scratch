@@ -18,18 +18,34 @@ Version: 2.0.0
 __version__ = "2.0.0"
 __author__ = "Saurabh Sharma"
 
-# Import main classes for easy access
-from .core import SparkJobAnalyzer, create_spark_analyzer, JobMarketDataProcessor
-from .ml import SalaryDisparityAnalyzer
-from .utils.spark_utils import create_spark_session
+# Import main classes for easy access - make PySpark imports optional
+try:
+    from .core import SparkJobAnalyzer, create_spark_analyzer, JobMarketDataProcessor
+    from .ml import SalaryDisparityAnalyzer
+    from .utils.spark_utils import create_spark_session
+    _PYSPARK_AVAILABLE = True
+except ImportError:
+    # PySpark not available - define dummy classes or skip
+    _PYSPARK_AVAILABLE = False
+    SparkJobAnalyzer = None
+    create_spark_analyzer = None
+    JobMarketDataProcessor = None
+    SalaryDisparityAnalyzer = None
+    create_spark_session = None
+
 from .visualization.charts import SalaryVisualizer, QuartoChartExporter
 
 __all__ = [
-    "SparkJobAnalyzer",
-    "create_spark_analyzer",
-    "JobMarketDataProcessor",
-    "SalaryDisparityAnalyzer",
-    "create_spark_session",
     "SalaryVisualizer",
     "QuartoChartExporter",
 ]
+
+# Add PySpark classes only if available
+if _PYSPARK_AVAILABLE:
+    __all__.extend([
+        "SparkJobAnalyzer",
+        "create_spark_analyzer",
+        "JobMarketDataProcessor",
+        "SalaryDisparityAnalyzer",
+        "create_spark_session",
+    ])

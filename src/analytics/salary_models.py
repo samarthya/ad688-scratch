@@ -116,8 +116,20 @@ class SalaryAnalyticsModels:
                 feature_df[col] = feature_df[col].astype(str).str.strip()
                 feature_df[col] = feature_df[col].replace(['nan', 'None', ''], 'Unknown')
 
-        print(f"Prepared features for {len(feature_df):,} records")
-        print(f"Salary range: ${feature_df[self.salary_col].min():,.0f} - ${feature_df[self.salary_col].max():,.0f}")
+        print(f"\n✅ Prepared features for {len(feature_df):,} records")
+        print(f"   Salary range: ${feature_df[self.salary_col].min():,.0f} - ${feature_df[self.salary_col].max():,.0f}")
+        print(f"   Median salary: ${feature_df[self.salary_col].median():,.0f}")
+        print(f"   Unique locations: {feature_df[self.location_col].nunique()}")
+        print(f"   Unique titles: {feature_df['title'].nunique()}")
+        print(f"   Unique industries: {feature_df['industry'].nunique()}")
+
+        # Check for data quality issues
+        if len(feature_df) < 100:
+            print(f"\n⚠️ WARNING: Only {len(feature_df)} records available. Models may not perform well.")
+
+        salary_std = feature_df[self.salary_col].std()
+        if salary_std < 1000:
+            print(f"\n⚠️ WARNING: Very low salary variation (std: ${salary_std:.2f}). Classification may fail.")
 
         return feature_df
 
@@ -320,6 +332,17 @@ class SalaryAnalyticsModels:
         # Make predictions
         y_pred_train = model.predict(X_train)
         y_pred_test = model.predict(X_test)
+
+        # Check if model has both classes
+        n_classes = len(model.classes_)
+        print(f"Model trained with {n_classes} classes: {model.classes_}")
+
+        if n_classes < 2:
+            raise ValueError(f"Classification requires at least 2 classes, but only found {n_classes}. "
+                           f"This indicates insufficient salary variation in the data. "
+                           f"Median salary: ${median_salary:,.0f}, "
+                           f"Salary range: ${feature_df[self.salary_col].min():,.0f} - ${feature_df[self.salary_col].max():,.0f}")
+
         y_pred_proba = model.predict_proba(X_test)[:, 1]
 
         # Calculate metrics

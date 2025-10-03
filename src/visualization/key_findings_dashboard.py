@@ -440,6 +440,11 @@ class KeyFindingsDashboard:
             return fig
 
         except Exception as e:
+            # Debug: Check if this is where the debug output is coming from
+            error_msg = str(e)
+            if "DEBUG" in error_msg or "DataFrame shape" in error_msg:
+                print(f"FOUND DEBUG SOURCE: Exception message contains debug info: {error_msg[:200]}")
+
             # Create error visualization with consistent styling
             fig = go.Figure()
             fig.add_annotation(

@@ -1,8 +1,8 @@
 """
 Auto Data Processor for Figure Generation
 
-This module provides automatic data loading and processing for visualization
-generation, with fallback mechanisms for different data sources.
+This module provides automatic data loading by delegating to the centralized
+website_processor pipeline to ensure consistency.
 """
 
 import pandas as pd
@@ -13,51 +13,27 @@ warnings.filterwarnings('ignore')
 
 def load_analysis_data(analysis_type="comprehensive"):
     """
-    Load data for analysis with automatic processing.
+    Load data for analysis using the centralized pipeline.
+
+    This delegates to website_processor.load_and_process_data() to ensure
+    all analysis uses the same standardized data.
 
     Args:
         analysis_type: Type of analysis ("comprehensive", "experience", "industry", etc.)
 
     Returns:
-        pd.DataFrame: Processed data ready for analysis
+        pd.DataFrame: Processed data ready for analysis with standardized columns
     """
     print(f"Loading data for {analysis_type} analysis...")
 
-    # Try different data sources in order of preference
-    data_sources = [
-        "data/processed/clean_job_data.csv",
-        "data/processed/job_market_sample.csv",
-        "data/raw/lightcast_job_postings.csv"
-    ]
+    # Use the centralized pipeline from website_processor
+    from .website_processor import load_and_process_data
 
-    for source in data_sources:
-        source_path = Path(source)
-        if source_path.exists():
-            try:
-                print(f"  Trying {source}...")
-                df = pd.read_csv(source_path)
+    df, summary = load_and_process_data()
 
-                # Process the data based on source
-                if "raw" in source:
-                    df = process_raw_data(df)
-                else:
-                    df = process_processed_data(df)
+    print(f"  ✅ Loaded {len(df):,} records with standardized columns")
 
-                print(f"  ✅ Successfully loaded {len(df):,} records from {source}")
-                return df
-
-            except Exception as e:
-                print(f"  ⚠️  Failed to load {source}: {e}")
-                continue
-
-    # If all sources fail, raise an error
-    raise FileNotFoundError(
-        "No data files found. Please ensure you have at least one of the following files:\n"
-        "- data/processed/clean_job_data.csv\n"
-        "- data/processed/job_market_sample.csv\n"
-        "- data/raw/lightcast_job_postings.csv\n\n"
-        "This is a student project that requires real data analysis."
-    )
+    return df
 
 def process_raw_data(df):
     """Process raw Lightcast data using centralized column mapping."""
@@ -117,14 +93,35 @@ def process_raw_data(df):
     # Create salary average (computed from raw salary data)
     print("  🧮 Computing salary_avg from raw salary data...")
 
-    # Convert salary columns to numeric first
-    salary_raw_cols = ['salary_single', 'salary_min', 'salary_max', 'salary']
+    # Debug: Check what salary columns we have
+    salary_cols_present = [c for c in df.columns if 'salary' in c.lower()]
+    print(f"    Available salary columns: {salary_cols_present}")
+
+    # Convert salary columns to numeric first (including pre-computed salary_avg from clean sample)
+    salary_raw_cols = ['salary_avg', 'salary_single', 'salary_min', 'salary_max', 'salary']
     for col in salary_raw_cols:
         if col in df.columns:
+            before_convert = df[col].notna().sum()
             df[col] = pd.to_numeric(df[col], errors='coerce')
+            after_convert = df[col].notna().sum()
+            if before_convert != after_convert:
+                print(f"    Converted {col}: {before_convert:,} → {after_convert:,} valid values")
 
-    # Compute salary_avg using priority logic
-    if 'salary_single' in df.columns or 'salary' in df.columns:
+    # Check if salary_avg already exists (from clean sample data)
+    salary_avg_exists = False
+    if 'salary_avg' in df.columns:
+        valid_count = df['salary_avg'].notna().sum()
+        print(f"    Found existing salary_avg column: {valid_count:,}/{len(df):,} valid ({valid_count/len(df)*100:.1f}%)")
+
+        if valid_count > len(df) * 0.5:
+            # Already has computed salary_avg with good coverage, use it
+            print(f"    ✅ Using existing salary_avg column - skipping computation")
+            salary_avg_exists = True
+        else:
+            print(f"    ⚠️ Existing salary_avg has low coverage, will compute from salary components")
+
+    # Only compute if we don't have a good salary_avg already
+    if not salary_avg_exists and ('salary_single' in df.columns or 'salary' in df.columns):
         # Priority 1: Use single salary value if available
         salary_single_col = 'salary_single' if 'salary_single' in df.columns else 'salary'
         df['salary_avg'] = df[salary_single_col].copy()
@@ -139,14 +136,14 @@ def process_raw_data(df):
                 df.loc[fill_mask, 'salary_avg'] = (df.loc[fill_mask, 'salary_min'] + df.loc[fill_mask, 'salary_max']) / 2
                 print(f"    Computed {fill_mask.sum():,} salary_avg values from salary ranges")
 
-    elif 'salary_min' in df.columns and 'salary_max' in df.columns:
+    elif not salary_avg_exists and 'salary_min' in df.columns and 'salary_max' in df.columns:
         # Only range data available - compute average
         both_exist = df['salary_min'].notna() & df['salary_max'].notna()
         df['salary_avg'] = np.nan
         df.loc[both_exist, 'salary_avg'] = (df.loc[both_exist, 'salary_min'] + df.loc[both_exist, 'salary_max']) / 2
         print(f"    Computed {both_exist.sum():,} salary_avg values from salary ranges")
 
-    else:
+    elif not salary_avg_exists:
         # Create synthetic salary data for testing
         print("    No salary data found - creating synthetic data for testing")
         df['salary_avg'] = np.random.normal(80000, 30000, len(df))
@@ -191,6 +188,80 @@ def process_raw_data(df):
                 df.loc[missing_salary_mask, 'salary_avg_imputed'] = 75000
                 print(f"    Applied fallback salary of $75,000 to {missing_salary_mask.sum():,} records")
 
+    # Final data quality assurance for analysis-ready data
+    print("  🔍 Final data quality checks...")
+
+    # Ensure salary_avg_imputed is numeric and clean
+    df['salary_avg_imputed'] = pd.to_numeric(df['salary_avg_imputed'], errors='coerce')
+
+    # Remove records with invalid salary data
+    invalid_salary_mask = df['salary_avg_imputed'].isna() | (df['salary_avg_imputed'] <= 0)
+    invalid_count = invalid_salary_mask.sum()
+    if invalid_count > 0:
+        print(f"    Removing {invalid_count:,} records with invalid salary data")
+        df = df[~invalid_salary_mask].copy()
+
+    # Final validation: Remove records with still unrealistic salary values
+    final_valid_mask = (df['salary_avg_imputed'] >= 20000) & (df['salary_avg_imputed'] <= 500000)
+    final_invalid_count = (~final_valid_mask).sum()
+    if final_invalid_count > 0:
+        print(f"    Removing {final_invalid_count:,} records with unrealistic salary values")
+        df = df[final_valid_mask].copy()
+
+    print(f"  ✅ Final dataset: {len(df):,} records with clean salary data")
+
+    # Standardize experience columns and ensure they are numeric
+    print("  📊 Processing experience data...")
+    experience_columns = ['experience_min', 'experience_max', 'min_experience', 'max_experience', 'MIN_YEARS_EXPERIENCE', 'MAX_YEARS_EXPERIENCE']
+
+    for col in experience_columns:
+        if col in df.columns:
+            print(f"    Processing {col}...")
+            # Convert to numeric, replacing non-numeric values with NaN
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Fill negative or unrealistic values with NaN
+            df.loc[df[col] < 0, col] = np.nan
+            df.loc[df[col] > 50, col] = np.nan  # Cap at 50 years experience
+
+            # Fill NaN values with reasonable defaults based on column type
+            if 'min' in col.lower():
+                df[col] = df[col].fillna(0)  # Minimum experience defaults to 0
+            elif 'max' in col.lower():
+                df[col] = df[col].fillna(df[col].median() if df[col].notna().any() else 5)  # Use median or default to 5
+
+    # Ensure experience_min <= experience_max
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        # Swap values where min > max
+        swap_mask = df['experience_min'] > df['experience_max']
+        if swap_mask.any():
+            print(f"    Swapping {swap_mask.sum()} records where min > max experience")
+            df.loc[swap_mask, ['experience_min', 'experience_max']] = df.loc[swap_mask, ['experience_max', 'experience_min']].values
+
+    # Create derived numeric columns for analysis
+    print("  🔢 Creating derived numeric columns...")
+
+    # Company size numeric (if exists)
+    if 'company_size' in df.columns:
+        df['company_size_numeric'] = pd.to_numeric(df['company_size'], errors='coerce')
+        df['company_size_numeric'] = df['company_size_numeric'].fillna(df['company_size_numeric'].median() if df['company_size_numeric'].notna().any() else 100)
+
+    # Job ID numeric (if exists)
+    if 'job_id' in df.columns:
+        df['job_id_numeric'] = pd.to_numeric(df['job_id'], errors='coerce')
+
+    # Experience range (max - min)
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        df['experience_range'] = df['experience_max'] - df['experience_min']
+        df['experience_range'] = df['experience_range'].fillna(0)
+
+    # Average experience
+    if 'experience_min' in df.columns and 'experience_max' in df.columns:
+        df['experience_avg'] = (df['experience_min'] + df['experience_max']) / 2
+        df['experience_avg'] = df['experience_avg'].fillna(df['experience_min'].fillna(df['experience_max'].fillna(2)))
+
+    print(f"  ✅ Experience data processing completed")
+
     # Create experience level
     if 'min_experience' in df.columns:
         df['experience_level'] = pd.cut(
@@ -216,47 +287,24 @@ def process_raw_data(df):
     return df
 
 def process_processed_data(df):
-    """Process already processed data."""
+    """Process already processed data using standardization pipeline."""
     print("  Processing pre-processed data...")
 
-    # Ensure required columns exist
-    required_columns = ['title', 'company', 'industry', 'location', 'salary_avg', 'experience_level']
-
-    for col in required_columns:
-        if col not in df.columns:
-            if col == 'salary_avg':
-                if 'salary_min' in df.columns and 'salary_max' in df.columns:
-                    df[col] = (df['salary_min'] + df['salary_max']) / 2
-                else:
-                    df[col] = np.random.normal(80000, 30000, len(df))
-            elif col == 'experience_level':
-                df[col] = np.random.choice(['Entry', 'Mid', 'Senior', 'Executive'], len(df))
-            elif col == 'industry':
-                df[col] = df.get('industry', 'Technology')
-            elif col == 'location':
-                df[col] = df.get('location', 'San Francisco')
-            else:
-                df[col] = f"Sample {col}"
+    # Use the same standardization pipeline as raw data
+    # This ensures SALARY_AVG -> salary_avg_imputed conversion
+    df = process_raw_data(df)
 
     return df
 
 
-def get_data_summary(df):
-    """Get summary statistics for the loaded data."""
-    summary = {
-        'total_records': len(df),
-        'salary_coverage': (df['salary_avg'].notna().sum() / len(df)) * 100,
-        'unique_industries': df['industry'].nunique() if 'industry' in df.columns else 0,
-        'unique_locations': df['location'].nunique() if 'location' in df.columns else 0,
-        'unique_companies': df['company'].nunique() if 'company' in df.columns else 0,
-        'salary_range': {
-            'min': df['salary_avg'].min() if 'salary_avg' in df.columns else 0,
-            'max': df['salary_avg'].max() if 'salary_avg' in df.columns else 0,
-            'median': df['salary_avg'].median() if 'salary_avg' in df.columns else 0
-        }
-    }
+def get_data_summary(df=None):
+    """
+    Get summary statistics for the loaded data.
 
-    return summary
+    Delegates to the centralized website_processor.get_data_summary() for consistency.
+    """
+    from .website_processor import get_data_summary as _get_summary
+    return _get_summary(df)
 
 def validate_data_for_analysis(df, analysis_type="comprehensive"):
     """Validate that data is suitable for the specified analysis."""

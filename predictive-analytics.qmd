@@ -1,6 +1,6 @@
 ---
 title: "Predictive Analytics"
-subtitle: "Machine Learning Models for Salary Prediction and Job Classification"
+subtitle: "Machine Learning Insights for Job Market Analysis"
 format:
   html:
     theme: cosmo
@@ -17,310 +17,211 @@ execute:
 
 ## Overview
 
-This page provides advanced predictive analytics using machine learning models. Our analysis includes two main models with plain-language explanations and job seeker implications.
+This page demonstrates basic predictive analytics using the job market data. We focus on simple, interpretable models that provide actionable insights for job seekers.
 
 ```{python}
 #| label: data-loading
-#| echo: false
 
-# Load data using existing abstraction layer
-from src.analytics import SalaryAnalyticsModels, JobMarketNLPAnalyzer, PredictiveAnalyticsDashboard
+# Load processed data using centralized pipeline
+from src.data import load_analysis_data
+from src.config.column_mapping import get_analysis_column
+import pandas as pd
+import numpy as np
 
-# Initialize analytics using abstraction layer (auto data loading)
-print("🚀 Initializing Predictive Analytics...")
-salary_models = SalaryAnalyticsModels()  # Uses auto data loading
-nlp_analyzer = JobMarketNLPAnalyzer()    # Uses auto data loading
-dashboard = PredictiveAnalyticsDashboard()  # Uses auto data loading
+print("Loading data...")
+df = load_analysis_data("predictive")
 
-print("✅ Analytics components initialized successfully")
+# Get standardized column names
+salary_col = get_analysis_column('salary')
+city_col = get_analysis_column('city')
+
+print(f"✅ Loaded {len(df):,} records")
+print(f"   Salary column: {salary_col}")
+print(f"   Location column: {city_col}")
 ```
 
-## Model 1: Multiple Linear Regression for Salary Prediction
+## Salary Distribution Analysis
 
-### What We're Modeling
-
-We're predicting salary based on location, job title, industry, experience, and skills. This helps understand which factors most influence compensation.
-
-### Features Used
-
-- **Location**: Geographic cost of living and market demand
-- **Job Title**: Role complexity and responsibility level
-- **Industry**: Sector-specific compensation standards
-- **Experience Years**: Career progression and expertise
-- **Skills Count**: Technical capability breadth
-
-### Why This Matters for Job Seekers
-
-- Identify high-paying locations to target
-- Understand which skills command salary premiums
-- Quantify the value of experience and specialization
-- Compare compensation across industries and roles
+Understanding the overall salary landscape helps set realistic expectations.
 
 ```{python}
-#| label: regression-model
-#| echo: false
+#| label: salary-distribution
 
-# Run regression analysis using abstraction layer
-try:
-    print("🔍 Running Multiple Linear Regression Analysis...")
-    analytics_results = salary_models.run_complete_analysis()
-    regression_results = analytics_results['regression']
+import plotly.express as px
+import plotly.graph_objects as go
 
-    # Display model performance
-    r2_score = regression_results['test_r2']
-    rmse = regression_results['test_rmse']
+# Create salary distribution visualization
+fig = px.histogram(
+    df,
+    x=salary_col,
+    nbins=50,
+    title="Salary Distribution in Tech Job Market",
+    labels={salary_col: "Annual Salary ($)"},
+    color_discrete_sequence=['#3498db']
+)
 
-    print(f"📊 Model Performance:")
-    print(f"   R² Score: {r2_score:.3f} (explains {r2_score*100:.1f}% of salary variance)")
-    print(f"   RMSE: ${rmse:,.0f} (average prediction error)")
-    print(f"   Sample Size: {regression_results['sample_size']['train']:,} training records")
+# Add median line
+median_salary = df[salary_col].median()
+fig.add_vline(
+    x=median_salary,
+    line_dash="dash",
+    line_color="red",
+    annotation_text=f"Median: ${median_salary:,.0f}",
+    annotation_position="top"
+)
 
-    # Show top salary drivers
-    top_features = regression_results['feature_importance'].head(5)
-    print(f"\n🎯 Top 5 Salary Drivers:")
-    for idx, row in top_features.iterrows():
-        print(f"   {idx+1}. {row['feature']}: {row['abs_coefficient']:.0f}")
+fig.update_layout(
+    height=500,
+    showlegend=False,
+    xaxis_title="Annual Salary ($)",
+    yaxis_title="Number of Jobs"
+)
 
-    # Display regression visualization
-    regression_figures = analytics_results['figures']
-    if 'regression_accuracy' in regression_figures:
-        regression_figures['regression_accuracy'].show()
+fig.show()
 
-    if 'regression_importance' in regression_figures:
-        regression_figures['regression_importance'].show()
-
-except Exception as e:
-    print(f"❌ Regression analysis error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
+# Print key statistics
+print(f"\n📊 Salary Statistics:")
+print(f"   Median: ${median_salary:,.0f}")
+print(f"   Mean: ${df[salary_col].mean():,.0f}")
+print(f"   25th percentile: ${df[salary_col].quantile(0.25):,.0f}")
+print(f"   75th percentile: ${df[salary_col].quantile(0.75):,.0f}")
 ```
 
-## Model 2: Classification for Above-Average Paying Jobs
+## Geographic Salary Analysis
 
-### What We're Modeling
-
-We're classifying jobs as "above-average" or "below-average" paying based on location, title, industry, and skills. This helps identify high-opportunity roles.
-
-### Features Used
-
-- **Location**: High-paying vs. lower-paying markets
-- **Job Title**: Premium roles vs. standard positions
-- **Industry**: High-compensation vs. average sectors
-- **Experience Level**: Senior vs. junior classifications
-- **Skills Complexity**: Advanced vs. basic skill requirements
-
-### Why This Matters for Job Seekers
-
-- Identify which combinations lead to above-average pay
-- Target high-opportunity locations and industries
-- Understand which skills unlock premium compensation
-- Focus job search on above-average paying role types
+Where you work significantly impacts compensation.
 
 ```{python}
-#| label: classification-model
-#| echo: false
+#| label: geographic-analysis
 
-# Display classification results using abstraction layer
-try:
-    classification_results = analytics_results['classification']
+# Top 15 cities by job count
+top_cities = df[city_col].value_counts().head(15).index
 
-    # Display model performance
-    accuracy = classification_results['test_accuracy']
-    threshold = classification_results['threshold']
+# Filter to top cities and calculate median salaries
+city_data = df[df[city_col].isin(top_cities)].groupby(city_col).agg({
+    salary_col: ['median', 'count']
+}).reset_index()
 
-    print(f"📊 Classification Model Performance:")
-    print(f"   Accuracy: {accuracy:.3f} ({accuracy*100:.1f}% correct predictions)")
-    print(f"   Above-Average Threshold: ${threshold:,.0f}")
-    print(f"   Sample Size: {classification_results['sample_size']['train']:,} training records")
+city_data.columns = ['city', 'median_salary', 'job_count']
+city_data = city_data.sort_values('median_salary', ascending=False)
 
-    # Show top predictors
-    top_predictors = classification_results['feature_importance'].head(5)
-    print(f"\n🎯 Top 5 Above-Average Job Predictors:")
-    for idx, row in top_predictors.iterrows():
-        print(f"   {idx+1}. {row['feature']}: {row['importance']:.3f}")
+# Create visualization
+fig = go.Figure()
 
-    # Display classification visualizations
-    if 'classification_importance' in regression_figures:
-        regression_figures['classification_importance'].show()
+fig.add_trace(go.Bar(
+    x=city_data['median_salary'],
+    y=city_data['city'],
+    orientation='h',
+    marker_color='#2ecc71',
+    text=[f"${x:,.0f}" for x in city_data['median_salary']],
+    textposition='outside',
+    hovertemplate='<b>%{y}</b><br>Median: $%{x:,.0f}<br>Jobs: %{customdata}<extra></extra>',
+    customdata=city_data['job_count']
+))
 
-    if 'classification_distribution' in regression_figures:
-        regression_figures['classification_distribution'].show()
+fig.update_layout(
+    title="Top 15 Cities by Median Salary",
+    xaxis_title="Median Annual Salary ($)",
+    yaxis_title="City",
+    height=600,
+    showlegend=False
+)
 
-except Exception as e:
-    print(f"❌ Classification analysis error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
+fig.show()
+
+# Print insights
+highest_city = city_data.iloc[0]
+print(f"\n🏆 Highest paying city: {highest_city['city']}")
+print(f"   Median salary: ${highest_city['median_salary']:,.0f}")
+print(f"   Number of jobs: {int(highest_city['job_count']):,}")
 ```
 
-## Skills Analysis and NLP Insights
+## Simple Salary Prediction
 
-### Skills Extraction and Clustering
-
-We analyze job requirements to identify skill clusters and salary premiums.
+We can predict salary ranges based on key factors.
 
 ```{python}
-#| label: nlp-analysis
-#| echo: false
+#| label: simple-prediction
 
-# Run NLP analysis using abstraction layer
-try:
-    print("🔍 Running NLP Skills Analysis...")
-    nlp_results = nlp_analyzer.run_complete_nlp_analysis()
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_absolute_error
 
-    # Display skills insights
-    skills_insights = nlp_results['insights']
-    print(f"📊 Skills Analysis Results:")
-    print(f"   Total Unique Skills: {skills_insights['total_unique_skills']:,}")
-    print(f"   Top In-Demand Skill: {skills_insights['top_skill']}")
-    print(f"   Most Valuable Skill: {skills_insights['most_valuable_skill']}")
-    print(f"   Skill Clusters: {skills_insights['num_clusters']}")
+# Prepare data for simple prediction
+# Use city, title, and industry as predictors
+prediction_features = []
+feature_names = []
 
-    # Display NLP visualizations
-    nlp_figures = nlp_results['figures']
+# Encode top 10 cities
+top_10_cities = df[city_col].value_counts().head(10).index
+for city in top_10_cities:
+    col_name = f'city_{city}'
+    df[col_name] = (df[city_col] == city).astype(int)
+    prediction_features.append(col_name)
+    feature_names.append(col_name)
 
-    if 'top_skills' in nlp_figures:
-        nlp_figures['top_skills'].show()
+# Encode top 10 titles
+if 'title' in df.columns:
+    top_10_titles = df['title'].value_counts().head(10).index
+    for title in top_10_titles:
+        col_name = f'title_{title[:20]}'  # Truncate long titles
+        df[col_name] = (df['title'] == title).astype(int)
+        prediction_features.append(col_name)
+        feature_names.append(col_name)
 
-    if 'skill_clusters' in nlp_figures:
-        nlp_figures['skill_clusters'].show()
+# Prepare features and target
+X = df[prediction_features].fillna(0)
+y = df[salary_col]
 
-    if 'skill_salary_correlation' in nlp_figures:
-        nlp_figures['skill_salary_correlation'].show()
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Display word clouds if available
-    word_clouds = nlp_results.get('word_clouds', {})
-    if word_clouds:
-        print(f"\n🎨 Generated {len(word_clouds)} word clouds for skills visualization")
+# Train simple linear regression
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-except Exception as e:
-    print(f"❌ NLP analysis error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
+# Evaluate
+y_pred = model.predict(X_test)
+r2 = r2_score(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+
+print(f"\n🤖 Simple Salary Prediction Model:")
+print(f"   R² Score: {r2:.3f} (explains {r2*100:.1f}% of variance)")
+print(f"   Mean Absolute Error: ${mae:,.0f}")
+print(f"   Training samples: {len(X_train):,}")
+print(f"   Test samples: {len(X_test):,}")
+
+# Feature importance (top 5)
+feature_importance = pd.DataFrame({
+    'feature': feature_names,
+    'coefficient': model.coef_
+}).sort_values('coefficient', ascending=False)
+
+print(f"\n📈 Top 5 Salary Boosters:")
+for idx, row in feature_importance.head(5).iterrows():
+    feature_name = row['feature'].replace('city_', '').replace('title_', '')
+    print(f"   {feature_name}: +${row['coefficient']:,.0f}")
 ```
 
-## Executive Summary Dashboard
+## Key Insights for Job Seekers
 
-### Comprehensive Analytics Overview
+Based on the analysis above, here are actionable recommendations:
 
-```{python}
-#| label: executive-dashboard
-#| echo: false
+### 🎯 Location Strategy
+- **Highest paying markets** are visible in the geographic analysis above
+- Consider **cost of living** alongside salary when evaluating offers
+- **Remote opportunities** may offer flexibility while maintaining competitive salaries
 
-# Create executive summary using abstraction layer
-try:
-    print("📊 Creating Executive Summary Dashboard...")
-    executive_dashboard = dashboard.create_executive_summary_dashboard()
-    executive_dashboard.show()
+### 💼 Career Planning
+- **Experience matters**: Salary generally increases with career progression
+- **Specialization pays**: Certain skills and titles command premium compensation
+- **Market awareness**: Understanding salary ranges helps in negotiations
 
-    # Display key insights
-    insights = analytics_results.get('insights', {})
-
-    print(f"\n🎯 Key Insights for Job Seekers:")
-    for insight in insights.get('job_seeker_recommendations', []):
-        print(f"   • {insight}")
-
-except Exception as e:
-    print(f"❌ Dashboard creation error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
-```
-
-## Model Comparison and Validation
-
-### Detailed Model Performance Analysis
-
-```{python}
-#| label: model-comparison
-#| echo: false
-
-# Create model comparison dashboard using abstraction layer
-try:
-    print("📊 Creating Model Comparison Dashboard...")
-    comparison_dashboard = dashboard.create_model_comparison_dashboard()
-    comparison_dashboard.show()
-
-    # Display comprehensive insights
-    if 'regression_insights' in insights:
-        print(f"\n📈 Regression Model Insights:")
-        for insight in insights['regression_insights']:
-            print(f"   • {insight}")
-
-    if 'classification_insights' in insights:
-        print(f"\n🎯 Classification Model Insights:")
-        for insight in insights['classification_insights']:
-            print(f"   • {insight}")
-
-except Exception as e:
-    print(f"❌ Model comparison error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
-```
-
-## Skills and Market Intelligence
-
-### Advanced Skills Analysis Dashboard
-
-```{python}
-#| label: skills-dashboard
-#| echo: false
-
-# Create skills insights dashboard using abstraction layer
-try:
-    print("📊 Creating Skills Intelligence Dashboard...")
-    skills_dashboard = dashboard.create_skills_insights_dashboard()
-    skills_dashboard.show()
-
-    # Display skill cluster insights
-    if 'clusters' in nlp_results:
-        print(f"\n🔍 Skill Cluster Analysis:")
-        for cluster_name, cluster_data in nlp_results['clusters'].items():
-            print(f"   {cluster_data['description']}: {cluster_data['total_skills']} skills")
-
-except Exception as e:
-    print(f"❌ Skills dashboard error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
-```
-
-## Summary and Recommendations
-
-### Strategic Insights for Different Stakeholders
-
-```{python}
-#| label: strategic-recommendations
-#| echo: false
-
-# Generate strategic recommendations using abstraction layer
-try:
-    comprehensive_report = dashboard.generate_comprehensive_report()
-    recommendations = comprehensive_report.get('recommendations', {})
-
-    print("🎯 STRATEGIC RECOMMENDATIONS")
-    print("=" * 40)
-
-    if 'for_job_seekers' in recommendations:
-        print("\n👥 For Job Seekers:")
-        for rec in recommendations['for_job_seekers']:
-            print(f"   • {rec}")
-
-    if 'for_employers' in recommendations:
-        print("\n🏢 For Employers:")
-        for rec in recommendations['for_employers']:
-            print(f"   • {rec}")
-
-    if 'for_policy_makers' in recommendations:
-        print("\n🏛️ For Policy Makers:")
-        for rec in recommendations['for_policy_makers']:
-            print(f"   • {rec}")
-
-    # Display executive summary
-    exec_summary = comprehensive_report.get('executive_summary', {})
-    if exec_summary:
-        print(f"\n📊 EXECUTIVE SUMMARY")
-        print(f"   Total Jobs Analyzed: {exec_summary.get('total_jobs_analyzed', 0):,}")
-        print(f"   Regression R²: {exec_summary.get('regression_r2', 0):.3f}")
-        print(f"   Classification Accuracy: {exec_summary.get('classification_accuracy', 0):.3f}")
-        print(f"   Salary Threshold: ${exec_summary.get('salary_threshold', 0):,.0f}")
-
-except Exception as e:
-    print(f"❌ Recommendations generation error: {e}")
-    print("This indicates a data quality issue that needs to be addressed.")
-```
+### 📊 Using This Analysis
+1. **Benchmark your offers** against median salaries in your target location
+2. **Identify high-opportunity markets** for relocation or remote work
+3. **Plan skill development** in areas that show strong salary correlation
 
 ---
 
-*All analysis uses machine learning models trained on real job market data. Models are automatically retrained when new data becomes available, ensuring fresh insights every time.*
+*Analysis based on {len(df):,} real job postings. Data is continuously updated to reflect current market conditions.*
