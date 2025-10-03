@@ -99,32 +99,18 @@ fig.show()
 #| label: geographic-analysis
 #| echo: false
 
-# Display geographic salary analysis using proper abstraction layer
-from src.visualization.key_findings_dashboard import KeyFindingsDashboard
-dashboard = KeyFindingsDashboard(df)
+# Display geographic salary analysis using city_name (plain text)
+from src.visualization import SalaryVisualizer
+visualizer = SalaryVisualizer(df)
 
-# Use the complete intelligence dashboard which includes geographic analysis
-# Or we could create a dedicated geographic method
-try:
-    from src.visualization import SalaryVisualizer
-    visualizer = SalaryVisualizer(df)
-
-    # Create interactive geographic analysis with decoded location data
-    geo_fig = visualizer.plot_salary_by_category('location')
-    geo_fig.update_layout(
-        title="Geographic Salary Analysis: Top Locations by Median Salary",
-        height=600,
-        margin=dict(l=80, r=80, t=100, b=80),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        autosize=True,
-        width=None,
-        font=dict(size=14)
-    )
-    geo_fig.show()
-except Exception as e:
-    print(f"Geographic analysis error: {e}")
-    print("Using location data from processed pipeline...")
+# Use city_name which has clean, plain text city names
+geo_fig = visualizer.plot_salary_by_category('city_name')
+geo_fig.update_layout(
+    title="Geographic Salary Analysis: Top Cities by Median Salary",
+    height=600,
+    margin=dict(l=80, r=80, t=100, b=80)
+)
+geo_fig.show()
 ```
 
 ## AI & Technology Salary Analysis

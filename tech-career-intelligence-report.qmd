@@ -299,12 +299,22 @@ fig.show()
 
 ### Key Insights from Experience Analysis
 
+```{python}
+#| output: asis
+
+from IPython.display import Markdown, display
+
+experience_insights = """
 The experience level analysis reveals several critical patterns:
 
-- **Entry to Mid-Level Transition**: Average salary increase of 46% (${levels[0]} to ${levels[1]})
-- **Mid to Senior Transition**: Average salary increase of 47% (${levels[1]} to ${levels[2]})
-- **Senior to Executive Transition**: Average salary increase of 43% (${levels[2]} to ${levels[3]})
+- **Entry to Mid-Level Transition**: Significant salary growth with experience
+- **Mid to Senior Transition**: Continued compensation increases for expertise
+- **Senior to Executive Transition**: Premium compensation for leadership roles
 - **Market Distribution**: Mid-level positions represent the largest segment of the job market
+"""
+
+display(Markdown(experience_insights))
+```
 
 ## Industry Analysis and Sector Trends
 
@@ -382,22 +392,22 @@ from src.visualization import SalaryVisualizer
 visualizer = SalaryVisualizer(df)
 
 try:
-    # Create interactive geographic analysis with decoded location data
-    geo_fig = visualizer.plot_salary_by_category('location')
+    # Create interactive geographic analysis using city_name (plain text)
+    geo_fig = visualizer.plot_salary_by_category('city_name')
     geo_fig.update_layout(
-        title="Geographic Salary Analysis: Regional Variations",
+        title="Geographic Salary Analysis: Top Cities by Median Salary",
         height=600,
-        margin=dict(l=80, r=80, t=100, b=80),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(size=12),
-        title_font_size=18
+        margin=dict(l=80, r=80, t=100, b=80)
     )
     geo_fig.show()
 
-    print("\n### Geographic Analysis Summary")
-    print("This analysis incorporates base64-decoded location data to provide accurate geographic insights.")
-    print("Key findings include significant salary variations across metropolitan areas and states.")
+    from IPython.display import Markdown, display
+    display(Markdown("""
+### Geographic Analysis Summary
+
+This analysis uses clean city name data to provide accurate geographic insights.
+Key findings include significant salary variations across metropolitan areas.
+"""))
 
 except Exception as e:
     print(f"Geographic analysis temporarily unavailable: {e}")
@@ -455,11 +465,15 @@ try:
     )
     ai_fig.show()
 
-    print("\n### AI and Technology Trends")
-    print("- Artificial Intelligence and Machine Learning roles command significant premiums")
-    print("- Cloud computing skills show strong salary correlation")
-    print("- Data science roles demonstrate consistent growth patterns")
-    print("- Emerging technologies create new high-value career paths")
+    from IPython.display import Markdown, display
+    display(Markdown("""
+### AI and Technology Trends
+
+- Artificial Intelligence and Machine Learning roles command significant premiums
+- Cloud computing skills show strong salary correlation
+- Data science roles demonstrate consistent growth patterns
+- Emerging technologies create new high-value career paths
+"""))
 
 except Exception as e:
     print(f"AI analysis temporarily unavailable: {e}")
