@@ -418,6 +418,7 @@ except Exception as e:
 
 ```{python}
 #| label: correlation-analysis
+#| output: asis
 
 # Create correlation matrix analysis
 try:
@@ -434,11 +435,15 @@ try:
     )
     corr_fig.show()
 
-    print("\n### Correlation Analysis Insights")
-    print("- Strong correlations indicate factors that consistently move together")
-    print("- Weak correlations suggest independent salary determinants")
-    print("- Negative correlations reveal inverse relationships")
-    print("- This matrix helps identify the most impactful salary factors")
+    from IPython.display import Markdown, display
+    display(Markdown("""
+### Correlation Analysis Insights
+
+- Strong correlations indicate factors that consistently move together
+- Weak correlations suggest independent salary determinants
+- Negative correlations reveal inverse relationships
+- This matrix helps identify the most impactful salary factors
+"""))
 
 except Exception as e:
     print(f"Correlation analysis temporarily unavailable: {e}")

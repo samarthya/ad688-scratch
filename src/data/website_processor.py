@@ -240,8 +240,11 @@ def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
     """
     print("📊 Loading job market data...")
 
+    # Get project root (works from any directory)
+    project_root = Path(__file__).parent.parent.parent
+
     # Priority 1: Load processed Parquet (preferred - already standardized)
-    parquet_path = Path("data/processed/job_market_processed.parquet")
+    parquet_path = project_root / "data/processed/job_market_processed.parquet"
     if parquet_path.exists():
         try:
             print(f"  ✅ Loading processed Parquet ({parquet_path})...")
@@ -253,7 +256,7 @@ def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
             print(f"  ⚠️  Failed to load Parquet: {e}")
 
     # Try sample data
-    sample_path = Path("data/processed/job_market_sample.csv")
+    sample_path = project_root / "data/processed/job_market_sample.csv"
     if sample_path.exists():
         try:
             print("  → Loading sample data...")
@@ -267,7 +270,7 @@ def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
             print(f"  ⚠️  Sample data failed: {e}")
 
     # Try raw data with full processing
-    raw_path = Path("data/raw/lightcast_job_postings.csv")
+    raw_path = project_root / "data/raw/lightcast_job_postings.csv"
     if raw_path.exists():
         try:
             print("  → Loading raw data with full processing...")

@@ -127,14 +127,37 @@ for city in top_10_cities:
     prediction_features.append(col_name)
     feature_names.append(col_name)
 
-# Encode top 10 titles
+# Encode top 10 titles (skip if titles are encoded/hashed)
 if 'title' in df.columns:
     top_10_titles = df['title'].value_counts().head(10).index
-    for title in top_10_titles:
-        col_name = f'title_{title[:20]}'  # Truncate long titles
-        df[col_name] = (df['title'] == title).astype(int)
-        prediction_features.append(col_name)
-        feature_names.append(col_name)
+    # Check if titles look like meaningful text (not just codes)
+    sample_title = str(top_10_titles[0]) if len(top_10_titles) > 0 else ""
+
+    # Only use titles if they're actual job titles (not codes like ET123...)
+    if sample_title and not sample_title.startswith('ET') and len(sample_title) > 3:
+        for title in top_10_titles:
+            col_name = f'title_{str(title)[:20]}'  # Truncate long titles
+            df[col_name] = (df['title'] == title).astype(int)
+            prediction_features.append(col_name)
+            feature_names.append(col_name)
+    else:
+        print("   ⚠️  Skipping title encoding (titles appear to be encoded IDs)")
+
+        # Use experience or industry as alternative features
+        if 'experience_years' in df.columns:
+            print("   ✅  Using experience_years as alternative feature")
+            df['experience_years_filled'] = df['experience_years'].fillna(df['experience_years'].median())
+            prediction_features.append('experience_years_filled')
+            feature_names.append('experience_years')
+
+        if 'naics2_name' in df.columns:
+            print("   ✅  Using top industries as alternative features")
+            top_5_industries = df['naics2_name'].value_counts().head(5).index
+            for industry in top_5_industries:
+                col_name = f'industry_{str(industry)[:15]}'
+                df[col_name] = (df['naics2_name'] == industry).astype(int)
+                prediction_features.append(col_name)
+                feature_names.append(col_name)
 
 # Prepare features and target
 X = df[prediction_features].fillna(0)
@@ -191,4 +214,10 @@ Based on the analysis above, here are actionable recommendations:
 
 ---
 
-*Analysis based on {len(df):,} real job postings. Data is continuously updated to reflect current market conditions.*
+```{python}
+#| label: footer-text
+#| output: asis
+
+from IPython.display import Markdown, display
+display(Markdown(f"*Analysis based on {len(df):,} real job postings. Data is continuously updated to reflect current market conditions.*"))
+```
