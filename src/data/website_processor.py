@@ -230,13 +230,18 @@ def process_website_data() -> Dict[str, Any]:
 
 def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Load processed data directly - NO runtime processing!
+    Load and process job market data with automatic caching.
 
     Data Source Priority:
-    1. Processed Parquet (already standardized, fastest)
-    2. Clean Sample CSV (fallback, requires minor standardization)
+    1. Processed Parquet (already standardized, instant load)
+    2. Clean Sample CSV (minor processing, saves to Parquet)
+    3. Raw CSV (full processing, auto-saves to Parquet for future runs)
 
-    If neither exists, run: python scripts/create_processed_data.py
+    On first run: Processes raw data and saves to Parquet
+    Subsequent runs: Loads directly from Parquet (much faster)
+
+    Returns:
+        tuple: (DataFrame, summary_dict)
     """
     print("📊 Loading job market data...")
 
@@ -255,40 +260,65 @@ def load_and_process_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
         except Exception as e:
             print(f"  ⚠️  Failed to load Parquet: {e}")
 
-    # Try sample data
+    # Priority 2: Try sample data (process and save to Parquet)
     sample_path = project_root / "data/processed/job_market_sample.csv"
     if sample_path.exists():
         try:
-            print("  → Loading sample data...")
+            print("  → Loading sample data (converting to Parquet)...")
             df = pd.read_csv(sample_path)
+            print(f"     Loaded {len(df):,} sample records")
+
             df = standardize_columns(df)
             df = apply_basic_cleaning(df)
             summary = get_data_summary(df)
-            print(f"  ✅ Loaded {summary['total_records']:,} sample records")
+
+            # Auto-save to Parquet for future runs
+            print(f"  💾 Saving to Parquet for faster future loads...")
+            parquet_path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(parquet_path, index=False)
+            file_size = parquet_path.stat().st_size / (1024*1024)
+            print(f"  ✅ Saved to {parquet_path.name} ({file_size:.1f} MB)")
+            print(f"  ℹ️  Next run will load from Parquet (instant!)")
+
             return df, summary
         except Exception as e:
             print(f"  ⚠️  Sample data failed: {e}")
 
-    # Try raw data with full processing
+    # Try raw data with full processing (auto-save to Parquet)
     raw_path = project_root / "data/raw/lightcast_job_postings.csv"
     if raw_path.exists():
         try:
-            print("  → Loading raw data with full processing...")
+            print("  → Processing raw data (first time setup)...")
             df = pd.read_csv(raw_path)
+            print(f"     Loaded {len(df):,} raw records")
+
+            print("  → Standardizing columns...")
             df = standardize_columns(df)
+
+            print("  → Applying data cleaning...")
             df = apply_comprehensive_cleaning(df)
+
             summary = get_data_summary(df)
-            print(f"  ✅ Loaded {summary['total_records']:,} raw records")
+            print(f"  ✅ Processed {summary['total_records']:,} records")
+
+            # Auto-save to Parquet for future runs
+            print(f"  💾 Saving processed data to Parquet for future use...")
+            parquet_path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(parquet_path, index=False)
+            file_size = parquet_path.stat().st_size / (1024*1024)
+            print(f"  ✅ Saved to {parquet_path.name} ({file_size:.1f} MB)")
+            print(f"  ℹ️  Next run will load from Parquet (much faster!)")
+
             return df, summary
         except Exception as e:
-            print(f"  ⚠️  Raw data failed: {e}")
+            print(f"  ⚠️  Raw data processing failed: {e}")
 
     # No data found
     raise FileNotFoundError(
-        "No processed data found.\n\n"
-        "Run this command to create it:\n"
-        "  python scripts/create_processed_data.py\n\n"
-        "This will process the raw data and create data/processed/job_market_processed.parquet"
+        "No data source found.\n\n"
+        "Expected data location:\n"
+        "  data/raw/lightcast_job_postings.csv\n\n"
+        "Please ensure raw data file exists in the data/raw/ directory."
     )
 
 def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:

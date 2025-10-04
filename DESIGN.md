@@ -18,23 +18,24 @@
 
 ## Architecture Overview
 
-### Core Principle: Process Once, Use Many Times
+### Core Principle: Automatic Process & Cache
 
 ```bash
-ONE-TIME (scripts/create_processed_data.py):
-  Raw CSV (72K records) → Process → Parquet (32K clean records)
+FIRST RUN (automatic):
+  Raw CSV → Detect → Process → Save Parquet → Use
 
-RUNTIME (All QMD/notebooks):
+SUBSEQUENT RUNS (instant):
   Load Parquet → Use directly (NO processing)
 ```
 
 ### Design Principles
 
-1. **Process Once**: Dedicated script processes raw data, saves as Parquet
-2. **Load Fast**: Parquet loads instantly vs CSV processing
-3. **Standardized Columns**: All snake_case, no runtime mapping
-4. **Single Salary Column**: `salary_avg` is source of truth
-5. **Simple**: Pandas + Parquet (no distributed processing needed)
+1. **Automatic Processing**: First run auto-detects and processes raw data
+2. **Smart Caching**: Automatically saves processed data as Parquet
+3. **Instant Loads**: Subsequent runs load Parquet instantly
+4. **Standardized Columns**: All snake_case, no runtime mapping
+5. **Single Salary Column**: `salary_avg` is source of truth
+6. **Simple**: Pandas + Parquet (no distributed processing needed)
 
 ### Current Dataset
 
@@ -48,21 +49,7 @@ RUNTIME (All QMD/notebooks):
 
 ## Data Processing Pipeline
 
-### ONE-TIME: Create Processed Data
-
-**Script**: `scripts/create_processed_data.py`
-
-**Steps**:
-
-1. Load `data/raw/lightcast_job_postings.csv`
-2. Standardize columns to snake_case
-3. Compute `salary_avg` from `salary_from`/`salary_to`
-4. Impute missing salaries (by city, experience, title, occupation)
-5. Validate range (20K-500K USD)
-6. Clean experience, location, industry
-7. Save `data/processed/job_market_processed.parquet`
-
-### RUNTIME: Load Processed Data
+### Automatic Data Loading (Smart Cache)
 
 **Module**: `src/data/website_processor.py`
 
@@ -70,8 +57,26 @@ RUNTIME (All QMD/notebooks):
 from src.data.website_processor import load_and_process_data
 
 df, summary = load_and_process_data()
-# Loads Parquet instantly, no processing
 ```
+
+**Behavior**:
+
+1. **First run** (no Parquet exists):
+   - Loads `data/raw/lightcast_job_postings.csv`
+   - Standardizes columns to snake_case
+   - Computes `salary_avg` from `salary_from`/`salary_to`
+   - Imputes missing salaries (by city, experience, title, occupation)
+   - Validates range (20K-500K USD)
+   - Cleans experience, location, industry
+   - **Auto-saves** `data/processed/job_market_processed.parquet`
+   - Returns DataFrame
+
+2. **Subsequent runs** (Parquet exists):
+   - Loads Parquet instantly
+   - **No processing needed** - uses cached data
+   - Returns DataFrame
+
+**Optional**: You can still run `scripts/create_processed_data.py` manually to regenerate the Parquet file from scratch.
 
 ---
 

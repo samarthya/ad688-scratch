@@ -23,10 +23,11 @@ The Tech Career Intelligence Platform is a data-driven web application built wit
 
 ### Core Principles
 
-1. **Process Once, Use Many Times**: Raw data is processed once into Parquet format, then loaded directly for all analyses
+1. **Automatic Process & Cache**: First run auto-processes raw data and saves to Parquet; subsequent runs load instantly from cache
 2. **Abstraction Layer**: All business logic resides in `src/` modules; QMD files are pure presentation layer
 3. **Column Standardization**: All processed data uses `snake_case` column names
 4. **Configuration-Driven**: Centralized column mapping and settings in `src/config/`
+5. **Auto-Generate Assets**: Website figures are automatically generated during QMD rendering
 
 ### Technology Stack
 
@@ -341,11 +342,11 @@ classDiagram
 
 ## Data Flow
 
-### One-Time Processing Flow
+### Automatic Processing Flow (First Run)
 
 ```mermaid
 flowchart TD
-    START([python scripts/create_processed_data.py])
+    START([quarto preview<br/>OR load_and_process_data<br/>First Run Only])
     RAW[(data/raw/lightcast_job_postings.csv<br/>32,364 records<br/>UPPERCASE columns)]
 
     START --> LOAD[Load Raw CSV]
@@ -379,9 +380,11 @@ flowchart TD
 
     EXPERIENCE --> CLEAN[Clean & Standardize<br/>Remove nulls<br/>Trim strings]
 
-    CLEAN --> PARQUET[(data/processed/<br/>job_market_processed.parquet<br/>32,364 records<br/>132 snake_case columns<br/>117.8 MB)]
+    CLEAN --> SAVE[💾 Auto-save to Parquet]
 
-    PARQUET --> DONE([✅ Ready for Runtime])
+    SAVE --> PARQUET[(data/processed/<br/>job_market_processed.parquet<br/>32,364 records<br/>132 snake_case columns<br/>117.8 MB)]
+
+    PARQUET --> DONE([✅ Ready for Runtime<br/>Next run loads instantly!])
 
     style START fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
     style DONE fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
@@ -400,15 +403,16 @@ flowchart TD
     START --> QMD
     QMD --> IMPORT[Import website_processor]
 
-    IMPORT --> GET_DF[get_processed_dataframe]
+    IMPORT --> GET_DATA[get_website_data]
 
-    GET_DF --> CHECK{Parquet exists?}
+    GET_DATA --> CHECK{Parquet exists?}
 
     CHECK -->|Yes| LOAD_FAST[Load Parquet<br/>~100ms ⚡]
-    CHECK -->|No| LOAD_SLOW[Process Raw CSV<br/>~5s 🐌]
+    CHECK -->|No| PROCESS[Auto-process & save<br/>~5s first time]
 
     LOAD_FAST --> DF[DataFrame<br/>snake_case columns]
-    LOAD_SLOW --> DF
+    PROCESS --> SAVE[💾 Save to Parquet]
+    SAVE --> DF
 
     DF --> SUMMARY[get_website_data_summary<br/>total_records, salary_range, etc.]
 
@@ -428,7 +432,7 @@ flowchart TD
 
     VIZ --> VIZ_PROCESS
 
-    VIZ_PROCESS --> FIGS[Generate figures/]
+    VIZ_PROCESS --> FIGS[🎨 Generate figures/]
 
     subgraph FORMATS[" "]
         F1[*.html - Interactive Plotly]
