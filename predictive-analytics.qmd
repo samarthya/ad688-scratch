@@ -35,7 +35,7 @@ df = load_analysis_data("predictive")
 salary_col = get_analysis_column('salary')
 city_col = get_analysis_column('city')
 
-print(f"✅ Loaded {len(df):,} records")
+print(f"[OK] Loaded {len(df):,} records")
 print(f"   Salary column: {salary_col}")
 print(f"   Location column: {city_col}")
 ```
@@ -80,7 +80,7 @@ fig.update_layout(
 fig.show()
 
 # Print key statistics
-print(f"\n📊 Salary Statistics:")
+print(f"\n[DATA] Salary Statistics:")
 print(f"   Median: ${median_salary:,.0f}")
 print(f"   Mean: ${df[salary_col].mean():,.0f}")
 print(f"   25th percentile: ${df[salary_col].quantile(0.25):,.0f}")
@@ -105,99 +105,114 @@ fig.show()
 
 ## Simple Salary Prediction
 
-We can predict salary ranges based on key factors.
+We can predict salary ranges based on key factors using PySpark MLlib.
 
 ```{python}
 #| label: simple-prediction
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_absolute_error
+from pyspark.sql import SparkSession
+from pyspark.ml.regression import LinearRegression
+from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder
+from pyspark.ml import Pipeline
+from pyspark.ml.evaluation import RegressionEvaluator
 
-# Prepare data for simple prediction
-# Use city, title, and industry as predictors
-prediction_features = []
-feature_names = []
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("Salary Prediction") \
+    .master("local[*]") \
+    .config("spark.driver.memory", "2g") \
+    .getOrCreate()
 
-# Encode top 10 cities
-top_10_cities = df[city_col].value_counts().head(10).index
-for city in top_10_cities:
-    col_name = f'city_{city}'
-    df[col_name] = (df[city_col] == city).astype(int)
-    prediction_features.append(col_name)
-    feature_names.append(col_name)
+# Filter out rows with null salaries FIRST
+print(f"\n[DATA] Filtering for valid salaries:")
+print(f"   Total records: {len(df):,}")
+valid_salary_mask = df[salary_col].notna()
+df_model = df[valid_salary_mask].copy()
+print(f"   With valid salary: {len(df_model):,}")
+print(f"   Filtered out: {len(df) - len(df_model):,}")
 
-# Encode top 10 titles (skip if titles are encoded/hashed)
-if 'title' in df.columns:
-    top_10_titles = df['title'].value_counts().head(10).index
-    # Check if titles look like meaningful text (not just codes)
-    sample_title = str(top_10_titles[0]) if len(top_10_titles) > 0 else ""
+# Convert to Spark DataFrame
+spark_df = spark.createDataFrame(df_model)
 
-    # Only use titles if they're actual job titles (not codes like ET123...)
-    if sample_title and not sample_title.startswith('ET') and len(sample_title) > 3:
-        for title in top_10_titles:
-            col_name = f'title_{str(title)[:20]}'  # Truncate long titles
-            df[col_name] = (df['title'] == title).astype(int)
-            prediction_features.append(col_name)
-            feature_names.append(col_name)
-    else:
-        print("   ⚠️  Skipping title encoding (titles appear to be encoded IDs)")
+# Prepare feature columns
+feature_cols = []
 
-        # Use experience or industry as alternative features
-        if 'experience_years' in df.columns:
-            print("   ✅  Using experience_years as alternative feature")
-            df['experience_years_filled'] = df['experience_years'].fillna(df['experience_years'].median())
-            prediction_features.append('experience_years_filled')
-            feature_names.append('experience_years')
+# Use top 10 cities as categorical features
+if city_col in spark_df.columns:
+    print(f"\n[FEATURE] Using {city_col} as categorical feature")
+    city_indexer = StringIndexer(inputCol=city_col, outputCol="city_index", handleInvalid="keep")
+    city_encoder = OneHotEncoder(inputCol="city_index", outputCol="city_vec")
+    feature_cols.append("city_vec")
 
-        if 'naics2_name' in df.columns:
-            print("   ✅  Using top industries as alternative features")
-            top_5_industries = df['naics2_name'].value_counts().head(5).index
-            for industry in top_5_industries:
-                col_name = f'industry_{str(industry)[:15]}'
-                df[col_name] = (df['naics2_name'] == industry).astype(int)
-                prediction_features.append(col_name)
-                feature_names.append(col_name)
+# Use title if available
+if 'title' in spark_df.columns:
+    print(f"[FEATURE] Using title as categorical feature")
+    title_indexer = StringIndexer(inputCol="title", outputCol="title_index", handleInvalid="keep")
+    title_encoder = OneHotEncoder(inputCol="title_index", outputCol="title_vec")
+    feature_cols.append("title_vec")
 
-# Prepare features and target
-X = df[prediction_features].fillna(0)
-y = df[salary_col]
+# Use industry if available
+if 'naics2_name' in spark_df.columns:
+    print(f"[FEATURE] Using industry as categorical feature")
+    industry_indexer = StringIndexer(inputCol="naics2_name", outputCol="industry_index", handleInvalid="keep")
+    industry_encoder = OneHotEncoder(inputCol="industry_index", outputCol="industry_vec")
+    feature_cols.append("industry_vec")
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Assemble features
+assembler = VectorAssembler(inputCols=feature_cols, outputCol="features", handleInvalid="skip")
 
-# Train simple linear regression
-model = LinearRegression()
-model.fit(X_train, y_train)
+# Create pipeline stages
+stages = []
+if city_col in spark_df.columns:
+    stages.extend([city_indexer, city_encoder])
+if 'title' in spark_df.columns:
+    stages.extend([title_indexer, title_encoder])
+if 'naics2_name' in spark_df.columns:
+    stages.extend([industry_indexer, industry_encoder])
+stages.append(assembler)
+
+# Build and fit pipeline
+pipeline = Pipeline(stages=stages)
+pipeline_model = pipeline.fit(spark_df)
+transformed_df = pipeline_model.transform(spark_df)
+
+# Split into train/test
+train_df, test_df = transformed_df.randomSplit([0.8, 0.2], seed=42)
+
+# Train linear regression model
+lr = LinearRegression(featuresCol="features", labelCol=salary_col, maxIter=10)
+lr_model = lr.fit(train_df)
+
+# Make predictions
+predictions = lr_model.transform(test_df)
 
 # Evaluate
-y_pred = model.predict(X_test)
-r2 = r2_score(y_test, y_pred)
-mae = mean_absolute_error(y_test, y_pred)
+evaluator = RegressionEvaluator(labelCol=salary_col, predictionCol="prediction", metricName="r2")
+r2 = evaluator.evaluate(predictions)
 
-print(f"\n🤖 Simple Salary Prediction Model:")
+evaluator_mae = RegressionEvaluator(labelCol=salary_col, predictionCol="prediction", metricName="mae")
+mae = evaluator_mae.evaluate(predictions)
+
+print(f"\n[MODEL] PySpark MLlib Linear Regression Results:")
 print(f"   R² Score: {r2:.3f} (explains {r2*100:.1f}% of variance)")
 print(f"   Mean Absolute Error: ${mae:,.0f}")
-print(f"   Training samples: {len(X_train):,}")
-print(f"   Test samples: {len(X_test):,}")
+print(f"   Training samples: {train_df.count():,}")
+print(f"   Test samples: {test_df.count():,}")
 
-# Feature importance (top 5)
-feature_importance = pd.DataFrame({
-    'feature': feature_names,
-    'coefficient': model.coef_
-}).sort_values('coefficient', ascending=False)
+# Show feature importance
+print(f"\n[INFO] Model trained with {len(feature_cols)} feature groups:")
+for feat in feature_cols:
+    print(f"   - {feat}")
 
-print(f"\n📈 Top 5 Salary Boosters:")
-for idx, row in feature_importance.head(5).iterrows():
-    feature_name = row['feature'].replace('city_', '').replace('title_', '')
-    print(f"   {feature_name}: +${row['coefficient']:,.0f}")
+# Stop Spark
+spark.stop()
 ```
 
 ## Key Insights for Job Seekers
 
 Based on the analysis above, here are actionable recommendations:
 
-### 🎯 Location Strategy
+### [TARGET] Location Strategy
 - **Highest paying markets** are visible in the geographic analysis above
 - Consider **cost of living** alongside salary when evaluating offers
 - **Remote opportunities** may offer flexibility while maintaining competitive salaries
@@ -207,7 +222,7 @@ Based on the analysis above, here are actionable recommendations:
 - **Specialization pays**: Certain skills and titles command premium compensation
 - **Market awareness**: Understanding salary ranges helps in negotiations
 
-### 📊 Using This Analysis
+### [DATA] Using This Analysis
 1. **Benchmark your offers** against median salaries in your target location
 2. **Identify high-opportunity markets** for relocation or remote work
 3. **Plan skill development** in areas that show strong salary correlation

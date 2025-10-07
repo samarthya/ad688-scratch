@@ -49,9 +49,9 @@ if figures:
     print("Figure files generated:")
     for name, path in figures.items():
         exists = os.path.exists(path)
-        print(f"  {name}: {path} - {'✅' if exists else '❌'}")
+        print(f"  {name}: {path} - {'[OK]' if exists else '[ERROR]'}")
 else:
-    print("⚠️ No figures were generated")
+    print("[WARNING] No figures were generated")
 ```
 
 ## Key Metrics Overview

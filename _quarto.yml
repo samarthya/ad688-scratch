@@ -43,6 +43,7 @@ format:
     embed-resources: true
     css: styles.css
     html-math-method: katex
+    mathjax: false
   docx:
     toc: true
     toc-depth: 3

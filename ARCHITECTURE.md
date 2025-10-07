@@ -1,197 +1,389 @@
 # System Architecture
 
-**Tech Career Intelligence Platform** - Comprehensive architecture documentation with Mermaid diagrams.
+**Tech Career Intelligence Platform** - Scalable data processing with PySpark, interactive analysis with Pandas + Plotly
+
+> See [DESIGN.md](DESIGN.md) for implementation guide and usage patterns
 
 ---
 
 ## Table of Contents
 
 1. [System Overview](#system-overview)
-2. [Architecture Diagram](#architecture-diagram)
-3. [Module Structure](#module-structure)
-4. [Class Diagrams](#class-diagrams)
-5. [Data Flow](#data-flow)
-6. [Quarto Website Integration](#quarto-website-integration)
-7. [Jupyter Notebooks](#jupyter-notebooks)
-8. [Configuration Management](#configuration-management)
+2. [Technology Stack](#technology-stack)
+3. [Architecture Diagram](#architecture-diagram)
+4. [Data Flow](#data-flow)
+5. [Module Structure](#module-structure)
+6. [Class Diagrams](#class-diagrams)
+7. [Deployment Architecture](#deployment-architecture)
 
 ---
 
 ## System Overview
 
-The Tech Career Intelligence Platform is a data-driven web application built with **Quarto**, **Python**, and **Plotly** to analyze job market trends, salary patterns, and career progression insights.
+The Tech Career Intelligence Platform is a **multi-layered data analytics system** that processes millions of job postings to provide actionable career insights through interactive web dashboards and reports.
 
-### Core Principles
+### Core Architecture Principles
 
-1. **Automatic Process & Cache**: First run auto-processes raw data and saves to Parquet; subsequent runs load instantly from cache
-2. **Abstraction Layer**: All business logic resides in `src/` modules; QMD files are pure presentation layer
-3. **Column Standardization**: All processed data uses `snake_case` column names
-4. **Configuration-Driven**: Centralized column mapping and settings in `src/config/`
-5. **Auto-Generate Assets**: Website figures are automatically generated during QMD rendering
+```mermaid
+graph LR
+    subgraph PRINCIPLE["SEPARATION OF CONCERNS"]
+        PYSPARK["PySpark<br/>Heavy ETL<br/>13M rows"]
+        PANDAS["Pandas<br/>Analysis<br/>30-50K rows"]
+        PLOTLY["Plotly<br/>Interactive<br/>Visualizations"]
+        QUARTO["Quarto<br/>Professional<br/>Presentations"]
+    end
 
-### Technology Stack
+    PYSPARK -->|"Process & Filter"| PANDAS
+    PANDAS -->|"Analyze & Model"| PLOTLY
+    PLOTLY -->|"Embed & Display"| QUARTO
+
+    style PRINCIPLE fill:#f5f5f5,stroke:#333,stroke-width:2px
+    style PYSPARK fill:#1565c0,stroke:#fff,color:#fff,stroke-width:2px
+    style PANDAS fill:#2e7d32,stroke:#fff,color:#fff,stroke-width:2px
+    style PLOTLY fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:2px
+    style QUARTO fill:#c62828,stroke:#fff,color:#fff,stroke-width:2px
+```
+
+### System Layers
+
+1. **Data Processing Layer** (PySpark)
+
+   - Load and clean 13M row CSV datasets
+   - Validate and transform data
+   - Engineer features at scale
+   - Save to efficient Parquet format
+
+2. **Analysis Layer** (Pandas + Scikit-learn)
+
+   - Load processed Parquet datasets
+   - Statistical analysis and ML models
+   - Feature engineering for ML
+   - Generate insights and metrics
+
+3. **Visualization Layer** (Plotly)
+
+   - Create interactive charts
+   - Generate executive dashboards
+   - Export multi-format outputs (HTML/PNG/SVG)
+   - Consistent theming and styling
+
+4. **Presentation Layer** (Quarto)
+
+   - Static website generation
+   - Dynamic report rendering
+   - Embed interactive visualizations
+   - Professional documentation
+
+---
+
+## Technology Stack
+
+### Primary Technologies
 
 ```mermaid
 graph TB
-    A[PRESENTATION LAYER<br/>Quarto HTML + Plotly + Markdown]
-    B[ABSTRACTION LAYER<br/>Python Classes<br/>Pandas + NumPy + Scikit-learn]
-    C[DATA LAYER<br/>Parquet Processed + CSV Raw]
+    subgraph PROCESSING[" DATA PROCESSING"]
+        SPARK[PySpark 4.0.1<br/>Distributed ETL]
+        PARQUET[Apache Parquet<br/>Columnar Storage]
+    end
 
-    A --> B
-    B --> C
+    subgraph ANALYSIS["[DATA] ANALYSIS & ML"]
+        PANDAS[Pandas 2.3<br/>Data Analysis]
+        SKLEARN[Scikit-learn 1.7<br/>Machine Learning]
+        NUMPY[NumPy 2.3<br/>Numerical Computing]
+    end
 
-    style A fill:#e1f5ff,stroke:#01579b,stroke-width:2px
-    style B fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style C fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    subgraph VISUALIZATION["[CHART] VISUALIZATION"]
+        PLOTLY[Plotly 6.3<br/>Interactive Charts]
+        MATPLOTLIB[Matplotlib 3.10<br/>Static Plots]
+        KALEIDO[Kaleido 1.1<br/>Image Export]
+    end
+
+    subgraph PRESENTATION[" PRESENTATION"]
+        QUARTO[Quarto<br/>Website Generator]
+        JUPYTER[Jupyter Lab<br/>Notebooks]
+        DOCX[python-docx<br/>Word Reports]
+    end
+
+    PROCESSING --> ANALYSIS
+    ANALYSIS --> VISUALIZATION
+    VISUALIZATION --> PRESENTATION
+
+    style PROCESSING fill:#1565c0,stroke:#fff,color:#fff,stroke-width:3px
+    style ANALYSIS fill:#2e7d32,stroke:#fff,color:#fff,stroke-width:3px
+    style VISUALIZATION fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:3px
+    style PRESENTATION fill:#c62828,stroke:#fff,color:#fff,stroke-width:3px
 ```
+
+### Technology Decision Matrix
+
+| Layer | Technology | Why? | Alternatives Considered |
+|-------|-----------|------|------------------------|
+| **ETL** | PySpark | 13M rows, distributed processing, lazy evaluation | Pandas (too slow), Dask (less mature) |
+| **Storage** | Parquet | Columnar, compressed, fast reads | CSV (slow), HDF5 (not distributed) |
+| **Analysis** | Pandas | Rich API, ecosystem, fast for <100K rows | Polars (new), Spark (overkill) |
+| **ML** | Scikit-learn | Standard, well-tested, integrates with Pandas | Spark MLlib (complex), TensorFlow (overkill) |
+| **Charts** | Plotly | Interactive, web-native, rich features | Altair (limited), D3 (complex) |
+| **Website** | Quarto | Reproducible, supports Python, professional | R Markdown (R-focused), Sphinx (docs-only) |
 
 ---
 
 ## Architecture Diagram
 
+### High-Level System Architecture
+
 ```mermaid
 graph TB
-    subgraph QUARTO["🌐 QUARTO WEBSITE"]
-        INDEX[index.qmd<br/>Homepage]
-        PIPELINE[data-pipeline.qmd<br/>Pipeline Demo]
-        INSIGHTS[salary-insights.qmd<br/>Salary Analysis]
-        MARKET[market-dashboard.qmd<br/>Market Overview]
-        PREDICT[predictive-analytics.qmd<br/>ML Models]
+    subgraph INPUT["DATA SOURCES"]
+        RAW[(Raw CSV<br/>13M rows<br/>lightcast_job_postings.csv)]
     end
 
-    subgraph PROCESSOR["📊 DATA PROCESSOR"]
-        WP[website_processor.py<br/>load_and_process_data<br/>get_processed_dataframe<br/>get_website_data_summary]
+    subgraph ETL["ETL LAYER - PySpark"]
+        PROCESSOR[JobMarketDataProcessor<br/>src/core/processor.py]
+        LOADER[DataLoader<br/>src/data/loaders.py]
+        TRANSFORMER[DataTransformer<br/>src/data/transformers.py]
+        VALIDATOR[DataValidator<br/>src/data/validators.py]
+
+        PROCESSOR --> LOADER
+        PROCESSOR --> TRANSFORMER
+        PROCESSOR --> VALIDATOR
     end
 
-    subgraph VIZ["📈 VISUALIZATION"]
-        SV[SalaryVisualizer<br/>Charts & Analysis]
-        KF[KeyFindingsDashboard<br/>Executive Dashboards]
-        TH[JobMarketTheme<br/>Styling]
+    subgraph STORAGE["DATA STORAGE"]
+        PARQUET[(Processed Parquet<br/>30-50K rows<br/>job_market_processed.parquet)]
     end
 
-    subgraph ANALYTICS["🤖 ANALYTICS"]
-        ML[SalaryAnalyticsModels<br/>Regression & Classification]
-        NLP[JobMarketNLPAnalyzer<br/>Skills Extraction]
-        DASH[PredictiveAnalyticsDashboard<br/>ML Dashboards]
+    subgraph ANALYTICS["ANALYTICS LAYER - Pandas"]
+        ANALYZER[SparkJobAnalyzer<br/>src/core/analyzer.py]
+        MODELS[SalaryAnalyticsModels<br/>src/analytics/salary_models.py]
+        NLP[JobMarketNLPAnalyzer<br/>src/analytics/nlp_analysis.py]
+        ML[ML Models<br/>src/ml/*.py]
     end
 
-    subgraph CONFIG["⚙️ CONFIGURATION"]
-        COL[column_mapping.py<br/>LIGHTCAST_COLUMN_MAPPING<br/>ANALYSIS_COLUMNS]
-        SET[settings.py<br/>Application Config]
+    subgraph VIZ["VISUALIZATION LAYER - Plotly"]
+        CHARTS[SalaryVisualizer<br/>src/visualization/charts.py]
+        DASHBOARD[KeyFindingsDashboard<br/>src/visualization/key_findings_dashboard.py]
+        THEME[JobMarketTheme<br/>src/visualization/theme.py]
     end
 
-    subgraph DATA["💾 DATA LAYER"]
-        PARQUET[(job_market_processed.parquet<br/>117.8 MB, 32K records)]
-        CSV[(lightcast_job_postings.csv<br/>Raw Data)]
+    subgraph OUTPUT["OUTPUT LAYER"]
+        QUARTO[Quarto Website<br/>*.qmd files]
+        JUPYTER[Jupyter Notebooks<br/>notebooks/*.ipynb]
+        REPORTS[Word Reports<br/>*.docx]
     end
 
-    INDEX --> WP
-    PIPELINE --> WP
-    INSIGHTS --> WP
-    MARKET --> WP
-    PREDICT --> WP
+    RAW --> PROCESSOR
+    PROCESSOR --> PARQUET
+    PARQUET --> ANALYZER
+    PARQUET --> MODELS
+    PARQUET --> NLP
+    PARQUET --> ML
 
-    WP --> VIZ
-    WP --> ANALYTICS
-    WP --> CONFIG
+    MODELS --> CHARTS
+    NLP --> CHARTS
+    ML --> CHARTS
+    ANALYZER --> DASHBOARD
 
-    VIZ --> TH
-    ANALYTICS --> ML
+    CHARTS --> THEME
+    DASHBOARD --> THEME
 
-    CONFIG --> WP
+    CHARTS --> QUARTO
+    DASHBOARD --> QUARTO
+    CHARTS --> JUPYTER
+    CHARTS --> REPORTS
 
-    WP --> PARQUET
-    PARQUET -.fallback.-> CSV
-
-    style QUARTO fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
-    style PROCESSOR fill:#fff3e0,stroke:#e65100,stroke-width:3px
-    style VIZ fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-    style ANALYTICS fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style CONFIG fill:#fff9c4,stroke:#f57f17,stroke-width:2px
-    style DATA fill:#fce4ec,stroke:#c2185b,stroke-width:3px
+    style INPUT fill:#37474f,stroke:#fff,color:#fff,stroke-width:2px
+    style ETL fill:#1565c0,stroke:#fff,color:#fff,stroke-width:3px
+    style STORAGE fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:2px
+    style ANALYTICS fill:#2e7d32,stroke:#fff,color:#fff,stroke-width:3px
+    style VIZ fill:#d84315,stroke:#fff,color:#fff,stroke-width:3px
+    style OUTPUT fill:#c62828,stroke:#fff,color:#fff,stroke-width:2px
 ```
 
+---
+
+## Data Flow
+
+### End-to-End Data Pipeline
+
+```mermaid
+flowchart TD
+    START([Raw CSV<br/>13M rows]) --> SPARK_READ[PySpark Read CSV<br/>Parallel Loading]
+
+    SPARK_READ --> STANDARDIZE[Standardize Columns<br/>UPPERCASE → snake_case]
+    STANDARDIZE --> CLEAN[Clean & Validate<br/>- Salary ranges<br/>- Experience values<br/>- Location data]
+    CLEAN --> IMPUTE[Intelligent Imputation<br/>- Salary by city+industry<br/>- Experience defaults]
+    IMPUTE --> FILTER[Filter Invalid Records<br/>- salary < 20K or > 500K<br/>- missing critical fields]
+    FILTER --> FEATURE[Feature Engineering<br/>- experience_level<br/>- salary_avg<br/>- company_size_numeric]
+    FEATURE --> SAVE_PARQUET[Save to Parquet<br/>Columnar + Compressed]
+
+    SAVE_PARQUET --> PARQUET[(Processed Parquet<br/>30-50K clean rows)]
+
+    PARQUET --> PANDAS_READ[Pandas Read Parquet<br/>Fast Load to Memory]
+
+    PANDAS_READ --> BRANCH{Analysis Type?}
+
+    BRANCH -->|Statistical| STATS[Statistical Analysis<br/>- Aggregations<br/>- Distributions<br/>- Correlations]
+    BRANCH -->|ML Models| ML[Machine Learning<br/>- Regression<br/>- Classification<br/>- Clustering]
+    BRANCH -->|NLP| NLP[NLP Analysis<br/>- Skills extraction<br/>- Topic modeling<br/>- Word clouds]
+
+    STATS --> PLOTLY[Plotly Visualizations]
+    ML --> PLOTLY
+    NLP --> PLOTLY
+
+    PLOTLY --> EXPORT{Export Format?}
+
+    EXPORT -->|Web| HTML[HTML<br/>Interactive Charts]
+    EXPORT -->|Reports| PNG[PNG/SVG<br/>Static Images]
+
+    HTML --> QUARTO[Quarto Website<br/>_salary/]
+    PNG --> DOCX[Word Reports<br/>*.docx]
+    HTML --> JUPYTER[Jupyter Notebooks<br/>notebooks/]
+
+    style START fill:#37474f,stroke:#fff,color:#fff
+    style SPARK_READ fill:#1565c0,stroke:#fff,color:#fff
+    style PARQUET fill:#6a1b9a,stroke:#fff,color:#fff
+    style PANDAS_READ fill:#2e7d32,stroke:#fff,color:#fff
+    style PLOTLY fill:#d84315,stroke:#fff,color:#fff
+    style QUARTO fill:#c62828,stroke:#fff,color:#fff
+```
+
+### Layer Boundaries and Contracts
+
+```mermaid
+graph LR
+    subgraph INPUT ["Input Contract"]
+        CSV[CSV File<br/>UPPERCASE columns<br/>Raw, unvalidated]
+    end
+
+    subgraph SPARK_LAYER ["PySpark Layer"]
+        SPARK_DF[Spark DataFrame<br/>snake_case columns<br/>Validated schema]
+    end
+
+    subgraph PARQUET_LAYER ["Storage Contract"]
+        PARQ[Parquet File<br/>snake_case columns<br/>Clean, validated<br/>30-50K rows]
+    end
+
+    subgraph PANDAS_LAYER ["Pandas Layer"]
+        PANDAS_DF[Pandas DataFrame<br/>snake_case columns<br/>Ready for analysis]
+    end
+
+    subgraph OUTPUT_LAYER ["Output Contract"]
+        FIGURES[Plotly Figures<br/>HTML/PNG/SVG<br/>Self-contained]
+    end
+
+    CSV -->|spark.read.csv| SPARK_DF
+    SPARK_DF -->|.write.parquet| PARQ
+    PARQ -->|pd.read_parquet| PANDAS_DF
+    PANDAS_DF -->|viz.plot_*| FIGURES
+
+    style INPUT fill:#37474f,stroke:#fff,color:#fff
+    style SPARK_LAYER fill:#1565c0,stroke:#fff,color:#fff
+    style PARQUET_LAYER fill:#6a1b9a,stroke:#fff,color:#fff
+    style PANDAS_LAYER fill:#2e7d32,stroke:#fff,color:#fff
+    style OUTPUT_LAYER fill:#d84315,stroke:#fff,color:#fff
+```
 
 ---
 
 ## Module Structure
 
-### Directory Tree
+### Directory Organization
 
 ```mermaid
-graph LR
+graph TB
     ROOT[src/]
 
-    ROOT --> ANALYTICS[analytics/<br/>ML & NLP]
-    ROOT --> CONFIG[config/<br/>Settings]
-    ROOT --> DATA[data/<br/>Pipeline]
-    ROOT --> ML[ml/<br/>Models]
+    ROOT --> CONFIG[config/<br/>Configuration]
+    ROOT --> CORE[core/<br/>PySpark ETL]
+    ROOT --> DATA[data/<br/>Data Utilities]
+    ROOT --> ANALYTICS[analytics/<br/>Pandas ML]
+    ROOT --> ML[ml/<br/>ML Models]
+    ROOT --> VIZ[visualization/<br/>Plotly Charts]
     ROOT --> UTILS[utils/<br/>Helpers]
-    ROOT --> VIZ[visualization/<br/>Charts]
 
-    ANALYTICS --> A1[salary_models.py]
-    ANALYTICS --> A2[nlp_analysis.py]
-    ANALYTICS --> A3[predictive_dashboard.py]
-    ANALYTICS --> A4[docx_report_generator.py]
+    CONFIG --> CONFIG1[column_mapping.py<br/>Column standards]
+    CONFIG --> CONFIG2[settings.py<br/>App config]
 
-    CONFIG --> C1[column_mapping.py]
-    CONFIG --> C2[settings.py]
+    CORE --> CORE1[processor.py<br/>JobMarketDataProcessor]
+    CORE --> CORE2[analyzer.py<br/>SparkJobAnalyzer]
 
-    DATA --> D1[website_processor.py]
-    DATA --> D2[auto_processor.py]
-    DATA --> D3[data_cleaner.py]
-    DATA --> D4[loaders.py]
+    DATA --> DATA1[loaders.py<br/>DataLoader Spark]
+    DATA --> DATA2[transformers.py<br/>DataTransformer Spark]
+    DATA --> DATA3[validators.py<br/>DataValidator Spark]
+    DATA --> DATA4[website_processor.py<br/>Quarto interface]
+    DATA --> DATA5[auto_processor.py<br/>Helper functions]
 
-    ML --> M1[regression.py]
-    ML --> M2[classification.py]
-    ML --> M3[clustering.py]
-    ML --> M4[feature_engineering.py]
+    ANALYTICS --> ANALYTICS1[salary_models.py<br/>SalaryAnalyticsModels]
+    ANALYTICS --> ANALYTICS2[nlp_analysis.py<br/>JobMarketNLPAnalyzer]
+    ANALYTICS --> ANALYTICS3[predictive_dashboard.py<br/>PredictiveAnalyticsDashboard]
+    ANALYTICS --> ANALYTICS4[docx_report_generator.py<br/>ReportGenerator]
 
-    VIZ --> V1[charts.py]
-    VIZ --> V2[key_findings_dashboard.py]
-    VIZ --> V3[theme.py]
+    ML --> ML1[regression.py<br/>Salary prediction]
+    ML --> ML2[classification.py<br/>Job categorization]
+    ML --> ML3[clustering.py<br/>Market segmentation]
+    ML --> ML4[feature_engineering.py<br/>Feature prep]
+    ML --> ML5[evaluation.py<br/>Model metrics]
 
-    style ROOT fill:#1a237e,stroke:#fff,color:#fff,stroke-width:3px
-    style ANALYTICS fill:#4a148c,stroke:#fff,color:#fff,stroke-width:2px
-    style CONFIG fill:#f57f17,stroke:#fff,color:#fff,stroke-width:2px
-    style DATA fill:#01579b,stroke:#fff,color:#fff,stroke-width:2px
-    style ML fill:#1b5e20,stroke:#fff,color:#fff,stroke-width:2px
-    style VIZ fill:#b71c1c,stroke:#fff,color:#fff,stroke-width:2px
+    VIZ --> VIZ1[charts.py<br/>SalaryVisualizer]
+    VIZ --> VIZ2[key_findings_dashboard.py<br/>KeyFindingsDashboard]
+    VIZ --> VIZ3[theme.py<br/>JobMarketTheme]
+
+    UTILS --> UTILS1[spark_utils.py<br/>Spark helpers]
+
+    style ROOT fill:#1a237e,stroke:#fff,color:#fff,stroke-width:4px
+    style CONFIG fill:#f57f17,stroke:#fff,color:#000,stroke-width:2px
+    style CORE fill:#1565c0,stroke:#fff,color:#fff,stroke-width:3px
+    style DATA fill:#0277bd,stroke:#fff,color:#fff,stroke-width:2px
+    style ANALYTICS fill:#2e7d32,stroke:#fff,color:#fff,stroke-width:3px
+    style ML fill:#558b2f,stroke:#fff,color:#fff,stroke-width:2px
+    style VIZ fill:#d84315,stroke:#fff,color:#fff,stroke-width:3px
+    style UTILS fill:#455a64,stroke:#fff,color:#fff,stroke-width:2px
 ```
+
+### Module Responsibilities
+
+| Module | Responsibility | Primary Technology | Output |
+|--------|---------------|-------------------|--------|
+| **src/config/** | Configuration management | Python | Settings, mappings |
+| **src/core/** | Heavy ETL processing | PySpark | Processed DataFrame |
+| **src/data/** | Data loading & utilities | PySpark + Pandas | DataFrames |
+| **src/analytics/** | ML models & analysis | Pandas + Scikit-learn | Models, insights |
+| **src/ml/** | Advanced ML | Pandas + Scikit-learn | Trained models |
+| **src/visualization/** | Charts & dashboards | Plotly | Figures |
+| **src/utils/** | Helper functions | Python | Utilities |
 
 ---
 
 ## Class Diagrams
 
-### 1. Data Processing Classes
+### 1. Data Processing Classes (PySpark)
 
 ```mermaid
 classDiagram
-    class WebsiteProcessor {
-        <<module>>
-        +load_and_process_data() tuple
-        +get_processed_dataframe() DataFrame
-        +get_website_data_summary() Dict
-        +standardize_columns(df) DataFrame
-        +decode_base64_locations(df) DataFrame
-        +parse_json_locations(df) DataFrame
-        +generate_website_figures(df) Dict
+    class JobMarketDataProcessor {
+        -spark: SparkSession
+        -settings: Settings
+        -data_loader: DataLoader
+        -data_transformer: DataTransformer
+        -data_validator: DataValidator
+        +load_and_process_data(path) DataFrame
+        +clean_and_standardize_data(df) DataFrame
+        +engineer_features(df) DataFrame
+        +save_processed_data(df, path) void
+        +assess_data_quality(df) Dict
     }
 
-    class AutoProcessor {
-        <<module>>
-        +load_analysis_data() DataFrame
-        +get_data_summary(df) Dict
-        +process_raw_data(df) DataFrame
-    }
-
-    class JobMarketDataCleaner {
-        -cleaning_stats: Dict
-        +clean_dataset(df) tuple
-        +_optimize_columns(df) tuple
-        +_clean_text_columns(df) tuple
-        +_clean_location_data(df) tuple
-        +_clean_salary_data(df) tuple
+    class SparkJobAnalyzer {
+        -spark: SparkSession
+        -settings: Settings
+        -job_data: DataFrame
+        +load_full_dataset(path) DataFrame
+        +calculate_salary_statistics() Dict
+        +analyze_by_location() DataFrame
+        +analyze_by_experience() DataFrame
+        +analyze_by_education() DataFrame
+        +generate_insights_report() Dict
     }
 
     class DataLoader {
@@ -199,55 +391,126 @@ classDiagram
         -settings: Settings
         +load_raw_data(path) DataFrame
         +load_processed_data(path) DataFrame
+        +validate_schema(df) bool
     }
 
     class DataTransformer {
         +clean_and_standardize(df) DataFrame
+        +standardize_column_names(df) DataFrame
+        +impute_missing_values(df) DataFrame
         +engineer_features(df) DataFrame
+        +create_experience_level(df) DataFrame
     }
 
     class DataValidator {
-        +validate_dataset(df) bool
+        +validate_dataset(df) Dict
         +check_required_columns(df) bool
-        +validate_salary_data(df) bool
+        +validate_salary_data(df) Dict
+        +validate_experience_data(df) Dict
+        +assess_data_quality(df) Dict
     }
 
-    WebsiteProcessor ..> AutoProcessor : delegates
-    WebsiteProcessor ..> JobMarketDataCleaner : uses
-    AutoProcessor ..> DataLoader : uses
-    JobMarketDataCleaner ..> DataTransformer : uses
-    JobMarketDataCleaner ..> DataValidator : uses
+    JobMarketDataProcessor --> DataLoader
+    JobMarketDataProcessor --> DataTransformer
+    JobMarketDataProcessor --> DataValidator
+    SparkJobAnalyzer --> DataLoader
+    SparkJobAnalyzer --> DataValidator
 ```
 
-### 2. Visualization Classes
+### 2. Analytics Classes (Pandas + ML)
+
+```mermaid
+classDiagram
+    class SalaryAnalyticsModels {
+        -df: DataFrame
+        -models: Dict
+        -scalers: Dict
+        -encoders: Dict
+        +prepare_features() DataFrame
+        +model_1_salary_regression(X, y) Dict
+        +model_2_above_average_classification(X, y) Dict
+        +run_complete_analysis() Dict
+        +create_analysis_visualizations(results) List~Figure~
+    }
+
+    class JobMarketNLPAnalyzer {
+        -df: DataFrame
+        -vectorizer: TfidfVectorizer
+        -skills_corpus: List
+        +extract_skills(text) List~str~
+        +create_word_cloud() Figure
+        +topic_clustering(n_topics) Dict
+        +analyze_skill_trends() DataFrame
+        +run_complete_nlp_analysis() Dict
+    }
+
+    class PredictiveAnalyticsDashboard {
+        -df: DataFrame
+        -salary_models: SalaryAnalyticsModels
+        -nlp_analyzer: JobMarketNLPAnalyzer
+        +create_executive_summary_dashboard() Figure
+        +create_model_comparison_dashboard() Figure
+        +create_skills_insights_dashboard() Figure
+        +generate_comprehensive_report() Dict
+    }
+
+    class SalaryRegressionModel {
+        -spark: SparkSession
+        -models: Dict
+        +prepare_regression_data(df) DataFrame
+        +train_linear_regression(df) Model
+        +train_random_forest(df) Model
+        +evaluate_model(model, test_df) Dict
+    }
+
+    class JobClassificationModel {
+        -spark: SparkSession
+        -pipelines: Dict
+        +prepare_classification_data(df) DataFrame
+        +train_logistic_regression(df) Model
+        +train_random_forest_classifier(df) Model
+        +evaluate_classification(model, test_df) Dict
+    }
+
+    PredictiveAnalyticsDashboard --> SalaryAnalyticsModels
+    PredictiveAnalyticsDashboard --> JobMarketNLPAnalyzer
+    SalaryAnalyticsModels --> SalaryRegressionModel
+    SalaryAnalyticsModels --> JobClassificationModel
+```
+
+### 3. Visualization Classes (Plotly)
 
 ```mermaid
 classDiagram
     class SalaryVisualizer {
         -df: DataFrame
+        -theme: JobMarketTheme
+        +get_overall_statistics() Dict
         +get_experience_progression_analysis() Dict
-        +get_education_analysis() Dict
-        +get_skills_analysis() Dict
-        +get_industry_salary_analysis() DataFrame
-        +get_geographic_salary_analysis() DataFrame
+        +get_education_roi_analysis() Dict
+        +get_industry_salary_analysis(top_n) DataFrame
+        +get_geographic_salary_analysis(top_n) DataFrame
         +plot_salary_distribution() Figure
-        +plot_salary_by_category(col) Figure
+        +plot_experience_salary_trend() Figure
+        +plot_salary_by_category(column) Figure
         +plot_ai_salary_comparison() Figure
         +plot_remote_salary_analysis() Figure
         +create_correlation_matrix() Figure
-        +create_key_findings_graphics(dir) Dict
     }
 
     class KeyFindingsDashboard {
         -df: DataFrame
+        -theme: JobMarketTheme
+        -key_metrics: Dict
         +create_key_metrics_cards() Figure
         +create_career_progression_analysis() Figure
-        +create_company_strategy_analysis() Figure
         +create_education_roi_analysis() Figure
-        +create_complete_intelligence_dashboard() Figure
+        +create_company_strategy_analysis() Figure
         +create_ai_technology_analysis() Figure
+        +create_complete_intelligence_dashboard() Figure
         -_calculate_key_metrics() Dict
         -_get_salary_progression_data() Dict
+        -_create_metric_card(metric, value) Figure
     }
 
     class JobMarketTheme {
@@ -256,586 +519,207 @@ classDiagram
         +CATEGORICAL_COLORS: List
         +SALARY_SCALE: List
         +FONT_FAMILY: str
-        +get_plotly_layout(title, w, h) Dict
-        +get_matplotlib_style() Dict
+        +BASE_FONT_SIZE: int
+        +get_plotly_layout(title, width, height) Dict
+        +get_color_scale(type) List
+        +apply_theme_to_figure(fig) Figure
     }
 
     class QuartoChartExporter {
-        +export_for_quarto(fig, path) void
-        +save_multiple_formats(fig, name) void
+        +export_for_quarto(fig, path) str
+        +save_multiple_formats(fig, base_name) Dict
+        +save_html(fig, path) void
+        +save_png(fig, path, width, height) void
+        +save_svg(fig, path, width, height) void
     }
 
-    SalaryVisualizer ..> JobMarketTheme : uses
-    KeyFindingsDashboard ..> JobMarketTheme : uses
-    SalaryVisualizer ..> QuartoChartExporter : uses
-    KeyFindingsDashboard ..> QuartoChartExporter : uses
+    SalaryVisualizer --> JobMarketTheme
+    KeyFindingsDashboard --> JobMarketTheme
+    SalaryVisualizer --> QuartoChartExporter
+    KeyFindingsDashboard --> QuartoChartExporter
 ```
-
-### 3. Analytics Classes
-
-```mermaid
-classDiagram
-    class SalaryAnalyticsModels {
-        -df: DataFrame
-        +run_complete_analysis() Dict
-        +prepare_features() DataFrame
-        +model_1_salary_regression(X) Dict
-        +model_2_above_average_classification(X) Dict
-        +create_analysis_visualizations(results) List~Figure~
-    }
-
-    class JobMarketNLPAnalyzer {
-        -df: DataFrame
-        +extract_skills() List~str~
-        +create_word_cloud() Figure
-        +topic_clustering() Dict
-        +visualize_skill_trends() Figure
-    }
-
-    class PredictiveAnalyticsDashboard {
-        +create_prediction_dashboard(model, X, y) Figure
-        +create_feature_importance_chart(model) Figure
-    }
-
-    class DOCXReportGenerator {
-        +generate_comprehensive_report(data) str
-        +add_figure_to_doc(doc, fig_path) void
-        +add_analysis_section(doc, analysis) void
-    }
-
-    SalaryAnalyticsModels ..> PredictiveAnalyticsDashboard : uses
-    JobMarketNLPAnalyzer ..> DOCXReportGenerator : uses
-```
-
-### 4. Configuration System
-
-```mermaid
-classDiagram
-    class ColumnMapping {
-        <<module>>
-        +LIGHTCAST_COLUMN_MAPPING: Dict
-        +ANALYSIS_COLUMNS: Dict
-        +DERIVED_COLUMNS: List
-        +EXPERIENCE_CATEGORIES: Dict
-        +get_analysis_column(key) str
-        +map_lightcast_columns(df) DataFrame
-    }
-
-    class Settings {
-        +raw_data_path: str
-        +processed_data_path: str
-        +output_dir: str
-        +min_salary: int
-        +max_salary: int
-        +required_columns: List
-        +default_chart_height: int
-        +test_size: float
-        +random_state: int
-    }
-
-    note for ColumnMapping "Maps:\nUPPERCASE → snake_case\nLogical → Actual columns"
-    note for Settings "Centralized\napplication config"
-```
-
 
 ---
 
-## Data Flow
+## Deployment Architecture
 
-### Automatic Processing Flow (First Run)
-
-```mermaid
-flowchart TD
-    START([quarto preview<br/>OR load_and_process_data<br/>First Run Only])
-    RAW[(data/raw/lightcast_job_postings.csv<br/>32,364 records<br/>UPPERCASE columns)]
-
-    START --> LOAD[Load Raw CSV]
-    LOAD --> RAW
-    RAW --> STANDARDIZE[standardize_columns]
-
-    STANDARDIZE --> MAP[Apply LIGHTCAST_COLUMN_MAPPING<br/>TITLE_NAME → title<br/>COMPANY_NAME → company]
-    MAP --> SNAKE[Convert UPPERCASE → snake_case<br/>CITY_NAME → city_name]
-    SNAKE --> DECODE[Decode base64 locations<br/>CITY base64 → city_name plain text]
-    DECODE --> JSON[Parse JSON locations<br/>LOCATION JSON → coordinates]
-
-    JSON --> SALARY[Compute salary_avg]
-
-    subgraph SALARY_COMPUTE[" "]
-        S1[Check for SALARY_AVG]
-        S2{Exists?}
-        S3[Use SALARY_AVG directly]
-        S4[Compute from salary_min/max]
-        S5[Intelligent Imputation<br/>Group by: city, experience,<br/>title, industry]
-
-        S1 --> S2
-        S2 -->|Yes| S3
-        S2 -->|No| S4
-        S4 --> S5
-    end
-
-    SALARY --> SALARY_COMPUTE
-    SALARY_COMPUTE --> VALIDATE[Validate salary data<br/>Range: 20K-500K<br/>Remove outliers]
-
-    VALIDATE --> EXPERIENCE[Process experience data<br/>experience_min/max → numeric<br/>Derived: avg, range]
-
-    EXPERIENCE --> CLEAN[Clean & Standardize<br/>Remove nulls<br/>Trim strings]
-
-    CLEAN --> SAVE[💾 Auto-save to Parquet]
-
-    SAVE --> PARQUET[(data/processed/<br/>job_market_processed.parquet<br/>32,364 records<br/>132 snake_case columns<br/>117.8 MB)]
-
-    PARQUET --> DONE([✅ Ready for Runtime<br/>Next run loads instantly!])
-
-    style START fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style DONE fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style RAW fill:#ff9800,stroke:#e65100,stroke-width:2px
-    style PARQUET fill:#2196f3,stroke:#0d47a1,stroke-width:3px,color:#fff
-    style SALARY_COMPUTE fill:#fff3e0,stroke:#e65100,stroke-width:2px
-```
-
-### Runtime Data Flow (Quarto Website)
-
-```mermaid
-flowchart TD
-    START([quarto preview])
-    QMD[*.qmd files load]
-
-    START --> QMD
-    QMD --> IMPORT[Import website_processor]
-
-    IMPORT --> GET_DATA[get_website_data]
-
-    GET_DATA --> CHECK{Parquet exists?}
-
-    CHECK -->|Yes| LOAD_FAST[Load Parquet<br/>~100ms ⚡]
-    CHECK -->|No| PROCESS[Auto-process & save<br/>~5s first time]
-
-    LOAD_FAST --> DF[DataFrame<br/>snake_case columns]
-    PROCESS --> SAVE[💾 Save to Parquet]
-    SAVE --> DF
-
-    DF --> SUMMARY[get_website_data_summary<br/>total_records, salary_range, etc.]
-
-    SUMMARY --> VIZ[Create Visualizations]
-
-    subgraph VIZ_PROCESS[" "]
-        V1[SalaryVisualizer df]
-        V2[get_analysis_column 'salary'<br/>→ Returns 'salary_avg']
-        V3[KeyFindingsDashboard df]
-        V4[create_key_metrics_cards]
-        V5[create_career_progression]
-
-        V1 --> V2
-        V3 --> V4
-        V3 --> V5
-    end
-
-    VIZ --> VIZ_PROCESS
-
-    VIZ_PROCESS --> FIGS[🎨 Generate figures/]
-
-    subgraph FORMATS[" "]
-        F1[*.html - Interactive Plotly]
-        F2[*.png - Static for DOCX]
-        F3[*.svg - Vector for scaling]
-    end
-
-    FIGS --> FORMATS
-    FORMATS --> RENDER[Render HTML pages]
-    RENDER --> OUTPUT[Output to _salary/]
-    OUTPUT --> DONE([✅ Website Ready])
-
-    style START fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style DONE fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style LOAD_FAST fill:#4caf50,stroke:#1b5e20,stroke-width:2px
-    style LOAD_SLOW fill:#f44336,stroke:#b71c1c,stroke-width:2px
-    style VIZ_PROCESS fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style FORMATS fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-```
-
-### Column Name Resolution Flow
-
-```mermaid
-flowchart LR
-    QMD[QMD File needs:<br/>'industry' analysis]
-
-    QMD --> IMPORT[Import get_analysis_column]
-    IMPORT --> CALL[get_analysis_column 'industry']
-    CALL --> LOOKUP[Lookup ANALYSIS_COLUMNS]
-
-    subgraph MAPPING[" "]
-        M1["ANALYSIS_COLUMNS = {<br/>'industry': 'naics2_name'<br/>}"]
-    end
-
-    LOOKUP --> MAPPING
-    MAPPING --> RETURN[Returns: 'naics2_name']
-
-    RETURN --> USE[visualizer.plot_salary_by_category<br/>'naics2_name']
-
-    USE --> CHECK{Column<br/>exists?}
-    CHECK -->|Yes| PLOT[Create Chart ✅]
-    CHECK -->|No| ERROR[Error: Column not found ❌]
-
-    style QMD fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style MAPPING fill:#fff9c4,stroke:#f57f17,stroke-width:2px
-    style PLOT fill:#4caf50,stroke:#1b5e20,stroke-width:2px,color:#fff
-    style ERROR fill:#f44336,stroke:#b71c1c,stroke-width:2px,color:#fff
-```
-
-
----
-
-## Quarto Website Integration
-
-### Page Architecture Flow
-
-```mermaid
-flowchart TD
-    subgraph QMD_STRUCTURE["📄 QMD File Structure"]
-        YAML[1. YAML Header<br/>title, format, theme]
-        DATA_LOAD[2. Data Loading Block<br/>get_processed_dataframe]
-        VIZ_BLOCKS[3. Visualization Blocks<br/>SalaryVisualizer<br/>KeyFindingsDashboard]
-    end
-
-    YAML --> DATA_LOAD
-    DATA_LOAD --> VIZ_BLOCKS
-
-    subgraph RULES["✅ QMD Rules"]
-        R1[✅ Use abstraction layer classes]
-        R2[✅ Use get_analysis_column]
-        R3[✅ Keep logic in src/ modules]
-        R4[❌ NO groupby, agg in QMD]
-        R5[❌ NO data wrangling in QMD]
-        R6[❌ NO hardcoded column names]
-    end
-
-    VIZ_BLOCKS -.follows.-> RULES
-
-    style QMD_STRUCTURE fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
-    style RULES fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-    style R1 fill:#c8e6c9,stroke:#2e7d32
-    style R2 fill:#c8e6c9,stroke:#2e7d32
-    style R3 fill:#c8e6c9,stroke:#2e7d32
-    style R4 fill:#ffcdd2,stroke:#c62828
-    style R5 fill:#ffcdd2,stroke:#c62828
-    style R6 fill:#ffcdd2,stroke:#c62828
-```
-
-### Page Relationships
+### Local Development
 
 ```mermaid
 graph TB
-    HOME[index.qmd<br/>Homepage<br/>Key metrics & navigation]
+    DEV[Developer Machine]
 
-    PIPELINE[data-pipeline.qmd<br/>Pipeline Demo<br/>Processing statistics]
+    subgraph LOCAL["Local Environment"]
+        VENV[Python Virtual Env<br/>.venv/]
+        SPARK_LOCAL[PySpark Local Mode<br/>Single JVM]
+        DATA_LOCAL[data/<br/>Local filesystem]
+        JUPYTER_LOCAL[Jupyter Lab<br/>localhost:8888]
+        QUARTO_LOCAL[Quarto Preview<br/>localhost:4200]
+    end
 
-    INSIGHTS[salary-insights.qmd<br/>Salary Analysis<br/>Distribution, Experience,<br/>Industry, Geography]
+    DEV --> VENV
+    VENV --> SPARK_LOCAL
+    SPARK_LOCAL --> DATA_LOCAL
+    VENV --> JUPYTER_LOCAL
+    VENV --> QUARTO_LOCAL
 
-    MARKET[market-dashboard.qmd<br/>Market Overview<br/>Executive dashboards,<br/>Geographic trends]
-
-    PREDICT[predictive-analytics.qmd<br/>ML Models<br/>Regression, Classification,<br/>Predictions]
-
-    REPORT[tech-career-intelligence-report.qmd<br/>DOCX Report<br/>Consolidated analysis]
-
-    HOME --> PIPELINE
-    HOME --> INSIGHTS
-    HOME --> MARKET
-    HOME --> PREDICT
-    HOME --> REPORT
-
-    PIPELINE -.shares data.-> INSIGHTS
-    INSIGHTS -.shares data.-> MARKET
-    MARKET -.shares data.-> PREDICT
-
-    style HOME fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style PIPELINE fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
-    style INSIGHTS fill:#9c27b0,stroke:#4a148c,stroke-width:2px,color:#fff
-    style MARKET fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
-    style PREDICT fill:#f44336,stroke:#b71c1c,stroke-width:2px,color:#fff
-    style REPORT fill:#607d8b,stroke:#263238,stroke-width:2px,color:#fff
+    style DEV fill:#37474f,stroke:#fff,color:#fff
+    style LOCAL fill:#1565c0,stroke:#fff,color:#fff,stroke-width:2px
 ```
 
-### Page Descriptions
-
-| File | Purpose | Key Visualizations |
-|------|---------|-------------------|
-| `index.qmd` | Homepage with key metrics | Overview cards, navigation |
-| `data-pipeline.qmd` | Data processing pipeline demo | Pipeline stats, processing flow |
-| `salary-insights.qmd` | Comprehensive salary analysis | Distribution, experience, industry, geography |
-| `market-dashboard.qmd` | Executive market overview | Geographic trends, market insights, AI analysis |
-| `predictive-analytics.qmd` | ML models and predictions | Regression, classification, salary predictions |
-| `tech-career-intelligence-report.qmd` | Downloadable DOCX report | Consolidated analysis |
-
----
-
-## Jupyter Notebooks
-
-### Notebook Structure
-
-```mermaid
-graph TD
-    subgraph NOTEBOOKS["📓 Jupyter Notebooks"]
-        N1[data_processing_pipeline_demo.ipynb<br/>Data Pipeline Showcase]
-        N2[ml_feature_engineering_lab.ipynb<br/>ML Models & Analytics]
-        N3[job_market_skill_analysis.ipynb<br/>Skills & NLP Analysis]
-    end
-
-    subgraph N1_SECTIONS["Pipeline Demo Sections"]
-        N1S1[1. Load raw data]
-        N1S2[2. standardize_columns process]
-        N1S3[3. Before/After statistics]
-        N1S4[4. Column mapping demo]
-        N1S5[5. Export to Parquet]
-    end
-
-    subgraph N2_SECTIONS["ML Lab Sections"]
-        N2S1[1. KMeans clustering]
-        N2S2[2. Linear Regression]
-        N2S3[3. Classification]
-        N2S4[4. Model evaluation]
-        N2S5[5. Feature importance]
-    end
-
-    subgraph N3_SECTIONS["Skills Analysis Sections"]
-        N3S1[1. Extract skills from descriptions]
-        N3S2[2. Topic clustering TF-IDF, LDA]
-        N3S3[3. Word clouds]
-        N3S4[4. Skill trends by industry]
-        N3S5[5. AI/ML skill detection]
-    end
-
-    N1 --> N1_SECTIONS
-    N2 --> N2_SECTIONS
-    N3 --> N3_SECTIONS
-
-    style NOTEBOOKS fill:#ff9800,stroke:#e65100,stroke-width:3px
-    style N1_SECTIONS fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style N2_SECTIONS fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-    style N3_SECTIONS fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-```
-
-### Notebook vs QMD Comparison
-
-```mermaid
-graph LR
-    subgraph JUPYTER["📓 Jupyter Notebooks"]
-        J1[Purpose: Exploration]
-        J2[Audience: Data Scientists]
-        J3[Execution: Manual]
-        J4[Data: Raw or Processed]
-        J5[Logic: Inline allowed]
-    end
-
-    subgraph QMD["📄 Quarto QMD Files"]
-        Q1[Purpose: Production]
-        Q2[Audience: General Users]
-        Q3[Execution: Automatic]
-        Q4[Data: Processed only]
-        Q5[Logic: Abstraction layer only]
-    end
-
-    J1 -.vs.-> Q1
-    J2 -.vs.-> Q2
-    J3 -.vs.-> Q3
-    J4 -.vs.-> Q4
-    J5 -.vs.-> Q5
-
-    style JUPYTER fill:#ff9800,stroke:#e65100,stroke-width:2px
-    style QMD fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
-```
-
-
----
-
-## Configuration Management
-
-### Column Mapping System
-
-```mermaid
-flowchart TD
-    RAW[Raw Data<br/>UPPERCASE columns<br/>TITLE_NAME, CITY_NAME]
-
-    STEP1[STEP 1:<br/>LIGHTCAST_COLUMN_MAPPING]
-
-    subgraph MAPPING1[" "]
-        M1["TITLE_NAME → title<br/>COMPANY_NAME → company<br/>CITY_NAME → city_name<br/>NAICS2_NAME → naics2_name"]
-    end
-
-    RAW --> STEP1
-    STEP1 --> MAPPING1
-
-    MAPPING1 --> PROCESSED[Processed Data<br/>snake_case columns<br/>title, city_name]
-
-    PROCESSED --> STEP2[STEP 2:<br/>ANALYSIS_COLUMNS]
-
-    subgraph MAPPING2[" "]
-        M2["'salary' → 'salary_avg'<br/>'industry' → 'naics2_name'<br/>'city' → 'city_name'<br/>'experience' → 'experience_years'"]
-    end
-
-    STEP2 --> MAPPING2
-
-    MAPPING2 --> ABSTRACT[Abstraction Layer<br/>get_analysis_column 'salary'<br/>→ Returns 'salary_avg']
-
-    ABSTRACT --> USAGE[QMD Files use:<br/>get_analysis_column 'key'<br/>to get actual column name]
-
-    style RAW fill:#ff9800,stroke:#e65100,stroke-width:2px
-    style PROCESSED fill:#4caf50,stroke:#1b5e20,stroke-width:2px,color:#fff
-    style MAPPING1 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
-    style MAPPING2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-    style ABSTRACT fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style USAGE fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
-```
-
-### Derived Columns Flow
-
-```mermaid
-flowchart LR
-    subgraph INPUT["Input Columns"]
-        I1[salary_min]
-        I2[salary_max]
-        I3[experience_min]
-        I4[experience_max]
-        I5[CITY base64]
-    end
-
-    subgraph PIPELINE["Data Pipeline"]
-        P1[Compute salary_avg<br/>salary_min + salary_max / 2]
-        P2[Compute experience_avg<br/>experience_min + max / 2]
-        P3[Decode CITY<br/>base64 → city_name]
-        P4[Create experience_range<br/>max - min]
-        P5[Flag ai_related<br/>Check skills for AI/ML]
-    end
-
-    subgraph OUTPUT["Derived Columns"]
-        O1[salary_avg ✨]
-        O2[experience_avg ✨]
-        O3[city_name ✨]
-        O4[experience_range ✨]
-        O5[ai_related ✨]
-    end
-
-    I1 --> P1
-    I2 --> P1
-    I3 --> P2
-    I4 --> P2
-    I4 --> P4
-    I3 --> P4
-    I5 --> P3
-
-    P1 --> O1
-    P2 --> O2
-    P3 --> O3
-    P4 --> O4
-    P5 --> O5
-
-    style INPUT fill:#ffebee,stroke:#c62828,stroke-width:2px
-    style PIPELINE fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style OUTPUT fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
-```
-
----
-
-## Summary
-
-### Key Architectural Decisions
-
-```mermaid
-mindmap
-  root((Tech Career<br/>Intelligence))
-    Process Once
-      Raw CSV to Parquet
-      One-time processing
-      Fast runtime loads
-    Abstraction Layer
-      Zero logic in QMD
-      All logic in src/
-      Reusable classes
-    Column Standards
-      All snake_case
-      Centralized mapping
-      get_analysis_column
-    Configuration
-      column_mapping.py
-      settings.py
-      DRY principle
-    Modular Design
-      data/
-      visualization/
-      analytics/
-      config/
-```
-
-### Class Responsibilities
+### Production/Scaled Deployment (Future)
 
 ```mermaid
 graph TB
-    subgraph DATA["📊 Data Classes"]
-        D1[website_processor<br/>Load & process data]
-        D2[JobMarketDataCleaner<br/>Clean & validate]
-        D3[DataLoader<br/>Load from files]
+    subgraph COMPUTE["Compute Cluster"]
+        SPARK_CLUSTER[PySpark Cluster<br/>Distributed Processing]
+        WORKERS[Worker Nodes<br/>Parallel Execution]
     end
 
-    subgraph VIZ["📈 Visualization Classes"]
-        V1[SalaryVisualizer<br/>Salary-focused charts]
-        V2[KeyFindingsDashboard<br/>Executive dashboards]
-        V3[JobMarketTheme<br/>Consistent styling]
+    subgraph STORAGE["Data Storage"]
+        S3[Cloud Object Storage<br/>S3/Azure Blob]
+        PARQUET_CLOUD[Parquet Files<br/>Partitioned by date]
     end
 
-    subgraph ANALYTICS["🤖 Analytics Classes"]
-        A1[SalaryAnalyticsModels<br/>ML models]
-        A2[JobMarketNLPAnalyzer<br/>Skills extraction]
-        A3[PredictiveAnalyticsDashboard<br/>ML dashboards]
+    subgraph WEB["Web Tier"]
+        STATIC[Static Site<br/>GitHub Pages/Netlify]
+        CDN[CDN<br/>CloudFlare]
     end
 
-    QMD[*.qmd Files] --> DATA
-    QMD --> VIZ
-    QMD --> ANALYTICS
+    SPARK_CLUSTER --> WORKERS
+    WORKERS --> PARQUET_CLOUD
+    PARQUET_CLOUD --> S3
+    S3 --> STATIC
+    STATIC --> CDN
 
-    DATA --> VIZ
-    VIZ --> A3
-
-    style QMD fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style DATA fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
-    style VIZ fill:#9c27b0,stroke:#4a148c,stroke-width:2px,color:#fff
-    style ANALYTICS fill:#ff9800,stroke:#e65100,stroke-width:2px
-```
-
-### Data Flow Principles
-
-```mermaid
-flowchart TD
-    RAW[Raw Data<br/>CSV, UPPERCASE]
-
-    PROCESS[One-time Processing<br/>create_processed_data.py]
-
-    PARQUET[Processed Data<br/>Parquet, snake_case]
-
-    RUNTIME[Runtime Load<br/>Direct, no processing]
-
-    ABSTRACTION[Abstraction Layer<br/>SalaryVisualizer<br/>KeyFindingsDashboard]
-
-    PRESENTATION[Presentation Layer<br/>QMD files<br/>No business logic]
-
-    OUTPUT[HTML Website<br/>_salary/]
-
-    RAW --> PROCESS
-    PROCESS --> PARQUET
-    PARQUET --> RUNTIME
-    RUNTIME --> ABSTRACTION
-    ABSTRACTION --> PRESENTATION
-    PRESENTATION --> OUTPUT
-
-    style RAW fill:#ff9800,stroke:#e65100,stroke-width:2px
-    style PROCESS fill:#f44336,stroke:#b71c1c,stroke-width:2px,color:#fff
-    style PARQUET fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
-    style RUNTIME fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
-    style ABSTRACTION fill:#9c27b0,stroke:#4a148c,stroke-width:2px,color:#fff
-    style PRESENTATION fill:#00bcd4,stroke:#006064,stroke-width:2px,color:#fff
-    style OUTPUT fill:#4caf50,stroke:#1b5e20,stroke-width:3px,color:#fff
+    style COMPUTE fill:#1565c0,stroke:#fff,color:#fff,stroke-width:2px
+    style STORAGE fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:2px
+    style WEB fill:#c62828,stroke:#fff,color:#fff,stroke-width:2px
 ```
 
 ---
 
-**Last Updated**: October 2025
-**Version**: 3.0 (Mermaid Diagrams Edition)
-**Format**: Markdown with Mermaid flowcharts, class diagrams, and mind maps
+## Performance Characteristics
+
+### Processing Performance
+
+| Operation | Technology | Dataset Size | Time | Memory |
+|-----------|-----------|--------------|------|--------|
+| Load raw CSV | PySpark | 13M rows | ~2-3 min | 4-8 GB |
+| Clean & transform | PySpark | 13M rows | ~5-10 min | 4-8 GB |
+| Save to Parquet | PySpark | 30-50K rows | ~10-30 sec | 2-4 GB |
+| Load Parquet | Pandas | 30-50K rows | ~1-2 sec | 500 MB |
+| Statistical analysis | Pandas | 30-50K rows | <1 sec | 500 MB |
+| ML training | Scikit-learn | 30-50K rows | 5-30 sec | 1-2 GB |
+| Generate chart | Plotly | 30-50K points | 1-5 sec | 200 MB |
+| Render Quarto page | Quarto | N/A | 5-15 sec | 500 MB |
+
+### Storage Efficiency
+
+```bash
+Raw CSV:        ~2.5 GB (13M rows, 131 columns)
+                ↓ PySpark processing + filtering
+Processed Parquet: ~120 MB (30-50K rows, 132 columns)
+                ↓ 95% size reduction
+```
+
+**Parquet Benefits**:
+
+- **Columnar storage**: Read only needed columns
+- **Compression**: Built-in snappy/gzip compression
+- **Type efficiency**: Proper data types vs. string CSV
+- **Fast reads**: Optimized for analytical queries
+
+---
+
+## Security & Data Privacy
+
+### Data Handling
+
+1. **No PII storage**: Job postings are anonymized
+2. **Local processing**: All data stays on local machine
+3. **No external APIs**: Self-contained processing
+4. **Version control**: Data files in `.gitignore`
+
+### Access Control
+
+- **Development**: Local file system permissions
+- **Production**: Cloud IAM roles (if deployed)
+- **API keys**: Environment variables (not committed)
+
+---
+
+## Monitoring & Observability
+
+### Logging
+
+```python
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+logger.info("Processing started...")
+```
+
+### Metrics to Track
+
+1. **Data Quality**:
+   - Missing value percentages
+   - Outlier counts
+   - Schema violations
+
+2. **Performance**:
+   - Processing time per stage
+   - Memory usage peaks
+   - Parquet file sizes
+
+3. **Model Performance**:
+   - R² scores
+   - Classification accuracy
+   - Feature importance
+
+---
+
+## Future Enhancements
+
+### Scalability
+
+1. **Distributed Spark**: Move to multi-node cluster for larger datasets
+2. **Incremental updates**: Process only new/changed data
+3. **Data partitioning**: Partition Parquet by date/region
+4. **Caching layer**: Redis for frequently accessed aggregations
+
+### Features
+
+1. **Real-time updates**: Stream processing with Spark Streaming
+2. **Interactive dashboards**: Add Streamlit/Dash for live exploration
+3. **API layer**: REST API for programmatic access
+4. **Automated reports**: Scheduled report generation and delivery
+
+### MLOps
+
+1. **Model versioning**: MLflow for experiment tracking
+2. **Model registry**: Centralized model storage
+3. **A/B testing**: Compare model versions
+4. **Monitoring**: Track model performance over time
+
+---
+
+## References
+
+- [PySpark Documentation](https://spark.apache.org/docs/latest/api/python/)
+- [Pandas Documentation](https://pandas.pydata.org/docs/)
+- [Plotly Python](https://plotly.com/python/)
+- [Quarto](https://quarto.org/)
+- [Scikit-learn](https://scikit-learn.org/)
+
+---
+
+**For implementation details and usage patterns**, see [DESIGN.md](DESIGN.md)
+
+**For project overview and setup**, see [README.md](README.md)

@@ -1,255 +1,644 @@
 # Technical Design & Implementation Guide
 
-**Current Architecture Documentation** - How the job market analytics system works
+Scalable data processing with PySpark + Interactive analysis with Pandas/Plotly
 
 > See [README.md](README.md) for project overview
+> See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system diagrams
 > Last Updated: October 2025
+
+---
 
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [Data Processing Pipeline](#data-processing-pipeline)
-3. [Column Standardization](#column-standardization)
+2. [Technology Stack](#technology-stack)
+3. [Data Processing Strategy](#data-processing-strategy)
 4. [System Components](#system-components)
 5. [Usage Patterns](#usage-patterns)
-6. [Homepage Metrics](#homepage-metrics)
+6. [Development Workflow](#development-workflow)
 
 ---
 
 ## Architecture Overview
 
-### Core Principle: Automatic Process & Cache
+### Design Philosophy
 
-```bash
-FIRST RUN (automatic):
-  Raw CSV → Detect → Process → Save Parquet → Use
+**Separation of Concerns**: Use the right tool for the right job
 
-SUBSEQUENT RUNS (instant):
-  Load Parquet → Use directly (NO processing)
-```
+- **PySpark**: Heavy data processing (ETL, cleaning, feature engineering) on large datasets
+- **Pandas**: Interactive analysis and visualization on processed datasets
+- **Plotly**: Rich interactive visualizations for web and reports
+- **Parquet**: Efficient columnar storage for fast analytics
 
-### Design Principles
+### Core Principles
 
-1. **Automatic Processing**: First run auto-detects and processes raw data
-2. **Smart Caching**: Automatically saves processed data as Parquet
-3. **Instant Loads**: Subsequent runs load Parquet instantly
-4. **Standardized Columns**: All snake_case, no runtime mapping
-5. **Single Salary Column**: `salary_avg` is source of truth
-6. **Simple**: Pandas + Parquet (no distributed processing needed)
-
-### Current Dataset
-
-- **Source**: Lightcast job postings (72,498 raw)
-- **Processed**: 32,364 with validated salary data
-- **Format**: Parquet (columnar, compressed)
-- **Columns**: 132 standardized snake_case
-- **Key**: `salary_avg`, `title`, `city_name`, `naics2_name`
+1. **Process Once, Use Many Times**: PySpark processes raw data → Parquet → Pandas analytics
+2. **Layered Architecture**: Clear separation between data processing, analysis, and presentation
+3. **Consistent Column Standards**: All processed data uses `snake_case` columns
+4. **Configuration-Driven**: Centralized mappings in `src/config/`
+5. **Type Safety**: Proper DataFrame contracts at layer boundaries
 
 ---
 
-## Data Processing Pipeline
+## Technology Stack
 
-### Automatic Data Loading (Smart Cache)
+### Data Processing Layer (PySpark)
 
-**Module**: `src/data/website_processor.py`
+#### Use For
 
-```python
-from src.data.website_processor import load_and_process_data
+- Loading large CSV files
+- Data cleaning and validation
+- Feature engineering at scale
+- Aggregations and transformations
+- Saving to Parquet
 
-df, summary = load_and_process_data()
-```
+#### Components
 
-**Behavior**:
+- `src/core/processor.py` - JobMarketDataProcessor
+- `src/core/analyzer.py` - SparkJobAnalyzer
+- `src/data/loaders.py` - DataLoader (Spark)
+- `src/data/transformers.py` - DataTransformer (Spark)
+- `src/data/validators.py` - DataValidator (Spark)
 
-1. **First run** (no Parquet exists):
-   - Loads `data/raw/lightcast_job_postings.csv`
-   - Standardizes columns to snake_case
-   - Computes `salary_avg` from `salary_from`/`salary_to`
-   - Imputes missing salaries (by city, experience, title, occupation)
-   - Validates range (20K-500K USD)
-   - Cleans experience, location, industry
-   - **Auto-saves** `data/processed/job_market_processed.parquet`
-   - Returns DataFrame
+### Analysis Layer (PySpark MLlib Only)
 
-2. **Subsequent runs** (Parquet exists):
-   - Loads Parquet instantly
-   - **No processing needed** - uses cached data
-   - Returns DataFrame
+#### Use For
 
-**Optional**: You can still run `scripts/create_processed_data.py` manually to regenerate the Parquet file from scratch.
+- Machine learning models (PySpark MLlib for distributed ML)
+- NLP analysis (PySpark MLlib for TF-IDF, clustering, Word2Vec)
+- Statistical analysis (Pandas for quick exploration)
+- Feature engineering for ML (PySpark transformers)
+
+#### Components
+
+- `src/analytics/salary_models.py` - SalaryAnalyticsModels (PySpark MLlib)
+- `src/analytics/nlp_analysis.py` - JobMarketNLPAnalyzer (PySpark MLlib)
+- `src/ml/` - Advanced ML models (PySpark MLlib)
+
+### Visualization Layer (Plotly + Matplotlib)
+
+**Use For**:
+
+- Interactive charts for Quarto website
+- Static exports for Word reports
+- Dashboard components
+- Executive visualizations
+
+**Components**:
+
+- `src/visualization/charts.py` - SalaryVisualizer
+- `src/visualization/key_findings_dashboard.py` - KeyFindingsDashboard
+- `src/visualization/theme.py` - JobMarketTheme
+
+### Presentation Layer (Quarto)
+
+**Use For**:
+
+- Website generation
+- Report rendering
+- Embedding interactive charts
+- Documentation
+
+**Components**:
+
+- `*.qmd` files (index, salary-insights, predictive-analytics, etc.)
+- HTML output with embedded Plotly charts
 
 ---
 
-## Column Standardization
+## Data Processing Strategy
 
-### All columns use snake_case
+### Three-Tier Data Pipeline
 
-| Raw | Processed |
-|-----|-----------|
-| `SALARY_FROM` | `salary_min` |
-| `SALARY_TO` | `salary_max` |
-| `SALARY_AVG` | `salary_avg` (computed) |
-| `TITLE_NAME` | `title` |
-| `CITY_NAME` | `city_name` |
-| `NAICS2_NAME` | `naics2_name` |
-| `SKILLS_NAME` | `skills_name` |
+```mermaid
+flowchart TB
+    subgraph TIER1["TIER 1: RAW DATA - PySpark Processing"]
+        RAW[("data/raw/<br/>lightcast_job_postings.csv<br/>~13M rows, 683 MB")]
 
-### Standard Column Lookup
+        ETL["PySpark ETL Pipeline<br/>(src/core/processor.py)"]
 
-**Config**: `src/config/column_mapping.py`
+        STEPS["<b>Processing Steps:</b><br/>- Load CSV efficiently<br/>- Standardize columns (UPPERCASE → snake_case)<br/>- Clean & validate salary data<br/>- Decode/parse location fields<br/>- Impute missing values<br/>- Filter invalid records<br/>- Feature engineering"]
 
-```python
-ANALYSIS_COLUMNS = {
-    'salary': 'salary_avg',
-    'title': 'title',
-    'city': 'city_name',
-    'industry': 'naics2_name',
-}
+        SAVE["Save to Parquet<br/>(columnar, compressed)"]
 
-# Usage
-from src.config.column_mapping import get_analysis_column
-salary_col = get_analysis_column('salary')  # 'salary_avg'
+        RAW --> ETL
+        ETL --> STEPS
+        STEPS --> SAVE
+    end
+
+    subgraph TIER2["TIER 2: PROCESSED DATA - Pandas Analysis"]
+        PARQUET[("data/processed/<br/>job_market_processed.parquet<br/>~30-50K rows, 120 MB")]
+
+        LOAD["Pandas Load<br/>(pd.read_parquet - instant!)"]
+
+        READY["Analysis-Ready Data:<br/>- snake_case columns<br/>- Clean salary data<br/>- Validated records"]
+
+        ANALYSIS["Multiple Analysis Paths"]
+
+        PATH1["Statistical Analysis<br/>(src/visualization/)"]
+        PATH2["ML Models<br/>(src/analytics/ + src/ml/)"]
+        PATH3["Dashboards<br/>(key_findings_dashboard)"]
+        PATH4["NLP Analysis<br/>(nlp_analysis.py)"]
+
+        PARQUET --> LOAD
+        LOAD --> READY
+        READY --> ANALYSIS
+        ANALYSIS --> PATH1
+        ANALYSIS --> PATH2
+        ANALYSIS --> PATH3
+        ANALYSIS --> PATH4
+    end
+
+    subgraph TIER3["TIER 3: PRESENTATION <br/> Plotly Visualizations"]
+        FIGURES[("figures/<br/>*.html, *.png, *.svg")]
+
+        PLOTLY["Plotly Charts"]
+
+        OUTPUTS["Output Formats:<br/>- Interactive HTML (Quarto)<br/>- Static PNG/SVG (Reports)<br/>- Themed & consistent"]
+
+        QUARTO["Quarto Website<br/>(*.qmd → _salary/)"]
+
+        PLOTLY --> OUTPUTS
+        OUTPUTS --> FIGURES
+        FIGURES --> QUARTO
+    end
+
+    SAVE -.-> PARQUET
+    PATH1 --> PLOTLY
+    PATH2 --> PLOTLY
+    PATH3 --> PLOTLY
+    PATH4 --> PLOTLY
+
+    style TIER1 fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
+    style TIER2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:3px
+    style TIER3 fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    style RAW fill:#1565c0,stroke:#fff,color:#fff
+    style PARQUET fill:#6a1b9a,stroke:#fff,color:#fff
+    style FIGURES fill:#e65100,stroke:#fff,color:#fff
 ```
 
 ---
 
 ## System Components
 
-### Data Processing (`src/data/`)
+### 1. Configuration (`src/config/`)
 
-**`website_processor.py`**:
+**Purpose**: Centralized settings and column mappings
 
-- `load_and_process_data()` - Loads Parquet
-- `standardize_columns()` - Column standardization
-- `get_data_summary()` - Data statistics
-- `generate_analysis_results()` - Run all analyses
-- `generate_website_figures()` - Create visualizations
+#### `column_mapping.py`
 
-### Visualization (`src/visualization/`)
+```python
+# Mapping from raw Lightcast columns to standardized names
+LIGHTCAST_COLUMN_MAPPING = {
+    'SALARY_FROM': 'salary_min',
+    'SALARY_TO': 'salary_max',
+    'TITLE_NAME': 'title',
+    'CITY_NAME': 'city_name',
+    'NAICS2_NAME': 'industry',
+    # ... more mappings
+}
 
-**`charts.py` - SalaryVisualizer**:
+# Analysis-friendly column lookup
+ANALYSIS_COLUMNS = {
+    'salary': 'salary_avg',
+    'city': 'city_name',
+    'industry': 'industry',
+}
 
-- `get_experience_progression_analysis()`
-- `get_education_analysis()`
-- `get_skills_analysis()`
-- `get_industry_salary_analysis()`
-- `plot_salary_distribution()`
-- `plot_ai_salary_comparison()`
-- `create_correlation_matrix()`
+def get_analysis_column(key: str) -> str:
+    """Get standardized column name for analysis"""
+    return ANALYSIS_COLUMNS.get(key, key)
+```
 
-**`key_findings_dashboard.py` - KeyFindingsDashboard**:
+#### `settings.py`
 
-- `create_key_metrics_cards()`
-- `create_career_progression_analysis()`
-- `create_complete_intelligence_dashboard()`
+```python
+class Settings:
+    """Application configuration"""
 
-### Analytics (`src/analytics/`)
+    # Data paths
+    RAW_DATA_PATH = "data/raw/lightcast_job_postings.csv"
+    PROCESSED_DATA_PATH = "data/processed/job_market_processed.parquet"
 
-**`salary_models.py` - SalaryAnalyticsModels**:
+    # Spark configuration
+    SPARK_MEMORY = "8g"
+    SPARK_DRIVER_MEMORY = "4g"
 
-- Multiple linear regression (salary prediction)
-- Binary classification (above/below avg)
-- Feature engineering and reporting
+    # Data validation
+    MIN_SALARY = 20000
+    MAX_SALARY = 500000
 
-**`nlp_analysis.py` - JobMarketNLPAnalyzer**:
+    # Feature engineering
+    EXPERIENCE_BINS = [0, 2, 5, 10, 20, float('inf')]
+    EXPERIENCE_LABELS = ['Entry', 'Mid', 'Senior', 'Executive', 'C-Level']
+```
 
-- Skills extraction
-- Topic clustering
-- Word cloud generation
+### 2. Data Processing (`src/core/` + `src/data/`)
+
+**Purpose**: PySpark-based ETL pipeline
+
+#### `src/core/processor.py` - JobMarketDataProcessor
+
+Main entry point for data processing:
+
+```python
+from src.core import JobMarketDataProcessor
+
+# Initialize processor with Spark
+processor = JobMarketDataProcessor()
+
+# Process raw data and save to Parquet
+df = processor.load_and_process_data()
+
+# Processed data now available at:
+# data/processed/job_market_processed.parquet
+```
+
+**Key Methods**:
+
+- `load_and_process_data()` - Full ETL pipeline
+- `clean_and_standardize_data()` - Data cleaning
+- `engineer_features()` - Feature creation
+- `save_processed_data()` - Save to Parquet
+
+#### `src/core/analyzer.py` - SparkJobAnalyzer
+
+Advanced PySpark analysis for large-scale operations:
+
+```python
+from src.core import SparkJobAnalyzer
+
+analyzer = SparkJobAnalyzer()
+analyzer.load_full_dataset()
+
+# Run large-scale aggregations
+salary_stats = analyzer.calculate_salary_statistics()
+location_analysis = analyzer.analyze_by_location()
+```
+
+#### `src/data/loaders.py` - DataLoader
+
+```python
+class DataLoader:
+    """Load data with PySpark"""
+
+    def load_raw_data(self, path: str) -> DataFrame:
+        """Load large CSV with Spark"""
+        return self.spark.read \
+            .option("header", "true") \
+            .option("inferSchema", "true") \
+            .csv(path)
+
+    def load_processed_data(self, path: str) -> DataFrame:
+        """Load Parquet with Spark"""
+        return self.spark.read.parquet(path)
+```
+
+### 3. Analysis (`src/analytics/` + `src/ml/`)
+
+**Purpose**: Pandas-based analysis and ML models
+
+#### `src/analytics/salary_models.py` - SalaryAnalyticsModels (PySpark MLlib)
+
+```python
+import pandas as pd
+from src.analytics import SalaryAnalyticsModels
+
+# Load processed data with Pandas
+df = pd.read_parquet('data/processed/job_market_processed.parquet')
+
+# Run ML models with PySpark MLlib (distributed machine learning)
+models = SalaryAnalyticsModels(df)
+results = models.run_complete_analysis()
+
+# Results include:
+# - Multiple linear regression (PySpark MLlib)
+# - Random Forest classification (PySpark MLlib)
+# - Feature importance from distributed models
+# - Model evaluation metrics (R², RMSE, Accuracy, F1)
+
+# Models automatically:
+# 1. Convert Pandas → Spark DataFrame
+# 2. Train with PySpark MLlib
+# 3. Return results as Python dict
+```
+
+#### `src/analytics/nlp_analysis.py` - JobMarketNLPAnalyzer (PySpark MLlib)
+
+```python
+from src.analytics import JobMarketNLPAnalyzer
+
+# NLP analysis with PySpark MLlib
+nlp = JobMarketNLPAnalyzer(df)
+skills = nlp.extract_skills_from_text()  # PySpark text processing
+clusters = nlp.cluster_skills_by_topic()  # PySpark TF-IDF + KMeans
+correlations = nlp.analyze_skill_salary_correlation()  # PySpark aggregations
+word_cloud = nlp.create_word_cloud()  # Visualization only
+
+# All NLP operations use PySpark MLlib:
+# - HashingTF + IDF for TF-IDF vectorization
+# - KMeans for clustering
+# - Word2Vec for embeddings
+```
+
+#### `src/ml/` - Advanced Machine Learning Models (PySpark MLlib)
+
+All ML models use PySpark MLlib for distributed machine learning:
+
+- `regression.py` - Salary prediction models (Linear, Random Forest)
+- `classification.py` - Job categorization (Logistic, Random Forest)
+- `clustering.py` - Market segmentation (KMeans)
+- `feature_engineering.py` - ML feature preparation (PySpark transformers)
+- `evaluation.py` - Model performance metrics (PySpark evaluators)
+- `salary_disparity.py` - Comprehensive analysis orchestration
+
+**Note**: These provide advanced PySpark MLlib capabilities for large-scale ML workloads.
+
+### 4. Visualization (`src/visualization/`)
+
+**Purpose**: Plotly-based interactive and static charts
+
+#### `src/visualization/charts.py` - SalaryVisualizer
+
+```python
+from src.visualization import SalaryVisualizer
+import pandas as pd
+
+df = pd.read_parquet('data/processed/job_market_processed.parquet')
+viz = SalaryVisualizer(df)
+
+# Create charts
+salary_dist = viz.plot_salary_distribution()
+experience_prog = viz.plot_experience_salary_trend()
+geo_analysis = viz.plot_salary_by_category('city_name')
+correlation = viz.create_correlation_matrix()
+
+# All return Plotly Figure objects
+salary_dist.show()  # Interactive display
+salary_dist.write_html('figure.html')  # Save for Quarto
+salary_dist.write_image('figure.png')  # Save for Word
+```
+
+#### `src/visualization/key_findings_dashboard.py` - KeyFindingsDashboard
+
+```python
+from src.visualization import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+
+# Executive dashboards
+metrics = dashboard.create_key_metrics_cards()
+career = dashboard.create_career_progression_analysis()
+education = dashboard.create_education_roi_analysis()
+complete = dashboard.create_complete_intelligence_dashboard()
+```
+
+#### `src/visualization/theme.py` - JobMarketTheme
+
+```python
+from src.visualization.theme import JobMarketTheme
+
+# Consistent styling across all charts
+layout = JobMarketTheme.get_plotly_layout(
+    title="Salary Distribution",
+    width=1200,
+    height=600
+)
+
+fig.update_layout(**layout)
+```
+
+### 5. Website Interface (`src/data/website_processor.py`)
+
+**Purpose**: Simplified interface for Quarto QMD files
+
+```python
+# In QMD files - simple, clean API
+from src.data.website_processor import (
+    load_and_process_data,
+    get_processed_dataframe,
+    get_website_data_summary
+)
+
+# Load processed data (Pandas)
+df = get_processed_dataframe()
+
+# Get summary statistics
+summary = get_website_data_summary()
+
+# Use in visualizations
+from src.visualization import SalaryVisualizer
+viz = SalaryVisualizer(df)
+fig = viz.plot_salary_distribution()
+fig.show()
+```
 
 ---
 
 ## Usage Patterns
 
-### In QMD Files
+### Pattern 1: Initial Data Processing (PySpark)
+
+**When**: First time setup or when raw data changes
+
+**How**:
 
 ```python
-# Load data
-from src.data.website_processor import load_and_process_data
-df, summary = load_and_process_data()
+# scripts/generate_processed_data.py (or use website_processor directly)
+from src.core import JobMarketDataProcessor
+from src.config.settings import Settings
+
+def main():
+    print("Processing raw data with PySpark...")
+
+    # Initialize processor
+    settings = Settings()
+    processor = JobMarketDataProcessor(settings=settings)
+
+    # Process raw CSV with PySpark (13M rows)
+    # This automatically saves to Parquet
+    spark_df = processor.load_and_process_data(
+        data_path="data/raw/lightcast_job_postings.csv"
+    )
+
+    print(f"Processed {spark_df.count():,} records")
+    print("Saved to data/processed/job_market_processed.parquet")
+
+    # Stop Spark to free memory
+    processor.spark.stop()
+
+    # Now Pandas can load the much smaller Parquet file
+    import pandas as pd
+    df = pd.read_parquet('data/processed/job_market_processed.parquet')
+    print(f"Pandas loaded {len(df):,} records for analysis")
+
+if __name__ == "__main__":
+    main()
+```
+
+**Run**: `python scripts/generate_processed_data.py`
+
+**Key Points**:
+
+- PySpark processes ALL 13M rows from CSV
+- PySpark filters/cleans and saves to Parquet (~30-50K rows)
+- Spark session stopped to free memory
+- Pandas loads the small Parquet for analysis (fast!)
+
+### Pattern 2: Analysis in Notebooks (Pandas)
+
+**When**: Exploratory analysis, ML experiments, visualization development
+
+**How**:
+
+```python
+# notebooks/analysis.ipynb
+import pandas as pd
+from src.visualization import SalaryVisualizer
+from src.analytics import SalaryAnalyticsModels
+
+# Load processed data (fast with Pandas)
+df = pd.read_parquet('../data/processed/job_market_processed.parquet')
+
+# Explore data
+print(df.shape)
+print(df['salary_avg'].describe())
 
 # Create visualizations
-from src.visualization.charts import SalaryVisualizer
-visualizer = SalaryVisualizer(df)
-fig = visualizer.plot_salary_distribution()
-fig.show()
-```
+viz = SalaryVisualizer(df)
+viz.plot_salary_distribution().show()
 
-### In Notebooks
-
-```python
-import pandas as pd
-
-# Load Parquet directly
-df = pd.read_parquet('data/processed/job_market_processed.parquet')
-
-# Use standardized columns
-salary = df['salary_avg']
-city = df['city_name']
-```
-
-### Analytics Models
-
-```python
-from src.analytics.salary_models import SalaryAnalyticsModels
-
+# Run ML models
 models = SalaryAnalyticsModels(df)
 results = models.run_complete_analysis()
 ```
 
+### Pattern 3: Quarto Website (Pandas + Plotly)
+
+**When**: Generating website content
+
+**How**:
+
+```python
+# salary-insights.qmd
+from src.data.website_processor import get_processed_dataframe
+from src.visualization import SalaryVisualizer
+
+# Load data
+df = get_processed_dataframe()
+
+# Create visualization
+viz = SalaryVisualizer(df)
+fig = viz.plot_salary_distribution()
+
+# Display in Quarto
+fig.show()
+```
+
+**Run**: `quarto render` or `quarto preview`
+
+### Pattern 4: Advanced Spark Analysis (PySpark)
+
+**When**: Large-scale aggregations or custom Spark operations
+
+**How**:
+
+```python
+from src.core import SparkJobAnalyzer
+
+# Initialize with Spark
+analyzer = SparkJobAnalyzer()
+analyzer.load_full_dataset()
+
+# Run Spark-based analysis
+salary_by_location = analyzer.analyze_by_location()
+experience_trends = analyzer.calculate_experience_trends()
+
+# Convert to Pandas for visualization
+pandas_df = salary_by_location.toPandas()
+```
+
 ---
 
-## Homepage Metrics
+## Development Workflow
 
-### Experience Gap (90%)
+### Setup
 
-```python
-entry = df[df['min_years_experience'] <= 2]['salary_avg'].median()
-senior = df[df['min_years_experience'] >= 8]['salary_avg'].median()
-gap = ((senior - entry) / entry) * 100  # 90%
+```bash
+# 1. Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Verify Spark installation
+python -c "from pyspark.sql import SparkSession; print('Spark OK')"
 ```
 
-Senior roles pay 90% more than entry-level
+### Initial Data Processing
 
-### Education Premium (9%)
+```bash
+# Process raw data (run once)
+python scripts/create_processed_data.py
 
-```python
-bachelors = df[df['education'].str.contains('Bachelor')]['salary_avg'].median()
-masters = df[df['education'].str.contains('Master')]['salary_avg'].median()
-premium = ((masters - bachelors) / bachelors) * 100  # 9%
+# Output: data/processed/job_market_processed.parquet
 ```
 
-Master's holders earn 9% more than Bachelor's
+### Development Cycle
 
-### Company Size Gap (32%)
+```bash
+# 1. Develop in notebooks
+jupyter lab
 
-```python
-small = df[df['company_size'] <= 50]['salary_avg'].median()
-large = df[df['company_size'] >= 1000]['salary_avg'].median()
-gap = ((large - small) / small) * 100  # 32%
+# 2. Move stable code to src/ modules
+# 3. Test visualizations in Quarto
+quarto preview --port 4200
+
+# 4. Generate final website
+quarto render
 ```
 
-Large companies pay 32% more than small
+### Testing
 
-### Salary Growth (3.0x)
+```bash
+# Run unit tests
+pytest tests/
 
-```python
-entry = df['salary_avg'].quantile(0.25)
-peak = df['salary_avg'].quantile(0.75)
-growth = peak / entry  # 3.0x
+# Validate data pipeline
+python -m src.data.validators
+
+# Check Parquet file
+python -c "import pandas as pd; df = pd.read_parquet('data/processed/job_market_processed.parquet'); print(df.info())"
 ```
 
-Salaries grow 3x from entry to senior
+---
 
-### Remote Availability (25%)
+## Column Standardization
 
-```python
-total = len(df)
-remote = len(df[df['remote_type'].str.contains('remote', case=False)])
-percentage = (remote / total) * 100  # 25%
-```
+All processed data uses consistent `snake_case` column names:
 
-25% of jobs offer remote work
+| Raw Column (Lightcast) | Processed Column | Type | Description |
+|------------------------|------------------|------|-------------|
+| `SALARY_FROM` | `salary_min` | float | Minimum salary in range |
+| `SALARY_TO` | `salary_max` | float | Maximum salary in range |
+| *(computed)* | `salary_avg` | float | **Primary salary metric** |
+| `TITLE_NAME` | `title` | string | Job title |
+| `CITY_NAME` | `city_name` | string | City location |
+| `NAICS2_NAME` | `industry` | string | Industry classification |
+| `MIN_YEARS_EXPERIENCE` | `experience_min` | int | Minimum experience |
+| `MAX_YEARS_EXPERIENCE` | `experience_max` | int | Maximum experience |
+| *(computed)* | `experience_level` | category | Entry/Mid/Senior/Executive |
+| `SKILLS_NAME` | `skills` | string | Required skills |
+| `COMPANY_NAME` | `company` | string | Company name |
+| `COMPANY_SIZE` | `company_size` | int | Number of employees |
+
+**Key Computed Columns**:
+
+- `salary_avg` = (salary_min + salary_max) / 2 with intelligent imputation
+- `experience_level` = binned from experience_min (Entry, Mid, Senior, Executive, C-Level)
+- `experience_avg` = (experience_min + experience_max) / 2
+- `company_size_numeric` = cleaned and validated company size
 
 ---
 
@@ -258,50 +647,131 @@ percentage = (remote / total) * 100  # 25%
 ```bash
 ad688-scratch/
 ├── data/
-│   ├── raw/lightcast_job_postings.csv          # Source (72K)
-│   └── processed/job_market_processed.parquet  # Clean (32K) ← USE THIS
-│
-├── scripts/create_processed_data.py            # ONE-TIME processing
+│   ├── raw/
+│   │   └── lightcast_job_postings.csv     # Source data (~13M rows)
+│   └── processed/
+│       └── job_market_processed.parquet   # Clean data (~30-50K rows)
 │
 ├── src/
-│   ├── data/website_processor.py               # Data loading
-│   ├── config/column_mapping.py                # Column config
-│   ├── visualization/charts.py                 # SalaryVisualizer
-│   ├── visualization/key_findings_dashboard.py # Dashboards
-│   └── analytics/salary_models.py              # ML models
+│   ├── config/
+│   │   ├── column_mapping.py              # Column standardization
+│   │   └── settings.py                    # Application config
+│   │
+│   ├── core/                              # PySpark processing
+│   │   ├── processor.py                   # JobMarketDataProcessor
+│   │   └── analyzer.py                    # SparkJobAnalyzer
+│   │
+│   ├── data/                              # Data utilities
+│   │   ├── loaders.py                     # DataLoader (Spark)
+│   │   ├── transformers.py                # DataTransformer (Spark)
+│   │   ├── validators.py                  # DataValidator (Spark)
+│   │   ├── auto_processor.py              # Helper functions
+│   │   └── website_processor.py           # Quarto interface
+│   │
+│   ├── analytics/                         # Pandas analysis
+│   │   ├── salary_models.py               # ML models
+│   │   ├── nlp_analysis.py                # NLP analysis
+│   │   ├── predictive_dashboard.py        # ML dashboards
+│   │   └── docx_report_generator.py       # Word reports
+│   │
+│   ├── ml/                                # ML models (can use Pandas)
+│   │   ├── regression.py
+│   │   ├── classification.py
+│   │   ├── clustering.py
+│   │   ├── feature_engineering.py
+│   │   └── evaluation.py
+│   │
+│   ├── visualization/                     # Plotly charts
+│   │   ├── charts.py                      # SalaryVisualizer
+│   │   ├── key_findings_dashboard.py      # Dashboards
+│   │   └── theme.py                       # Styling
+│   │
+│   └── utils/
+│       └── spark_utils.py                 # Spark helpers
 │
-├── *.qmd                                        # Quarto pages
-├── notebooks/                                   # Jupyter notebooks
-└── figures/                                     # Generated charts
+├── scripts/
+│   └── create_processed_data.py           # Data processing script
+│
+├── notebooks/                             # Jupyter notebooks (Pandas)
+│   ├── data_processing_pipeline_demo.ipynb
+│   ├── ml_feature_engineering_lab.ipynb
+│   └── job_market_skill_analysis.ipynb
+│
+├── *.qmd                                  # Quarto website pages
+├── figures/                               # Generated charts
+└── _salary/                               # Rendered website
 ```
 
 ---
 
-## Quick Start
+## Best Practices
 
-1. **Create processed data** (one-time):
+### Data Processing
 
-   ```bash
-   python scripts/create_processed_data.py
-   ```
+1. **Always use PySpark for initial processing** of the 13M row CSV
+2. **Save results to Parquet** for efficient downstream use
+3. **Standardize column names immediately** in the processing layer
+4. **Validate data quality** before saving to Parquet
+5. **Document all transformations** in processor classes
 
-2. **Run Quarto**:
+### Analysis
 
-   ```bash
-   quarto preview --port 4200
-   ```
+1. **Load from Parquet with Pandas** for analysis and visualization
+2. **Use consistent column names** from `ANALYSIS_COLUMNS`
+3. **Keep business logic in src/ modules**, not in QMD files
+4. **Test with processed data**, not raw data
+5. **Use type hints** for DataFrame contracts
 
-3. **Use in code**:
+### Visualization
 
-   ```python
-   df = pd.read_parquet('data/processed/job_market_processed.parquet')
-   ```
+1. **Use Plotly** for all interactive charts
+2. **Apply JobMarketTheme** for consistent styling
+3. **Save multiple formats** (HTML for web, PNG/SVG for reports)
+4. **Make charts self-contained** with clear titles and labels
+5. **Optimize for performance** (downsample if needed)
+
+### Documentation
+
+1. **Document the "why"**, not just the "what"
+2. **Keep DESIGN.md in sync** with implementation
+3. **Include code examples** in documentation
+4. **Explain design decisions** in comments
+5. **Update diagrams** when architecture changes
 
 ---
 
-**Best Practices**:
+## Migration Path
 
-- Always load from Parquet
-- Use `ANALYSIS_COLUMNS` for consistency
-- Keep business logic in Python modules (not QMD files)
-- Test with processed data only
+If you need to convert existing Pandas-based processing to PySpark:
+
+```python
+# Old (Pandas)
+import pandas as pd
+df = pd.read_csv('large_file.csv')
+df['new_col'] = df['old_col'].apply(some_function)
+df.to_parquet('output.parquet')
+
+# New (PySpark)
+from pyspark.sql import functions as F
+df = spark.read.csv('large_file.csv', header=True, inferSchema=True)
+df = df.withColumn('new_col', some_udf(F.col('old_col')))
+df.write.parquet('output.parquet', mode='overwrite')
+```
+
+Or keep existing ML models in Pandas and only use Spark for ETL:
+
+```python
+# ETL with PySpark
+from src.core import JobMarketDataProcessor
+processor = JobMarketDataProcessor()
+processor.load_and_process_data()  # Saves to Parquet
+
+# ML with Pandas
+import pandas as pd
+df = pd.read_parquet('data/processed/job_market_processed.parquet')
+# ... use scikit-learn as usual
+```
+
+---
+
+**Questions or issues?** See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system diagrams or open an issue on GitHub.
