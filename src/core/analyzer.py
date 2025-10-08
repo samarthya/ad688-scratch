@@ -74,7 +74,7 @@ class SparkJobAnalyzer:
             errors.extend([f"Missing essential column: {col}" for col in missing_essential])
 
         # Check for optional but important columns
-        optional_columns = ['SALARY_AVG_IMPUTED', 'INDUSTRY', 'LOCATION']
+        optional_columns = ['salary_avg', 'INDUSTRY', 'LOCATION']
         missing_optional = [col for col in optional_columns if col not in df.columns]
         if missing_optional:
             logger.warning(f"Missing optional columns: {missing_optional}")
@@ -95,11 +95,11 @@ class SparkJobAnalyzer:
             SELECT
                 COALESCE(INDUSTRY, 'Unknown') as industry,
                 COUNT(*) as job_count,
-                ROUND(AVG(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as avg_salary,
-                ROUND(MIN(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as min_salary,
-                ROUND(MAX(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as max_salary
+                ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary,
+                ROUND(MIN(COALESCE(salary_avg, 0)), 0) as min_salary,
+                ROUND(MAX(COALESCE(salary_avg, 0)), 0) as max_salary
             FROM job_data
-            WHERE SALARY_AVG_IMPUTED IS NOT NULL AND SALARY_AVG_IMPUTED > 0
+            WHERE salary_avg IS NOT NULL AND salary_avg > 0
             GROUP BY INDUSTRY
             ORDER BY avg_salary DESC
             LIMIT {}
@@ -127,9 +127,9 @@ class SparkJobAnalyzer:
             SELECT
                 COALESCE(EXPERIENCE_LEVEL, 'Unknown') as experience_level,
                 COUNT(*) as job_count,
-                ROUND(AVG(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as avg_salary
+                ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary
             FROM job_data
-            WHERE SALARY_AVG_IMPUTED IS NOT NULL AND SALARY_AVG_IMPUTED > 0
+            WHERE salary_avg IS NOT NULL AND salary_avg > 0
             GROUP BY EXPERIENCE_LEVEL
             ORDER BY avg_salary DESC
         """
@@ -156,9 +156,9 @@ class SparkJobAnalyzer:
             SELECT
                 COALESCE(STATE, 'Unknown') as state,
                 COUNT(*) as job_count,
-                ROUND(AVG(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as avg_salary
+                ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary
             FROM job_data
-            WHERE SALARY_AVG_IMPUTED IS NOT NULL AND SALARY_AVG_IMPUTED > 0
+            WHERE salary_avg IS NOT NULL AND salary_avg > 0
             GROUP BY STATE
             ORDER BY avg_salary DESC
             LIMIT {}
@@ -187,11 +187,11 @@ class SparkJobAnalyzer:
                 COUNT(*) as total_jobs,
                 COUNT(DISTINCT COMPANY) as unique_companies,
                 COUNT(DISTINCT INDUSTRY) as unique_industries,
-                ROUND(AVG(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as avg_salary,
-                ROUND(MIN(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as min_salary,
-                ROUND(MAX(COALESCE(SALARY_AVG_IMPUTED, 0)), 0) as max_salary
+                ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary,
+                ROUND(MIN(COALESCE(salary_avg, 0)), 0) as min_salary,
+                ROUND(MAX(COALESCE(salary_avg, 0)), 0) as max_salary
             FROM job_data
-            WHERE SALARY_AVG_IMPUTED IS NOT NULL AND SALARY_AVG_IMPUTED > 0
+            WHERE salary_avg IS NOT NULL AND salary_avg > 0
         """
 
         # Create temporary view

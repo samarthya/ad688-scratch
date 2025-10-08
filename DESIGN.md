@@ -580,7 +580,7 @@ python -c "from pyspark.sql import SparkSession; print('Spark OK')"
 
 ```bash
 # Process raw data (run once)
-python scripts/create_processed_data.py
+python scripts/generate_processed_data.py
 
 # Output: data/processed/job_market_processed.parquet
 ```
@@ -690,7 +690,7 @@ ad688-scratch/
 │       └── spark_utils.py                 # Spark helpers
 │
 ├── scripts/
-│   └── create_processed_data.py           # Data processing script
+│   └── generate_processed_data.py         # Data processing script
 │
 ├── notebooks/                             # Jupyter notebooks (Pandas)
 │   ├── data_processing_pipeline_demo.ipynb
@@ -760,17 +760,17 @@ df.write.parquet('output.parquet', mode='overwrite')
 
 Or keep existing ML models in Pandas and only use Spark for ETL:
 
-```python
+   ```python
 # ETL with PySpark
 from src.core import JobMarketDataProcessor
 processor = JobMarketDataProcessor()
 processor.load_and_process_data()  # Saves to Parquet
 
-# ML with Pandas
+# Analysis with Pandas
 import pandas as pd
-df = pd.read_parquet('data/processed/job_market_processed.parquet')
-# ... use scikit-learn as usual
-```
+   df = pd.read_parquet('data/processed/job_market_processed.parquet')
+# ... use for analysis and visualization
+   ```
 
 ---
 

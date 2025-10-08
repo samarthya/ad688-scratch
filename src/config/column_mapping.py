@@ -7,15 +7,18 @@ components to ensure data consistency.
 """
 
 # Core Column Mapping: Raw Lightcast → Analysis Format (all snake_case output)
+# Note: If both a base column and a _NAME column exist, the _NAME version is prioritized (it's usually cleaner)
 LIGHTCAST_COLUMN_MAPPING = {
     # Core Identification
     'ID': 'job_id',
-    'TITLE': 'title',
+    # 'TITLE': 'title',  # Commented out - TITLE_NAME takes priority
+    'TITLE_NAME': 'title',           # Clean title (prioritized)
     'TITLE_CLEAN': 'title_clean',
+    'COMPANY_NAME': 'company',       # Prefer COMPANY_NAME if available
     'COMPANY': 'company',
     'LOCATION': 'location',
-    'CITY': 'city_name',         # Base64 encoded city data → snake_case
-    'CITY_NAME': 'city_name',    # Plain text city data → snake_case
+    # 'CITY': 'city_name',           # Commented out - CITY_NAME takes priority
+    'CITY_NAME': 'city_name',        # Plain text city data → snake_case (prioritized)
 
     # Salary Data (Multiple Sources) - SALARY_AVG is computed, not mapped
     'SALARY_FROM': 'salary_min',
@@ -29,7 +32,6 @@ LIGHTCAST_COLUMN_MAPPING = {
     'MAX_YEARS_EXPERIENCE': 'experience_max',
 
     # Job Title & Occupation (for imputation grouping)
-    'TITLE_NAME': 'title',
     'LOT_V6_OCCUPATION_NAME': 'occupation',
 
     # Skills & Requirements
@@ -41,27 +43,32 @@ LIGHTCAST_COLUMN_MAPPING = {
     'EMPLOYMENT_TYPE_NAME': 'employment_type'
 }
 
-# Derived columns created during processing
+# Derived columns created during processing (all snake_case after PySpark ETL)
 DERIVED_COLUMNS = [
-    'salary_avg_imputed',    # Smart salary calculation with imputation
-    'experience_years',      # Numeric experience from MIN_YEARS_EXPERIENCE
-    'ai_related',           # AI/ML role classification
-    'remote_allowed',       # Boolean remote work flag
-    'experience_level',     # Standardized experience categories
-    'industry_clean',       # Cleaned industry names
-    'city_name'             # Clean city names for geographic analysis
+    'salary_avg',           # Smart salary calculation with imputation
+    'experience_years',     # Numeric experience from min_years_experience
+    'ai_related',          # AI/ML role classification
+    'remote_allowed',      # Boolean remote work flag
+    'experience_level',    # Standardized experience categories
+    'industry_clean',      # Cleaned industry names
+    'city_name'            # Clean city names for geographic analysis
 ]
 
-# Analysis-ready column names (for consistent usage across all modules)
+# Analysis-ready column names (all snake_case after PySpark processing)
+# These map logical names to ACTUAL column names in processed data
 ANALYSIS_COLUMNS = {
-    'salary': 'salary_avg',        # Standardized salary column (already clean from pipeline)
-    'industry': 'naics2_name',     # Industry classification (NAICS level 2)
-    'experience': 'experience_years',
-    'title': 'title',
-    'location': 'location',
-    'city': 'city_name',           # Clean city names for geographic analysis
-    'remote': 'remote_allowed',
-    'employment_type': 'employment_type'
+    'salary': 'salary_avg',              # Average salary (computed from salary_from/salary_to)
+    'salary_min': 'salary_from',         # Minimum salary (actual column name)
+    'salary_max': 'salary_to',           # Maximum salary (actual column name)
+    'industry': 'naics2_name',           # Industry classification (NAICS level 2) (actual column name)
+    'experience': 'min_years_experience', # Years of experience (actual column name)
+    'experience_min': 'min_years_experience', # Min years of experience
+    'experience_max': 'max_years_experience', # Max years of experience
+    'title': 'title',                    # Job title
+    'location': 'location',              # Job location
+    'city': 'city_name',                 # City name
+    'remote': 'remote_type_name',        # Remote work type
+    'employment_type': 'employment_type_name'  # Employment type
 }
 
 # Experience level categorization mapping

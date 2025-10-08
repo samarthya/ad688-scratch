@@ -35,14 +35,14 @@ class JobMarketClusterer:
 
         # Select features for clustering
         clustering_features = [
-            'SALARY_AVG_IMPUTED', 'education_level', 'experience_level',
+            'salary_avg', 'education_level', 'experience_level',
             'ai_skills_score', 'technical_skills_score', 'soft_skills_score',
             'location_cost_index', 'industry_growth_rate'
         ]
 
         # Filter out null values for clustering
         df_clean = df.filter(
-            col('SALARY_AVG_IMPUTED').isNotNull() &
+            col('salary_avg').isNotNull() &
             col('education_level').isNotNull() &
             col('experience_level').isNotNull()
         )
@@ -90,7 +90,7 @@ class JobMarketClusterer:
 
         # Define clustering features
         clustering_features = [
-            'SALARY_AVG_IMPUTED', 'education_level', 'ai_skills_score',
+            'salary_avg', 'education_level', 'ai_skills_score',
             'technical_skills_score', 'soft_skills_score', 'location_cost_index'
         ]
 
@@ -133,9 +133,9 @@ class JobMarketClusterer:
         # Calculate cluster statistics
         cluster_stats = predictions.groupBy("cluster").agg(
             count("*").alias("job_count"),
-            avg("SALARY_AVG_IMPUTED").alias("avg_salary"),
-            spark_max("SALARY_AVG_IMPUTED").alias("max_salary"),
-            spark_min("SALARY_AVG_IMPUTED").alias("min_salary"),
+            avg("salary_avg").alias("avg_salary"),
+            spark_max("salary_avg").alias("max_salary"),
+            spark_min("salary_avg").alias("min_salary"),
             avg("education_level").alias("avg_education"),
             avg("ai_skills_score").alias("avg_ai_skills"),
             avg("technical_skills_score").alias("avg_technical_skills"),
@@ -231,7 +231,7 @@ class JobMarketClusterer:
         for k in k_values:
             # Create temporary pipeline
             temp_pipeline = self.create_clustering_pipeline([
-                'SALARY_AVG_IMPUTED', 'education_level', 'ai_skills_score',
+                'salary_avg', 'education_level', 'ai_skills_score',
                 'technical_skills_score', 'soft_skills_score', 'location_cost_index'
             ])
 

@@ -31,7 +31,7 @@ def load_analysis_data(analysis_type="comprehensive"):
 
     df, summary = load_and_process_data()
 
-    print(f"  ✅ Loaded {len(df):,} records with standardized columns")
+    print(f"  [OK] Loaded {len(df):,} records with standardized columns")
 
     return df
 
@@ -115,10 +115,10 @@ def process_raw_data(df):
 
         if valid_count > len(df) * 0.5:
             # Already has computed salary_avg with good coverage, use it
-            print(f"    ✅ Using existing salary_avg column - skipping computation")
+            print(f"    [OK] Using existing salary_avg column - skipping computation")
             salary_avg_exists = True
         else:
-            print(f"    ⚠️ Existing salary_avg has low coverage, will compute from salary components")
+            print(f"    [WARNING] Existing salary_avg has low coverage, will compute from salary components")
 
     # Only compute if we don't have a good salary_avg already
     if not salary_avg_exists and ('salary_single' in df.columns or 'salary' in df.columns):
@@ -154,7 +154,7 @@ def process_raw_data(df):
         valid_salary_mask = (df['salary_avg'] >= 20000) & (df['salary_avg'] <= 500000)
         invalid_count = df['salary_avg'].notna().sum() - valid_salary_mask.sum()
         if invalid_count > 0:
-            print(f"    🧹 Marking {invalid_count:,} unrealistic salary values as missing for imputation")
+            print(f"    [CLEAN] Marking {invalid_count:,} unrealistic salary values as missing for imputation")
             df.loc[~valid_salary_mask, 'salary_avg'] = np.nan
 
     # Create salary_avg_imputed (the derived column expected by analysis)
@@ -163,7 +163,7 @@ def process_raw_data(df):
     # Apply intelligent salary imputation for missing values using industry grouping
     missing_salary_mask = df['salary_avg_imputed'].isna()
     if missing_salary_mask.sum() > 0:
-        print(f"  💡 Imputing {missing_salary_mask.sum():,} missing salary values using industry grouping...")
+        print(f"  [TIP] Imputing {missing_salary_mask.sum():,} missing salary values using industry grouping...")
 
         # Use industry median for imputation
         if 'industry' in df.columns:
@@ -189,7 +189,7 @@ def process_raw_data(df):
                 print(f"    Applied fallback salary of $75,000 to {missing_salary_mask.sum():,} records")
 
     # Final data quality assurance for analysis-ready data
-    print("  🔍 Final data quality checks...")
+    print("  [CHECK] Final data quality checks...")
 
     # Ensure salary_avg_imputed is numeric and clean
     df['salary_avg_imputed'] = pd.to_numeric(df['salary_avg_imputed'], errors='coerce')
@@ -208,10 +208,10 @@ def process_raw_data(df):
         print(f"    Removing {final_invalid_count:,} records with unrealistic salary values")
         df = df[final_valid_mask].copy()
 
-    print(f"  ✅ Final dataset: {len(df):,} records with clean salary data")
+    print(f"  [OK] Final dataset: {len(df):,} records with clean salary data")
 
     # Standardize experience columns and ensure they are numeric
-    print("  📊 Processing experience data...")
+    print("  [DATA] Processing experience data...")
     experience_columns = ['experience_min', 'experience_max', 'min_experience', 'max_experience', 'MIN_YEARS_EXPERIENCE', 'MAX_YEARS_EXPERIENCE']
 
     for col in experience_columns:
@@ -239,7 +239,7 @@ def process_raw_data(df):
             df.loc[swap_mask, ['experience_min', 'experience_max']] = df.loc[swap_mask, ['experience_max', 'experience_min']].values
 
     # Create derived numeric columns for analysis
-    print("  🔢 Creating derived numeric columns...")
+    print("  [COMPUTE] Creating derived numeric columns...")
 
     # Company size numeric (if exists)
     if 'company_size' in df.columns:
@@ -260,7 +260,7 @@ def process_raw_data(df):
         df['experience_avg'] = (df['experience_min'] + df['experience_max']) / 2
         df['experience_avg'] = df['experience_avg'].fillna(df['experience_min'].fillna(df['experience_max'].fillna(2)))
 
-    print(f"  ✅ Experience data processing completed")
+    print(f"  [OK] Experience data processing completed")
 
     # Create experience level
     if 'min_experience' in df.columns:
@@ -319,7 +319,7 @@ def validate_data_for_analysis(df, analysis_type="comprehensive"):
     missing = [col for col in required if col not in df.columns]
 
     if missing:
-        print(f"⚠️  Missing columns for {analysis_type} analysis: {missing}")
+        print(f"[WARNING]  Missing columns for {analysis_type} analysis: {missing}")
         return False
 
     return True

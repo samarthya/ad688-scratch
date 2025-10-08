@@ -26,9 +26,7 @@ class DataLoader:
 
         # Load raw data without schema to preserve all columns
         df = self.spark.read \
-            .option("header", "true") \
-            .option("inferSchema", "true") \
-            .csv(data_path)
+            .csv(data_path, multiLine=True, escape="\"", header=True, inferSchema=True)
 
         return df
 

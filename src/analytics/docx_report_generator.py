@@ -104,11 +104,11 @@ class JobMarketReportGenerator:
         Returns:
             Path to generated report
         """
-        print("📊 GENERATING COMPREHENSIVE DOCX REPORT")
+        print("[DATA] GENERATING COMPREHENSIVE DOCX REPORT")
         print("=" * 50)
 
         # Run all analyses
-        print("🔍 Running analytics...")
+        print("[CHECK] Running analytics...")
         analytics_results = self.salary_models.run_complete_analysis()
         nlp_results = self.nlp_analyzer.run_complete_nlp_analysis()
         comprehensive_report = self.dashboard.generate_comprehensive_report()
@@ -126,9 +126,9 @@ class JobMarketReportGenerator:
         output_path = Path(output_path)
         self.doc.save(output_path)
 
-        print(f"✅ Report generated successfully: {output_path}")
+        print(f"[OK] Report generated successfully: {output_path}")
         print(f"   📄 Document contains {len(self.doc.paragraphs)} paragraphs")
-        print(f"   📊 File size: {output_path.stat().st_size / 1024:.1f} KB")
+        print(f"   [DATA] File size: {output_path.stat().st_size / 1024:.1f} KB")
 
         return str(output_path)
 
@@ -470,7 +470,7 @@ def generate_comprehensive_docx_report(df: pd.DataFrame = None, output_path: str
         Path to generated report
     """
     if not DOCX_AVAILABLE:
-        print("❌ python-docx not available. Cannot generate DOCX report.")
+        print("[ERROR] python-docx not available. Cannot generate DOCX report.")
         print("Install with: pip install python-docx")
         return ""
 

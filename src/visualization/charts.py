@@ -30,9 +30,78 @@ class SalaryVisualizer:
     for job market data.
     """
 
-    def __init__(self, df: pd.DataFrame):
-        """Initialize with a pandas DataFrame."""
+    def __init__(self, df: pd.DataFrame, auto_save: bool = False, save_dir: str = 'figures/'):
+        """
+        Initialize with a pandas DataFrame.
+
+        Args:
+            df: Pandas DataFrame with processed job market data
+            auto_save: If True, automatically save figures when created
+            save_dir: Directory to save figures (default: 'figures/')
+        """
         self.df = df
+        self.auto_save = auto_save
+        self.save_dir = save_dir
+
+        # Ensure save directory exists if auto_save is enabled
+        if self.auto_save:
+            import os
+            os.makedirs(self.save_dir, exist_ok=True)
+
+    def _maybe_save_figure(self, fig, name: str) -> None:
+        """
+        Optionally save figure if auto_save is enabled.
+
+        Args:
+            fig: Plotly figure object
+            name: Base name for the file (without extension)
+        """
+        if self.auto_save:
+            import os
+            filepath = os.path.join(self.save_dir, f"{name}.html")
+            fig.write_html(filepath)
+            print(f"  [AUTO-SAVE] {filepath}")
+
+    def save_figure(self, fig, name: str, output_dir: Optional[str] = None, formats: list = ['html']) -> Dict[str, str]:
+        """
+        Explicitly save a figure to disk in multiple formats.
+
+        Args:
+            fig: Plotly figure object
+            name: Base name for the file (without extension)
+            output_dir: Optional override for save directory
+            formats: List of formats to save ['html', 'png', 'svg', 'pdf']
+
+        Returns:
+            Dict mapping format to saved file path
+        """
+        import os
+        save_path = output_dir or self.save_dir
+        os.makedirs(save_path, exist_ok=True)
+
+        saved_files = {}
+
+        for fmt in formats:
+            if fmt == 'html':
+                filepath = os.path.join(save_path, f"{name}.html")
+                fig.write_html(filepath)
+                saved_files['html'] = filepath
+            elif fmt in ['png', 'svg', 'pdf']:
+                try:
+                    filepath = os.path.join(save_path, f"{name}.{fmt}")
+                    # Requires kaleido package for static export
+                    if fmt == 'png':
+                        fig.write_image(filepath, width=1200, height=800, scale=2)
+                    elif fmt == 'svg':
+                        fig.write_image(filepath, width=1200, height=800)
+                    elif fmt == 'pdf':
+                        fig.write_image(filepath, width=1200, height=800)
+                    saved_files[fmt] = filepath
+                except Exception as e:
+                    print(f"  [WARNING] Could not save {fmt} format: {e}")
+                    print(f"  [INFO] Install kaleido for static image export: pip install kaleido")
+
+        return saved_files
 
     def get_experience_progression_analysis(self) -> Dict[str, Dict[str, Any]]:
         """Get experience progression analysis."""
@@ -630,6 +699,18 @@ class SalaryVisualizer:
             labels={salary_col: 'Salary ($)', category_col: category_col.title()}
         )
 
+        # For geographic visualizations, ensure city names are visible
+        if 'city' in category_col.lower() or 'location' in category_col.lower():
+            fig.update_xaxes(
+                tickangle=-45,
+                tickfont=dict(size=10),
+                title_font=dict(size=12)
+            )
+            fig.update_layout(
+                margin=dict(b=150),  # More space for angled labels
+                height=600
+            )
+
         if category_col == 'industry':
             fig = apply_industry_theme(fig, f"Salary Distribution by {category_col.title()}")
         elif category_col == 'location':
@@ -878,29 +959,38 @@ class SalaryVisualizer:
         return fig
 
     def create_correlation_matrix(self):
-        """Create correlation matrix heatmap."""
+        """Create correlation matrix heatmap focusing on salary-related features."""
         import plotly.express as px
         import plotly.graph_objects as go
         import numpy as np
 
         try:
-            # Select only numeric columns directly
-            numeric_df = self.df.select_dtypes(include=[np.number])
+            # Focus on salary-related and key numeric columns
+            # Priority: salary columns, experience, and ID-based classifications
+            priority_cols = [
+                'salary_avg', 'salary_from', 'salary_to',
+                'min_years_experience', 'max_years_experience',
+                'min_edulevels', 'max_edulevels',
+                'duration', 'modeled_duration'
+            ]
 
-            if len(numeric_df.columns) < 2:
-                raise ValueError(f'Not enough numeric columns for correlation. Found {len(numeric_df.columns)} columns.')
+            # Select columns that exist in the dataframe
+            available_cols = [col for col in priority_cols if col in self.df.columns]
 
-            # Remove columns with too many nulls (keep if at least 50% valid)
-            valid_cols = []
-            for col in numeric_df.columns:
-                if numeric_df[col].notna().sum() > len(numeric_df) * 0.5:
-                    valid_cols.append(col)
+            if len(available_cols) < 2:
+                # Fallback: use all numeric columns
+                numeric_df = self.df.select_dtypes(include=[np.number])
+                # Filter to columns with at least 30% coverage (more lenient than 50%)
+                available_cols = [
+                    col for col in numeric_df.columns
+                    if numeric_df[col].notna().sum() > len(numeric_df) * 0.3
+                ]
 
-            if len(valid_cols) < 2:
-                raise ValueError(f'Not enough columns with sufficient data. Found {len(valid_cols)} valid columns.')
+            if len(available_cols) < 2:
+                raise ValueError(f'Not enough columns with sufficient data. Found {len(available_cols)} valid columns.')
 
-            # Create clean dataframe with only valid columns
-            clean_df = numeric_df[valid_cols].copy()
+            # Create dataframe with selected columns
+            clean_df = self.df[available_cols].copy()
 
             # Drop rows with any NaN (needed for correlation)
             clean_df = clean_df.dropna()
@@ -930,8 +1020,8 @@ class SalaryVisualizer:
                 },
                 xaxis_title="Features",
                 yaxis_title="Features",
-                height=max(400, len(valid_cols) * 50),
-                width=max(600, len(valid_cols) * 50)
+                height=max(400, len(available_cols) * 50),
+                width=max(600, len(available_cols) * 50)
             )
 
             fig = apply_salary_theme(fig, "Feature Correlation Matrix", "heatmap")
@@ -972,12 +1062,36 @@ class SalaryVisualizer:
             print(f"Failed to create salary distribution: {e}")
 
         try:
-            # Create industry analysis
-            fig = self.plot_salary_by_category('industry')
-            fig.write_html(os.path.join(output_dir, 'key_finding_industry_analysis.html'))
-            graphics['industry_analysis'] = 'key_finding_industry_analysis.html'
+            # Create industry analysis using actual column name
+            industry_col = 'naics2_name' if 'naics2_name' in self.df.columns else None
+            if industry_col:
+                fig = self.plot_salary_by_category(industry_col)
+                fig.write_html(os.path.join(output_dir, 'key_finding_industry_analysis.html'))
+                graphics['industry_analysis'] = 'key_finding_industry_analysis.html'
+            else:
+                print(f"Skipped industry analysis: no industry column found")
         except Exception as e:
             print(f"Failed to create industry analysis: {e}")
+
+        try:
+            # Create geographic analysis
+            city_col = 'city_name' if 'city_name' in self.df.columns else None
+            if city_col:
+                fig = self.plot_salary_by_category(city_col)
+                fig.write_html(os.path.join(output_dir, 'key_finding_geographic_analysis.html'))
+                graphics['geographic_analysis'] = 'key_finding_geographic_analysis.html'
+            else:
+                print(f"Skipped geographic analysis: no city column found")
+        except Exception as e:
+            print(f"Failed to create geographic analysis: {e}")
+
+        try:
+            # Create correlation matrix
+            fig = self.create_correlation_matrix()
+            fig.write_html(os.path.join(output_dir, 'key_finding_correlation_matrix.html'))
+            graphics['correlation_matrix'] = 'key_finding_correlation_matrix.html'
+        except Exception as e:
+            print(f"Failed to create correlation matrix: {e}")
 
         return graphics
 
@@ -997,10 +1111,14 @@ class SalaryVisualizer:
             print(f"Failed to create overview: {e}")
 
         try:
-            # Create industry comparison
-            fig = self.plot_salary_by_category('industry')
-            fig.write_html(os.path.join(output_dir, 'executive_dashboard_industry.html'))
-            dashboard['industry'] = 'executive_dashboard_industry.html'
+            # Create industry comparison using actual column name
+            industry_col = 'naics2_name' if 'naics2_name' in self.df.columns else None
+            if industry_col:
+                fig = self.plot_salary_by_category(industry_col)
+                fig.write_html(os.path.join(output_dir, 'executive_dashboard_industry.html'))
+                dashboard['industry'] = 'executive_dashboard_industry.html'
+            else:
+                print(f"Skipped industry dashboard: no industry column found")
         except Exception as e:
             print(f"Failed to create industry comparison: {e}")
 

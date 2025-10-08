@@ -53,7 +53,7 @@ graph LR
    - Engineer features at scale
    - Save to efficient Parquet format
 
-2. **Analysis Layer** (Pandas + Scikit-learn)
+2. **Analysis Layer** (Pandas + PySpark MLlib)
 
    - Load processed Parquet datasets
    - Statistical analysis and ML models
@@ -89,7 +89,7 @@ graph TB
 
     subgraph ANALYSIS["[DATA] ANALYSIS & ML"]
         PANDAS[Pandas 2.3<br/>Data Analysis]
-        SKLEARN[Scikit-learn 1.7<br/>Machine Learning]
+        MLLIB[PySpark MLlib<br/>Machine Learning]
         NUMPY[NumPy 2.3<br/>Numerical Computing]
     end
 
@@ -122,7 +122,7 @@ graph TB
 | **ETL** | PySpark | 13M rows, distributed processing, lazy evaluation | Pandas (too slow), Dask (less mature) |
 | **Storage** | Parquet | Columnar, compressed, fast reads | CSV (slow), HDF5 (not distributed) |
 | **Analysis** | Pandas | Rich API, ecosystem, fast for <100K rows | Polars (new), Spark (overkill) |
-| **ML** | Scikit-learn | Standard, well-tested, integrates with Pandas | Spark MLlib (complex), TensorFlow (overkill) |
+| **ML** | PySpark MLlib | Scalable, consistent with PySpark architecture | Scikit-learn (not scalable), TensorFlow (overkill) |
 | **Charts** | Plotly | Interactive, web-native, rich features | Altair (limited), D3 (complex) |
 | **Website** | Quarto | Reproducible, supports Python, professional | R Markdown (R-focused), Sphinx (docs-only) |
 
@@ -348,8 +348,8 @@ graph TB
 | **src/config/** | Configuration management | Python | Settings, mappings |
 | **src/core/** | Heavy ETL processing | PySpark | Processed DataFrame |
 | **src/data/** | Data loading & utilities | PySpark + Pandas | DataFrames |
-| **src/analytics/** | ML models & analysis | Pandas + Scikit-learn | Models, insights |
-| **src/ml/** | Advanced ML | Pandas + Scikit-learn | Trained models |
+| **src/analytics/** | ML models & analysis | PySpark MLlib | Models, insights |
+| **src/ml/** | Advanced ML | PySpark MLlib | Trained models |
 | **src/visualization/** | Charts & dashboards | Plotly | Figures |
 | **src/utils/** | Helper functions | Python | Utilities |
 
@@ -610,7 +610,7 @@ graph TB
 | Save to Parquet | PySpark | 30-50K rows | ~10-30 sec | 2-4 GB |
 | Load Parquet | Pandas | 30-50K rows | ~1-2 sec | 500 MB |
 | Statistical analysis | Pandas | 30-50K rows | <1 sec | 500 MB |
-| ML training | Scikit-learn | 30-50K rows | 5-30 sec | 1-2 GB |
+| ML training | PySpark MLlib | 30-50K rows | 5-30 sec | 1-2 GB |
 | Generate chart | Plotly | 30-50K points | 1-5 sec | 200 MB |
 | Render Quarto page | Quarto | N/A | 5-15 sec | 500 MB |
 
@@ -716,7 +716,7 @@ logger.info("Processing started...")
 - [Pandas Documentation](https://pandas.pydata.org/docs/)
 - [Plotly Python](https://plotly.com/python/)
 - [Quarto](https://quarto.org/)
-- [Scikit-learn](https://scikit-learn.org/)
+- [PySpark MLlib](https://spark.apache.org/docs/latest/ml-guide.html)
 
 ---
 

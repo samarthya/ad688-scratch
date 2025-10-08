@@ -246,4 +246,4 @@ def setup_plotting_environment():
     """Setup the complete plotting environment with consistent styling."""
     JobMarketTheme.setup_matplotlib()
     JobMarketTheme.setup_seaborn()
-    print("✅ Plotting environment configured with JobMarketTheme")
+    print("[OK] Plotting environment configured with JobMarketTheme")

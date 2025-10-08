@@ -1,7 +1,6 @@
 ---
 title: "Tech Career Intelligence: Comprehensive Analysis of Job Market Trends and Salary Patterns"
 subtitle: "A Data-Driven Analysis of Technology Sector Employment Opportunities"
-author: "Career Intelligence Research Team"
 date: today
 format:
   html:
@@ -30,6 +29,52 @@ python:
   type: venv
   environment: .venv
 ---
+
+```{python}
+#| label: setup-format-detection
+#| include: false
+
+# Detect output format for conditional rendering
+import sys
+import os
+from pathlib import Path
+
+# Detect if rendering to DOCX by checking Quarto's format metadata
+is_docx = False
+try:
+    # Check for QUARTO_FORMAT environment variable (Quarto sets this)
+    quarto_format = os.environ.get('QUARTO_FORMAT', '')
+    if 'docx' in quarto_format.lower():
+        is_docx = True
+    # Also check command line args
+    elif any('docx' in str(arg).lower() for arg in sys.argv):
+        is_docx = True
+    # Check if in docx-specific context
+    elif hasattr(__builtins__, 'display'):
+        # In Jupyter/interactive context - use HTML
+        is_docx = False
+except:
+    is_docx = False
+
+# Helper function to display figures based on format
+def display_figure(fig, filename=None):
+    """Display figure appropriately based on output format"""
+    # Always try to save as PNG for DOCX compatibility
+    if filename:
+        png_path = f"figures/{filename}.png"
+        Path("figures").mkdir(exist_ok=True)
+        try:
+            # Save static PNG (works for both HTML and DOCX)
+            fig.write_image(png_path, width=1200, height=800, scale=2)
+        except Exception as e:
+            pass  # Silently fail if kaleido not available
+
+    # Always show interactive for rendering
+    fig.show()
+
+print(f"Format detection: DOCX mode = {is_docx}")
+print(f"Figures will be saved to figures/ directory for DOCX compatibility")
+```
 
 # Executive Summary
 
@@ -74,9 +119,9 @@ df = get_processed_dataframe()
 analysis = get_analysis_results()
 summary = get_website_data_summary()
 
-print(f"✅ Successfully processed {summary['total_records']:,} job postings")
-print(f"📊 Data quality: {summary['salary_coverage']:.1f}% salary coverage")
-print(f"🌍 Geographic coverage: {summary['unique_locations']} unique locations")
+print(f"[OK] Successfully processed {summary['total_records']:,} job postings")
+print(f"[DATA] Data quality: {summary['salary_coverage']:.1f}% salary coverage")
+print(f" Geographic coverage: {summary['unique_locations']} unique locations")
 print(f"🏢 Industry coverage: {summary['unique_industries']} unique industries")
 ```
 
@@ -160,7 +205,7 @@ fig.update_layout(
     paper_bgcolor='white'
 )
 
-fig.show()
+display_figure(fig, "kpi_dashboard")
 ```
 
 ## Experience Level Analysis and Career Progression
@@ -294,7 +339,7 @@ fig.update_yaxes(title_text="Median Salary ($)", row=1, col=1)
 fig.update_xaxes(title_text="Career Transition", row=2, col=1, tickangle=45)
 fig.update_yaxes(title_text="Growth Rate (%)", row=2, col=1)
 
-fig.show()
+display_figure(fig, "career_progression")
 ```
 
 ### Key Insights from Experience Analysis
@@ -376,7 +421,7 @@ fig.update_layout(
 fig.update_xaxes(title_text="Median Salary ($)", row=1, col=1)
 fig.update_yaxes(title_text="Industry", row=1, col=1)
 
-fig.show()
+display_figure(fig, "career_progression")
 ```
 
 ## Geographic Salary Analysis
@@ -399,7 +444,7 @@ try:
         height=600,
         margin=dict(l=80, r=80, t=100, b=80)
     )
-    geo_fig.show()
+    display_figure(geo_fig, "geographic_analysis")
 
     from IPython.display import Markdown, display
     display(Markdown("""
@@ -433,7 +478,7 @@ try:
         font=dict(size=12),
         title_font_size=18
     )
-    corr_fig.show()
+    display_figure(corr_fig, "correlation_matrix")
 
     from IPython.display import Markdown, display
     display(Markdown("""
@@ -468,7 +513,7 @@ try:
         font=dict(size=12),
         title_font_size=18
     )
-    ai_fig.show()
+    display_figure(ai_fig, "ai_salary_premium")
 
     from IPython.display import Markdown, display
     display(Markdown("""
@@ -534,7 +579,7 @@ try:
         font=dict(size=12),
         title_font_size=18
     )
-    dashboard_fig.show()
+    display_figure(dashboard_fig, "complete_dashboard")
 except Exception as e:
     print(f"Complete dashboard temporarily unavailable: {e}")
 ```

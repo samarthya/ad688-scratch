@@ -193,7 +193,7 @@ python scripts/generate_processed_data.py --force
 ### **Analysis Methods**
 
 - **Statistical Modeling**: Python with pandas, numpy, scipy
-- **Machine Learning**: Scikit-learn for prediction and classification models
+- **Machine Learning**: PySpark MLlib for scalable prediction and classification models
 - **Visualization**: Plotly for interactive charts, matplotlib for static analysis
 - **Web Framework**: Quarto for integrated analysis and presentation
 

@@ -1,22 +1,24 @@
 """
-Two Main Analytics Models for Salary and Compensation Trends
+Two Main Analytics Models for Salary and Compensation Trends - PySpark MLlib
 
-This module implements the core analytics models:
+This module implements the core analytics models using PySpark MLlib:
 1. Multiple Linear Regression for salary prediction
-2. Classification for above-average paying jobs
+2. Random Forest Classification for above-average paying jobs
 
-Each model includes plain-language summaries, feature descriptions,
-and implications for job seekers.
+Refactored to use PySpark MLlib instead of scikit-learn for consistency
+with the PySpark-based architecture and learning objectives.
 """
 
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import mean_squared_error, r2_score, classification_report, confusion_matrix
+from pyspark.sql import DataFrame as SparkDataFrame, SparkSession
+from pyspark.sql import functions as F
+from pyspark.ml.regression import LinearRegression, LinearRegressionModel
+from pyspark.ml.classification import RandomForestClassifier, RandomForestClassificationModel
+from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder, StandardScaler
+from pyspark.ml import Pipeline
+from pyspark.ml.evaluation import RegressionEvaluator, MulticlassClassificationEvaluator
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
@@ -24,38 +26,50 @@ from plotly.subplots import make_subplots
 
 class SalaryAnalyticsModels:
     """
-    Two main analytics models for salary and compensation analysis.
+    Two main analytics models for salary and compensation analysis using PySpark MLlib.
 
     Model 1: Multiple Linear Regression for salary prediction
-    Model 2: Classification for above-average paying jobs
+    Model 2: Random Forest Classification for above-average paying jobs
+
+    All models use PySpark MLlib for distributed machine learning at scale.
     """
 
-    def __init__(self, df: pd.DataFrame = None):
-        """Initialize with processed job market data using abstraction layer."""
-        if df is None:
-            # Use existing data loading abstraction
-            from src.data.auto_processor import load_analysis_data
-            self.df = load_analysis_data("analytics")
+    def __init__(self, df: pd.DataFrame = None, spark: SparkSession = None):
+        """Initialize with processed job market data."""
+        # Initialize Spark session
+        if spark is None:
+            from src.utils.spark_utils import create_spark_session
+            self.spark = create_spark_session("SalaryAnalyticsModels")
         else:
-            self.df = df.copy()
+            self.spark = spark
+
+        # Load data
+        if df is None:
+            from src.data.auto_processor import load_analysis_data
+            pandas_df = load_analysis_data("analytics")
+        else:
+            pandas_df = df.copy()
+
+        # Convert Pandas DataFrame to Spark DataFrame
+        self.spark_df = self.spark.createDataFrame(pandas_df)
+        self.pandas_df = pandas_df  # Keep for summary stats
 
         self.models = {}
-        self.scalers = {}
-        self.encoders = {}
+        self.pipelines = {}
         self.model_results = {}
 
         # Use existing column mapping abstraction
         from src.config.column_mapping import get_analysis_column
-        self.salary_col = get_analysis_column('salary')  # 'salary_avg_imputed'
+        self.salary_col = get_analysis_column('salary')  # 'salary_avg'
         self.location_col = get_analysis_column('city')  # 'city_name'
 
-        print(f"Initialized with {len(self.df):,} records")
+        print(f"Initialized with {self.spark_df.count():,} records")
         print(f"Using salary column: {self.salary_col}")
         print(f"Using location column: {self.location_col}")
 
-    def prepare_features(self) -> pd.DataFrame:
+    def prepare_features(self) -> SparkDataFrame:
         """
-        Prepare features for both models.
+        Prepare features for both models using PySpark.
 
         Features used:
         - Location (city_name): Geographic salary variations
@@ -64,82 +78,81 @@ class SalaryAnalyticsModels:
         - Experience (experience_years): Career progression impact
         - Skills (required_skills): Technical skill premiums
         """
-        print("\n=== FEATURE PREPARATION ===")
+        print("\n=== FEATURE PREPARATION (PySpark) ===")
 
-        # Start with core columns
-        feature_df = self.df.copy()
+        # Start with Spark DataFrame
+        feature_df = self.spark_df
 
         # Ensure required columns exist
         required_cols = [self.salary_col, self.location_col, 'title', 'industry']
-        missing_cols = [col for col in required_cols if col not in feature_df.columns]
+        existing_cols = feature_df.columns
 
-        if missing_cols:
-            print(f"Warning: Missing columns {missing_cols}")
-            # Create placeholder columns
-            for col in missing_cols:
+        for col in required_cols:
+            if col not in existing_cols:
+                print(f"Warning: Missing column {col}, creating placeholder")
                 if col == self.salary_col:
-                    feature_df[col] = 75000  # Default salary
+                    feature_df = feature_df.withColumn(col, F.lit(75000.0))
                 else:
-                    feature_df[col] = 'Unknown'
+                    feature_df = feature_df.withColumn(col, F.lit('Unknown'))
 
         # Clean salary data
-        feature_df[self.salary_col] = pd.to_numeric(feature_df[self.salary_col], errors='coerce')
-        feature_df = feature_df.dropna(subset=[self.salary_col])
-        feature_df = feature_df[feature_df[self.salary_col] > 0]
+        feature_df = feature_df.withColumn(
+            self.salary_col,
+            F.col(self.salary_col).cast('double')
+        )
+        feature_df = feature_df.filter(
+            (F.col(self.salary_col).isNotNull()) &
+            (F.col(self.salary_col) > 0)
+        )
 
-        # Create experience features
+        # Create experience features if not exists
         if 'experience_years' not in feature_df.columns:
-            # Create experience from salary percentiles
-            salary_percentiles = feature_df[self.salary_col].quantile([0.25, 0.5, 0.75])
-            def estimate_experience(salary):
-                if salary <= salary_percentiles[0.25]:
-                    return 1  # Entry level
-                elif salary <= salary_percentiles[0.5]:
-                    return 3  # Mid level
-                elif salary <= salary_percentiles[0.75]:
-                    return 7  # Senior level
-                else:
-                    return 12  # Executive level
+            # Estimate from salary (simple heuristic)
+            feature_df = feature_df.withColumn(
+                'experience_years',
+                F.when(F.col(self.salary_col) < 60000, F.lit(1.0))
+                 .when(F.col(self.salary_col) < 90000, F.lit(3.0))
+                 .when(F.col(self.salary_col) < 120000, F.lit(7.0))
+                 .otherwise(F.lit(12.0))
+            )
 
-            feature_df['experience_years'] = feature_df[self.salary_col].apply(estimate_experience)
-
-        # Create skills score
+        # Create skills score if not exists
         if 'required_skills' in feature_df.columns:
-            feature_df['skills_count'] = feature_df['required_skills'].astype(str).str.count(',') + 1
+            feature_df = feature_df.withColumn(
+                'skills_count',
+                F.size(F.split(F.col('required_skills'), ','))
+            )
         else:
-            feature_df['skills_count'] = 3  # Default skills count
+            feature_df = feature_df.withColumn('skills_count', F.lit(3.0))
 
         # Clean categorical variables
-        categorical_cols = [self.location_col, 'title', 'industry']
-        for col in categorical_cols:
+        for col in [self.location_col, 'title', 'industry']:
             if col in feature_df.columns:
-                feature_df[col] = feature_df[col].astype(str).str.strip()
-                feature_df[col] = feature_df[col].replace(['nan', 'None', ''], 'Unknown')
+                feature_df = feature_df.withColumn(
+                    col,
+                    F.when(
+                        (F.col(col).isNull()) | (F.col(col) == '') | (F.col(col) == 'nan'),
+                        F.lit('Unknown')
+                    ).otherwise(F.trim(F.col(col)))
+                )
 
-        print(f"\n✅ Prepared features for {len(feature_df):,} records")
-        print(f"   Salary range: ${feature_df[self.salary_col].min():,.0f} - ${feature_df[self.salary_col].max():,.0f}")
-        print(f"   Median salary: ${feature_df[self.salary_col].median():,.0f}")
-        print(f"   Unique locations: {feature_df[self.location_col].nunique()}")
-        print(f"   Unique titles: {feature_df['title'].nunique()}")
-        print(f"   Unique industries: {feature_df['industry'].nunique()}")
+        record_count = feature_df.count()
+        print(f"\n[OK] Prepared features for {record_count:,} records")
 
-        # Check for data quality issues
-        if len(feature_df) < 100:
-            print(f"\n⚠️ WARNING: Only {len(feature_df)} records available. Models may not perform well.")
-
-        salary_std = feature_df[self.salary_col].std()
-        if salary_std < 1000:
-            print(f"\n⚠️ WARNING: Very low salary variation (std: ${salary_std:.2f}). Classification may fail.")
+        # Get summary stats using Pandas for display
+        salary_stats = feature_df.select(self.salary_col).toPandas()[self.salary_col]
+        print(f"   Salary range: ${salary_stats.min():,.0f} - ${salary_stats.max():,.0f}")
+        print(f"   Median salary: ${salary_stats.median():,.0f}")
 
         return feature_df
 
-    def model_1_multiple_linear_regression(self, feature_df: pd.DataFrame) -> Dict[str, Any]:
+    def model_1_multiple_linear_regression(self, feature_df: SparkDataFrame = None) -> Dict[str, Any]:
         """
-        MODEL 1: Multiple Linear Regression for Salary Prediction
+        MODEL 1: Multiple Linear Regression for Salary Prediction (PySpark MLlib)
 
         WHAT WE'RE MODELING:
-        We're predicting salary based on location, job title, industry, experience, and skills.
-        This helps understand which factors most influence compensation.
+        We're predicting salary based on location, job title, industry, experience, and skills
+        using PySpark's distributed linear regression.
 
         FEATURES USED:
         - Location: Geographic cost of living and market demand
@@ -154,109 +167,127 @@ class SalaryAnalyticsModels:
         - Quantify the value of experience and specialization
         - Compare compensation across industries and roles
         """
-        print("\n=== MODEL 1: MULTIPLE LINEAR REGRESSION ===")
-        print("Predicting salary based on location, job title, industry, experience, and skills")
+        print("\n=== MODEL 1: MULTIPLE LINEAR REGRESSION (PySpark MLlib) ===")
+        print("Predicting salary using distributed linear regression")
 
-        # Prepare features
-        X_features = []
-        feature_names = []
+        if feature_df is None:
+            feature_df = self.prepare_features()
 
-        # Encode categorical variables
-        categorical_features = [self.location_col, 'title', 'industry']
+        # Select top categories to avoid too many features
+        top_locations = feature_df.groupBy(self.location_col).count().orderBy(F.desc('count')).limit(10)
+        top_locations_list = [row[self.location_col] for row in top_locations.collect()]
 
-        for feature in categorical_features:
-            if feature in feature_df.columns:
-                # Use top categories to avoid too many features
-                top_categories = feature_df[feature].value_counts().head(20).index
-                for category in top_categories:
-                    feature_name = f"{feature}_{category}"
-                    feature_df[feature_name] = (feature_df[feature] == category).astype(int)
-                    X_features.append(feature_name)
-                    feature_names.append(feature_name)
+        top_titles = feature_df.groupBy('title').count().orderBy(F.desc('count')).limit(10)
+        top_titles_list = [row['title'] for row in top_titles.collect()]
 
-        # Add numerical features
-        numerical_features = ['experience_years', 'skills_count']
-        for feature in numerical_features:
-            if feature in feature_df.columns:
-                X_features.append(feature)
-                feature_names.append(feature)
+        top_industries = feature_df.groupBy('industry').count().orderBy(F.desc('count')).limit(10)
+        top_industries_list = [row['industry'] for row in top_industries.collect()]
 
-        # Prepare data
-        X = feature_df[X_features].fillna(0)
-        y = feature_df[self.salary_col]
+        # Filter to top categories
+        feature_df = feature_df.filter(
+            F.col(self.location_col).isin(top_locations_list) &
+            F.col('title').isin(top_titles_list) &
+            F.col('industry').isin(top_industries_list)
+        )
 
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+        # Create StringIndexers and OneHotEncoders for categorical features
+        location_indexer = StringIndexer(inputCol=self.location_col, outputCol='location_index', handleInvalid='keep')
+        location_encoder = OneHotEncoder(inputCol='location_index', outputCol='location_vec')
+
+        title_indexer = StringIndexer(inputCol='title', outputCol='title_index', handleInvalid='keep')
+        title_encoder = OneHotEncoder(inputCol='title_index', outputCol='title_vec')
+
+        industry_indexer = StringIndexer(inputCol='industry', outputCol='industry_index', handleInvalid='keep')
+        industry_encoder = OneHotEncoder(inputCol='industry_index', outputCol='industry_vec')
+
+        # Assemble features
+        assembler = VectorAssembler(
+            inputCols=['location_vec', 'title_vec', 'industry_vec', 'experience_years', 'skills_count'],
+            outputCol='features_raw'
         )
 
         # Scale features
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
+        scaler = StandardScaler(inputCol='features_raw', outputCol='features', withMean=True, withStd=True)
+
+        # Linear Regression model
+        lr = LinearRegression(
+            featuresCol='features',
+            labelCol=self.salary_col,
+            maxIter=100,
+            regParam=0.01,
+            elasticNetParam=0.0
+        )
+
+        # Create pipeline
+        pipeline = Pipeline(stages=[
+            location_indexer, location_encoder,
+            title_indexer, title_encoder,
+            industry_indexer, industry_encoder,
+            assembler, scaler, lr
+        ])
+
+        # Split data
+        train_df, test_df = feature_df.randomSplit([0.8, 0.2], seed=42)
+
+        print(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
 
         # Train model
-        model = LinearRegression()
-        model.fit(X_train_scaled, y_train)
+        model = pipeline.fit(train_df)
+        self.pipelines['regression'] = model
 
         # Make predictions
-        y_pred_train = model.predict(X_train_scaled)
-        y_pred_test = model.predict(X_test_scaled)
+        train_predictions = model.transform(train_df)
+        test_predictions = model.transform(test_df)
 
-        # Calculate metrics
-        train_r2 = r2_score(y_train, y_pred_train)
-        test_r2 = r2_score(y_test, y_pred_test)
-        train_rmse = np.sqrt(mean_squared_error(y_train, y_pred_train))
-        test_rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+        # Evaluate
+        evaluator = RegressionEvaluator(
+            labelCol=self.salary_col,
+            predictionCol='prediction',
+            metricName='r2'
+        )
 
-        # Feature importance (absolute coefficients)
-        feature_importance = pd.DataFrame({
-            'feature': feature_names,
-            'coefficient': model.coef_,
-            'abs_coefficient': np.abs(model.coef_)
-        }).sort_values('abs_coefficient', ascending=False)
+        train_r2 = evaluator.evaluate(train_predictions)
+        test_r2 = evaluator.evaluate(test_predictions)
 
-        # Store model
-        self.models['regression'] = {
-            'model': model,
-            'scaler': scaler,
-            'features': feature_names
-        }
+        evaluator.setMetricName('rmse')
+        train_rmse = evaluator.evaluate(train_predictions)
+        test_rmse = evaluator.evaluate(test_predictions)
+
+        # Get feature importances (coefficients from linear regression)
+        lr_model = model.stages[-1]
+        coefficients = lr_model.coefficients.toArray()
 
         results = {
-            'model_type': 'Multiple Linear Regression',
+            'model_type': 'Multiple Linear Regression (PySpark MLlib)',
             'purpose': 'Salary Prediction',
-            'train_r2': train_r2,
-            'test_r2': test_r2,
-            'train_rmse': train_rmse,
-            'test_rmse': test_rmse,
-            'feature_importance': feature_importance,
-            'predictions': {
-                'y_test': y_test,
-                'y_pred': y_pred_test
-            },
+            'train_r2': float(train_r2),
+            'test_r2': float(test_r2),
+            'train_rmse': float(train_rmse),
+            'test_rmse': float(test_rmse),
+            'num_features': len(coefficients),
+            'intercept': float(lr_model.intercept),
             'sample_size': {
-                'train': len(X_train),
-                'test': len(X_test)
+                'train': train_df.count(),
+                'test': test_df.count()
             }
         }
 
         self.model_results['regression'] = results
 
-        print(f"✅ Model trained successfully!")
+        print(f"[OK] Model trained successfully!")
         print(f"   R² Score: {test_r2:.3f} (explains {test_r2*100:.1f}% of salary variance)")
         print(f"   RMSE: ${test_rmse:,.0f} (average prediction error)")
-        print(f"   Sample: {len(X_train):,} training, {len(X_test):,} testing")
+        print(f"   Features: {len(coefficients)} encoded features")
 
         return results
 
-    def model_2_above_average_classification(self, feature_df: pd.DataFrame) -> Dict[str, Any]:
+    def model_2_above_average_classification(self, feature_df: SparkDataFrame = None) -> Dict[str, Any]:
         """
-        MODEL 2: Classification for Above-Average Paying Jobs
+        MODEL 2: Random Forest Classification for Above-Average Paying Jobs (PySpark MLlib)
 
         WHAT WE'RE MODELING:
-        We're classifying jobs as "above-average" or "below-average" paying based on
-        location, title, industry, and skills. This helps identify high-opportunity roles.
+        We're classifying jobs as "above-average" or "below-average" paying using
+        Random Forest, which handles categorical features well and provides feature importance.
 
         FEATURES USED:
         - Location: High-paying vs. lower-paying markets
@@ -271,320 +302,226 @@ class SalaryAnalyticsModels:
         - Understand which skills unlock premium compensation
         - Focus job search on above-average paying role types
         """
-        print("\n=== MODEL 2: ABOVE-AVERAGE SALARY CLASSIFICATION ===")
-        print("Classifying jobs as above-average or below-average paying")
+        print("\n=== MODEL 2: ABOVE-AVERAGE SALARY CLASSIFICATION (PySpark MLlib) ===")
+        print("Classifying jobs using Random Forest")
+
+        if feature_df is None:
+            feature_df = self.prepare_features()
 
         # Create target variable (above median salary)
-        median_salary = feature_df[self.salary_col].median()
-        feature_df['above_average'] = (feature_df[self.salary_col] > median_salary).astype(int)
-
-        print(f"Median salary threshold: ${median_salary:,.0f}")
-        print(f"Above-average jobs: {feature_df['above_average'].sum():,} ({feature_df['above_average'].mean()*100:.1f}%)")
-
-        # Prepare features (similar to regression but simplified)
-        X_features = []
-        feature_names = []
-
-        # Top locations
-        top_locations = feature_df[self.location_col].value_counts().head(15).index
-        for location in top_locations:
-            feature_name = f"location_{location}"
-            feature_df[feature_name] = (feature_df[self.location_col] == location).astype(int)
-            X_features.append(feature_name)
-            feature_names.append(feature_name)
-
-        # Top job titles
-        top_titles = feature_df['title'].value_counts().head(15).index
-        for title in top_titles:
-            feature_name = f"title_{title}"
-            feature_df[feature_name] = (feature_df['title'] == title).astype(int)
-            X_features.append(feature_name)
-            feature_names.append(feature_name)
-
-        # Top industries
-        top_industries = feature_df['industry'].value_counts().head(10).index
-        for industry in top_industries:
-            feature_name = f"industry_{industry}"
-            feature_df[feature_name] = (feature_df['industry'] == industry).astype(int)
-            X_features.append(feature_name)
-            feature_names.append(feature_name)
-
-        # Numerical features
-        numerical_features = ['experience_years', 'skills_count']
-        for feature in numerical_features:
-            if feature in feature_df.columns:
-                X_features.append(feature)
-                feature_names.append(feature)
-
-        # Prepare data
-        X = feature_df[X_features].fillna(0)
-        y = feature_df['above_average']
-
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
+        median_salary = feature_df.approxQuantile(self.salary_col, [0.5], 0.01)[0]
+        feature_df = feature_df.withColumn(
+            'label',
+            F.when(F.col(self.salary_col) > median_salary, 1.0).otherwise(0.0)
         )
 
-        # Train Random Forest Classifier
-        model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10)
-        model.fit(X_train, y_train)
+        print(f"Median salary threshold: ${median_salary:,.0f}")
+        above_avg_count = feature_df.filter(F.col('label') == 1.0).count()
+        total_count = feature_df.count()
+        print(f"Above-average jobs: {above_avg_count:,} ({above_avg_count/total_count*100:.1f}%)")
+
+        # Select top categories
+        top_locations = feature_df.groupBy(self.location_col).count().orderBy(F.desc('count')).limit(10)
+        top_locations_list = [row[self.location_col] for row in top_locations.collect()]
+
+        top_titles = feature_df.groupBy('title').count().orderBy(F.desc('count')).limit(10)
+        top_titles_list = [row['title'] for row in top_titles.collect()]
+
+        top_industries = feature_df.groupBy('industry').count().orderBy(F.desc('count')).limit(10)
+        top_industries_list = [row['industry'] for row in top_industries.collect()]
+
+        # Filter to top categories
+        feature_df = feature_df.filter(
+            F.col(self.location_col).isin(top_locations_list) &
+            F.col('title').isin(top_titles_list) &
+            F.col('industry').isin(top_industries_list)
+        )
+
+        # Create StringIndexers for categorical features
+        location_indexer = StringIndexer(inputCol=self.location_col, outputCol='location_index', handleInvalid='keep')
+        title_indexer = StringIndexer(inputCol='title', outputCol='title_index', handleInvalid='keep')
+        industry_indexer = StringIndexer(inputCol='industry', outputCol='industry_index', handleInvalid='keep')
+
+        # Assemble features
+        assembler = VectorAssembler(
+            inputCols=['location_index', 'title_index', 'industry_index', 'experience_years', 'skills_count'],
+            outputCol='features'
+        )
+
+        # Random Forest Classifier
+        rf = RandomForestClassifier(
+            featuresCol='features',
+            labelCol='label',
+            numTrees=50,
+            maxDepth=10,
+            seed=42
+        )
+
+        # Create pipeline
+        pipeline = Pipeline(stages=[
+            location_indexer, title_indexer, industry_indexer,
+            assembler, rf
+        ])
+
+        # Split data
+        train_df, test_df = feature_df.randomSplit([0.8, 0.2], seed=42)
+
+        print(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
+
+        # Train model
+        model = pipeline.fit(train_df)
+        self.pipelines['classification'] = model
 
         # Make predictions
-        y_pred_train = model.predict(X_train)
-        y_pred_test = model.predict(X_test)
+        train_predictions = model.transform(train_df)
+        test_predictions = model.transform(test_df)
 
-        # Check if model has both classes
-        n_classes = len(model.classes_)
-        print(f"Model trained with {n_classes} classes: {model.classes_}")
+        # Evaluate
+        evaluator = MulticlassClassificationEvaluator(
+            labelCol='label',
+            predictionCol='prediction',
+            metricName='accuracy'
+        )
 
-        if n_classes < 2:
-            raise ValueError(f"Classification requires at least 2 classes, but only found {n_classes}. "
-                           f"This indicates insufficient salary variation in the data. "
-                           f"Median salary: ${median_salary:,.0f}, "
-                           f"Salary range: ${feature_df[self.salary_col].min():,.0f} - ${feature_df[self.salary_col].max():,.0f}")
+        train_accuracy = evaluator.evaluate(train_predictions)
+        test_accuracy = evaluator.evaluate(test_predictions)
 
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        evaluator.setMetricName('f1')
+        train_f1 = evaluator.evaluate(train_predictions)
+        test_f1 = evaluator.evaluate(test_predictions)
 
-        # Calculate metrics
-        train_accuracy = (y_pred_train == y_train).mean()
-        test_accuracy = (y_pred_test == y_test).mean()
-
-        # Feature importance
-        feature_importance = pd.DataFrame({
-            'feature': feature_names,
-            'importance': model.feature_importances_
-        }).sort_values('importance', ascending=False)
-
-        # Store model
-        self.models['classification'] = {
-            'model': model,
-            'features': feature_names,
-            'threshold': median_salary
-        }
+        # Get feature importances
+        rf_model = model.stages[-1]
+        feature_importance = rf_model.featureImportances.toArray()
 
         results = {
-            'model_type': 'Random Forest Classification',
-            'purpose': 'Above-Average Salary Prediction',
-            'threshold': median_salary,
-            'train_accuracy': train_accuracy,
-            'test_accuracy': test_accuracy,
-            'feature_importance': feature_importance,
-            'predictions': {
-                'y_test': y_test,
-                'y_pred': y_pred_test,
-                'y_pred_proba': y_pred_proba
-            },
+            'model_type': 'Random Forest Classification (PySpark MLlib)',
+            'purpose': 'Above-Average Salary Classification',
+            'train_accuracy': float(train_accuracy),
+            'test_accuracy': float(test_accuracy),
+            'train_f1': float(train_f1),
+            'test_f1': float(test_f1),
+            'median_threshold': float(median_salary),
+            'num_trees': 50,
             'sample_size': {
-                'train': len(X_train),
-                'test': len(X_test)
+                'train': train_df.count(),
+                'test': test_df.count()
             }
         }
 
         self.model_results['classification'] = results
 
-        print(f"✅ Model trained successfully!")
-        print(f"   Accuracy: {test_accuracy:.3f} ({test_accuracy*100:.1f}% correct predictions)")
-        print(f"   Sample: {len(X_train):,} training, {len(X_test):,} testing")
+        print(f"[OK] Model trained successfully!")
+        print(f"   Accuracy: {test_accuracy:.3f} ({test_accuracy*100:.1f}%)")
+        print(f"   F1 Score: {test_f1:.3f}")
+        print(f"   Random Forest: 50 trees, max depth 10")
 
         return results
 
-    def create_model_visualizations(self) -> Dict[str, go.Figure]:
-        """Create visualizations for both models."""
-        figures = {}
+    def run_complete_analysis(self) -> Dict[str, Any]:
+        """
+        Run both models and generate comprehensive results.
 
-        # Model 1: Regression Results
-        if 'regression' in self.model_results:
-            reg_results = self.model_results['regression']
+        Returns complete analysis with both regression and classification results.
+        """
+        print("\n" + "="*70)
+        print("[START] RUNNING COMPLETE SALARY ANALYTICS (PySpark MLlib)")
+        print("="*70)
 
-            # Prediction vs Actual
-            fig_reg = go.Figure()
+        # Prepare features once
+        feature_df = self.prepare_features()
 
-            y_test = reg_results['predictions']['y_test']
-            y_pred = reg_results['predictions']['y_pred']
+        # Run both models
+        regression_results = self.model_1_multiple_linear_regression(feature_df)
+        classification_results = self.model_2_above_average_classification(feature_df)
 
-            fig_reg.add_trace(go.Scatter(
-                x=y_test,
-                y=y_pred,
-                mode='markers',
-                name='Predictions',
-                marker=dict(color='blue', opacity=0.6)
-            ))
+        comprehensive_results = {
+            'regression': regression_results,
+            'classification': classification_results,
+            'technology': 'PySpark MLlib',
+            'models_trained': 2
+        }
 
-            # Perfect prediction line
-            min_val = min(y_test.min(), y_pred.min())
-            max_val = max(y_test.max(), y_pred.max())
-            fig_reg.add_trace(go.Scatter(
-                x=[min_val, max_val],
-                y=[min_val, max_val],
-                mode='lines',
-                name='Perfect Prediction',
-                line=dict(color='red', dash='dash')
-            ))
+        print("\n" + "="*70)
+        print("[OK] COMPLETE ANALYSIS FINISHED")
+        print("="*70)
+        print(f"Model 1 (Regression): R² = {regression_results['test_r2']:.3f}")
+        print(f"Model 2 (Classification): Accuracy = {classification_results['test_accuracy']:.3f}")
 
-            fig_reg.update_layout(
-                title=f"Model 1: Salary Prediction Accuracy (R² = {reg_results['test_r2']:.3f})",
-                xaxis_title="Actual Salary ($)",
-                yaxis_title="Predicted Salary ($)",
-                height=500
-            )
+        return comprehensive_results
 
-            figures['regression_accuracy'] = fig_reg
+    def create_analysis_visualizations(self, results: Dict[str, Any]) -> List[go.Figure]:
+        """
+        Create visualizations for model results.
 
-            # Feature Importance
-            top_features = reg_results['feature_importance'].head(10)
+        Returns list of Plotly figures for regression and classification results.
+        """
+        print("\n=== CREATING VISUALIZATIONS ===")
 
-            fig_importance = go.Figure(go.Bar(
-                x=top_features['abs_coefficient'],
-                y=top_features['feature'],
-                orientation='h',
-                marker_color='lightblue'
-            ))
+        figures = []
 
-            fig_importance.update_layout(
-                title="Model 1: Top 10 Most Important Features",
-                xaxis_title="Absolute Coefficient Value",
-                yaxis_title="Features",
-                height=500
-            )
+        # Model Performance Comparison
+        fig = go.Figure()
 
-            figures['regression_importance'] = fig_importance
+        fig.add_trace(go.Bar(
+            name='Regression R²',
+            x=['Training', 'Testing'],
+            y=[results['regression']['train_r2'], results['regression']['test_r2']],
+            marker_color='#1f77b4'
+        ))
 
-        # Model 2: Classification Results
-        if 'classification' in self.model_results:
-            class_results = self.model_results['classification']
+        fig.update_layout(
+            title='Model 1: Regression Performance (R² Score)',
+            yaxis_title='R² Score',
+            yaxis_range=[0, 1],
+            height=400
+        )
 
-            # Feature Importance
-            top_features = class_results['feature_importance'].head(10)
+        figures.append(fig)
 
-            fig_class_importance = go.Figure(go.Bar(
-                x=top_features['importance'],
-                y=top_features['feature'],
-                orientation='h',
-                marker_color='lightgreen'
-            ))
+        # Classification Performance
+        fig2 = go.Figure()
 
-            fig_class_importance.update_layout(
-                title="Model 2: Top 10 Features for Above-Average Salary Classification",
-                xaxis_title="Feature Importance",
-                yaxis_title="Features",
-                height=500
-            )
+        fig2.add_trace(go.Bar(
+            name='Accuracy',
+            x=['Training', 'Testing'],
+            y=[results['classification']['train_accuracy'], results['classification']['test_accuracy']],
+            marker_color='#2ca02c'
+        ))
 
-            figures['classification_importance'] = fig_class_importance
+        fig2.update_layout(
+            title='Model 2: Classification Performance (Accuracy)',
+            yaxis_title='Accuracy',
+            yaxis_range=[0, 1],
+            height=400
+        )
 
-            # Prediction Distribution
-            y_pred_proba = class_results['predictions']['y_pred_proba']
-            y_test = class_results['predictions']['y_test']
+        figures.append(fig2)
 
-            fig_dist = go.Figure()
-
-            # Above-average jobs
-            above_avg_proba = y_pred_proba[y_test == 1]
-            fig_dist.add_trace(go.Histogram(
-                x=above_avg_proba,
-                name='Above-Average Jobs',
-                opacity=0.7,
-                nbinsx=20
-            ))
-
-            # Below-average jobs
-            below_avg_proba = y_pred_proba[y_test == 0]
-            fig_dist.add_trace(go.Histogram(
-                x=below_avg_proba,
-                name='Below-Average Jobs',
-                opacity=0.7,
-                nbinsx=20
-            ))
-
-            fig_dist.update_layout(
-                title="Model 2: Prediction Confidence Distribution",
-                xaxis_title="Predicted Probability of Above-Average Salary",
-                yaxis_title="Number of Jobs",
-                barmode='overlay',
-                height=500
-            )
-
-            figures['classification_distribution'] = fig_dist
+        print(f"[OK] Created {len(figures)} visualizations")
 
         return figures
 
-    def run_complete_analysis(self) -> Dict[str, Any]:
-        """Run both models and return comprehensive results."""
-        print("🚀 RUNNING COMPLETE SALARY ANALYTICS")
-        print("=" * 50)
+    def __del__(self):
+        """Clean up Spark session on deletion."""
+        if hasattr(self, 'spark'):
+            try:
+                self.spark.stop()
+            except:
+                pass
 
-        # Prepare features
-        feature_df = self.prepare_features()
 
-        # Run Model 1: Multiple Linear Regression
-        regression_results = self.model_1_multiple_linear_regression(feature_df)
+# Convenience function for quick analysis
+def run_salary_analytics(df: pd.DataFrame = None) -> Dict[str, Any]:
+    """
+    Run complete salary analytics using PySpark MLlib.
 
-        # Run Model 2: Above-Average Classification
-        classification_results = self.model_2_above_average_classification(feature_df)
+    Args:
+        df: Optional Pandas DataFrame with job market data
 
-        # Create visualizations
-        figures = self.create_model_visualizations()
-
-        # Summary insights
-        insights = self.generate_insights()
-
-        return {
-            'regression': regression_results,
-            'classification': classification_results,
-            'figures': figures,
-            'insights': insights,
-            'data_summary': {
-                'total_records': len(feature_df),
-                'salary_range': {
-                    'min': feature_df[self.salary_col].min(),
-                    'max': feature_df[self.salary_col].max(),
-                    'median': feature_df[self.salary_col].median()
-                },
-                'unique_locations': feature_df[self.location_col].nunique(),
-                'unique_titles': feature_df['title'].nunique(),
-                'unique_industries': feature_df['industry'].nunique()
-            }
-        }
-
-    def generate_insights(self) -> Dict[str, List[str]]:
-        """Generate plain-language insights for job seekers."""
-        insights = {
-            'regression_insights': [],
-            'classification_insights': [],
-            'job_seeker_recommendations': []
-        }
-
-        if 'regression' in self.model_results:
-            reg_results = self.model_results['regression']
-            r2 = reg_results['test_r2']
-            top_features = reg_results['feature_importance'].head(5)
-
-            insights['regression_insights'] = [
-                f"Our salary prediction model explains {r2*100:.1f}% of salary variation",
-                f"Average prediction error is ${reg_results['test_rmse']:,.0f}",
-                f"Top salary driver: {top_features.iloc[0]['feature']}",
-                f"Model trained on {reg_results['sample_size']['train']:,} job postings"
-            ]
-
-        if 'classification' in self.model_results:
-            class_results = self.model_results['classification']
-            accuracy = class_results['test_accuracy']
-            threshold = class_results['threshold']
-            top_features = class_results['feature_importance'].head(5)
-
-            insights['classification_insights'] = [
-                f"Above-average salary threshold: ${threshold:,.0f}",
-                f"Model correctly identifies high-paying jobs {accuracy*100:.1f}% of the time",
-                f"Top predictor of above-average pay: {top_features.iloc[0]['feature']}",
-                f"Model analyzes {class_results['sample_size']['train']:,} job classifications"
-            ]
-
-        insights['job_seeker_recommendations'] = [
-            "Focus on locations and industries identified as high-paying",
-            "Develop skills that the models identify as salary drivers",
-            "Target job titles that consistently appear in above-average classifications",
-            "Consider geographic mobility to access higher-paying markets",
-            "Build experience in areas the models show have strong salary correlation"
-        ]
-
-        return insights
+    Returns:
+        Dictionary with complete analysis results
+    """
+    models = SalaryAnalyticsModels(df=df)
+    results = models.run_complete_analysis()
+    return results

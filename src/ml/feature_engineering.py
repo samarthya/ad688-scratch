@@ -236,23 +236,23 @@ class SalaryDisparityFeatureEngineer:
         """Create salary disparity specific features."""
 
         # Calculate salary percentiles
-        window_spec = Window.orderBy(col('SALARY_AVG_IMPUTED'))
+        window_spec = Window.orderBy(col('salary_avg'))
         df = df.withColumn('salary_percentile', percent_rank().over(window_spec))
 
         # Above median salary indicator
-        median_salary = df.select(avg('SALARY_AVG_IMPUTED')).collect()[0][0]
+        median_salary = df.select(avg('salary_avg')).collect()[0][0]
         df = df.withColumn('above_median_salary',
-                          when(col('SALARY_AVG_IMPUTED') > median_salary, 1).otherwise(0))
+                          when(col('salary_avg') > median_salary, 1).otherwise(0))
 
         # Salary gap indicators
         df = df.withColumn(
             'experience_salary_ratio',
-            col('SALARY_AVG_IMPUTED') / col('education_level')
+            col('salary_avg') / col('education_level')
         )
 
         df = df.withColumn(
             'education_salary_ratio',
-            col('SALARY_AVG_IMPUTED') / col('education_level')
+            col('salary_avg') / col('education_level')
         )
 
         return df

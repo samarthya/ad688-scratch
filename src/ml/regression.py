@@ -30,7 +30,7 @@ class SalaryRegressionModel:
         self.models = {}
         self.pipelines = {}
         self.feature_columns = []
-        self.target_column = 'SALARY_AVG_IMPUTED'
+        self.target_column = 'salary_avg'
 
     def prepare_regression_data(self, df: DataFrame,
                               feature_columns: List[str]) -> DataFrame:

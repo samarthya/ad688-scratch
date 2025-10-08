@@ -21,7 +21,7 @@ class DataValidator:
             return {'is_valid': False, 'errors': errors, 'warnings': warnings}
 
         # Check for required columns
-        required_columns = ['SALARY_AVG_IMPUTED', 'TITLE', 'COMPANY']
+        required_columns = ['salary_avg', 'TITLE', 'COMPANY']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             errors.extend([f"Missing required column: {col}" for col in missing_columns])
@@ -29,7 +29,7 @@ class DataValidator:
         # Check data quality
         total_rows = df.count()
         for col_name in df.columns:
-            if col_name in ['SALARY_AVG_IMPUTED']:
+            if col_name in ['salary_avg']:
                 null_count = df.filter(isnull(col(col_name)) | isnan(col(col_name))).count()
                 null_percentage = (null_count / total_rows) * 100
                 if null_percentage > 50:

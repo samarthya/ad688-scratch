@@ -2,6 +2,17 @@
 
 This directory contains 3 essential notebooks for the Job Market Analytics project.
 
+## Technology Stack
+
+All notebooks use **PySpark MLlib** for machine learning and NLP tasks, aligned with the project's learning objectives:
+
+- **PySpark**: Large-scale ETL and data processing
+- **PySpark MLlib**: All ML models (regression, classification, clustering) and NLP (TF-IDF, Word2Vec, tokenization)
+- **Plotly**: Interactive visualizations
+- **NO scikit-learn**: Removed to maintain consistency with PySpark ecosystem
+
+---
+
 ## Notebook 1: Data Pipeline
 
 **File**: `data_processing_pipeline_demo.ipynb`
@@ -10,55 +21,153 @@ This directory contains 3 essential notebooks for the Job Market Analytics proje
 
 **Content**:
 
-- Load raw data
-- Show data processing steps via `scripts/create_processed_data.py`
+- Load raw data with PySpark (13M rows from CSV)
+- Demonstrate data processing via `JobMarketDataProcessor`
 - Display before/after statistics
 - Validate processed Parquet output
+- Show column standardization (all snake_case)
+
+**Key Features**:
+
+- Uses `multiLine=True, escape="\"", header=True, inferSchema=True` for robust CSV parsing
+- Automatic column name standardization to snake_case
+- Efficient Parquet output for downstream analysis
 
 ---
 
-## Notebook 2: Machine Learning Models
+## Notebook 2: Machine Learning Feature Engineering
 
 **File**: `ml_feature_engineering_lab.ipynb`
 
-**Purpose**: Demonstrate ML models and clustering techniques
+**Purpose**: Demonstrate PySpark MLlib feature engineering and transformations
 
 **Content**:
 
-- ONET-based KMeans clustering for job segmentation
-- Multiple regression with justification
-- Classification aligned with topic (AI/remote jobs)
-- Visualize key results and metrics
+- Load processed data using `get_processed_dataframe()`
+- Feature engineering with PySpark MLlib transformers
+- Handle missing values and outliers
+- Create derived features from salary and experience data
+- Demonstrate `VectorAssembler`, `StandardScaler`, `StringIndexer`
+
+**Key Features**:
+- 100% PySpark MLlib (no scikit-learn)
+- Uses standardized column names: `salary_avg`, `salary_from`, `salary_to`, `min_years_experience`, `naics2_name`
+- Automatic data loading from Parquet
 
 ---
 
-## Notebook 3: Predictive Analytics
+## Notebook 3: Job Market Skill Analysis (NLP)
 
 **File**: `job_market_skill_analysis.ipynb`
 
-**Purpose**: Advanced predictive dashboards and feature engineering
+**Purpose**: NLP analysis of job market skills and requirements using PySpark MLlib
 
 **Content**:
 
-- Predictive dashboards using `PredictiveAnalyticsDashboard`
-- Extended feature engineering
-- Interactive visualizations
+- Load processed data using `get_processed_dataframe()`
+- Text processing with PySpark MLlib tokenization
+- TF-IDF analysis using `HashingTF` and `IDF`
+- Word2Vec embeddings for skill similarity
+- Topic modeling and skill clustering with PySpark KMeans
+- Interactive skill visualizations with Plotly
+
+**Key Features**:
+
+- 100% PySpark MLlib NLP pipeline
+- Replaced `TfidfVectorizer` with PySpark `Tokenizer` + `HashingTF` + `IDF`
+- Replaced `sklearn.cluster.KMeans` with PySpark `KMeans`
+- Uses `Word2Vec` for semantic skill analysis
 
 ---
 
-## Usage
+## Data Loading
 
-All notebooks load pre-processed data from `data/processed/job_market_processed.parquet`.
+All notebooks now use the **centralized data loading** pattern:
 
-To regenerate processed data:
+```python
+from src.data.website_processor import get_processed_dataframe
 
-```bash
-python scripts/create_processed_data.py
+# Load processed data (fast - 1-2 seconds from Parquet)
+df = get_processed_dataframe()
 ```
 
-To run notebooks:
+This ensures:
+
+- Consistent data across all notebooks
+- Fast loading from pre-processed Parquet
+- Automatic generation if processed data is missing
+
+---
+
+## Standardized Column Names
+
+After PySpark ETL, all columns use **snake_case** naming:
+
+| Logical Name | Actual Column | Description |
+|--------------|--------------|-------------|
+| `salary` | `salary_avg` | Average salary (primary) |
+| `salary_min` | `salary_from` | Minimum salary |
+| `salary_max` | `salary_to` | Maximum salary |
+| `industry` | `naics2_name` | Industry classification |
+| `experience` | `min_years_experience` | Minimum years required |
+| `city` | `city_name` | City name |
+| `remote` | `remote_type_name` | Remote work type |
+
+**Note**: Use the actual column names directly in notebooks for clarity.
+
+---
+
+## Setup & Usage
+
+### Prerequisites
+
+Ensure processed data exists:
 
 ```bash
+# Generate processed data (run ONCE, takes 5-10 minutes)
+python scripts/generate_processed_data.py
+```
+
+### Running Notebooks
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Start Jupyter
 cd notebooks
 jupyter notebook
 ```
+
+### Notebook Execution Order
+
+1. **data_processing_pipeline_demo.ipynb** - Understand the ETL pipeline
+2. **ml_feature_engineering_lab.ipynb** - Learn feature engineering with PySpark MLlib
+3. **job_market_skill_analysis.ipynb** - Explore NLP and skill analysis
+
+---
+
+## Architecture Notes
+
+### Why PySpark MLlib?
+
+1. **Scalability**: Handles 13M rows efficiently
+2. **Consistency**: Same stack for ETL and ML
+3. **Learning Objective**: Master PySpark ecosystem
+4. **Production Ready**: Code scales from laptop to cluster
+
+### Data Flow
+
+```
+Raw CSV (13M rows)
+    ↓ PySpark ETL (5-10 min, runs once)
+Processed Parquet (72K rows)
+    ↓ Pandas Load (1-2 sec)
+Analysis & Visualization
+```
+
+### Memory Management
+
+- **PySpark** processes large raw data without memory issues
+- **Pandas** loads smaller processed data for fast analysis
+- **Parquet** provides efficient columnar storage with compression

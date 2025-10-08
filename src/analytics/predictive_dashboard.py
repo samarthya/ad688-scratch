@@ -436,7 +436,7 @@ class PredictiveAnalyticsDashboard:
         Returns:
             Dictionary with complete analysis results
         """
-        print("📊 GENERATING COMPREHENSIVE ANALYTICS REPORT")
+        print("[DATA] GENERATING COMPREHENSIVE ANALYTICS REPORT")
         print("=" * 50)
 
         # Run all analyses
@@ -476,11 +476,11 @@ class PredictiveAnalyticsDashboard:
             'recommendations': self._generate_strategic_recommendations()
         }
 
-        print("✅ Comprehensive report generated successfully!")
-        print(f"   📈 Regression Model R²: {self.analytics_results['regression']['test_r2']:.3f}")
-        print(f"   🎯 Classification Accuracy: {self.analytics_results['classification']['test_accuracy']:.3f}")
-        print(f"   🔍 Skills Analyzed: {nlp_results['insights']['total_unique_skills']:,}")
-        print(f"   📊 Dashboards Created: {len(comprehensive_report['dashboards'])}")
+        print("[OK] Comprehensive report generated successfully!")
+        print(f"   [CHART] Regression Model R²: {self.analytics_results['regression']['test_r2']:.3f}")
+        print(f"   [TARGET] Classification Accuracy: {self.analytics_results['classification']['test_accuracy']:.3f}")
+        print(f"   [CHECK] Skills Analyzed: {nlp_results['insights']['total_unique_skills']:,}")
+        print(f"   [DATA] Dashboards Created: {len(comprehensive_report['dashboards'])}")
 
         return comprehensive_report
 

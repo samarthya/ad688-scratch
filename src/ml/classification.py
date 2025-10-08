@@ -115,16 +115,16 @@ class JobClassificationModel:
         """Create salary level classification target variable."""
 
         # Calculate salary percentiles
-        salary_percentiles = df.select('SALARY_AVG_IMPUTED').approxQuantile(
-            'SALARY_AVG_IMPUTED', [0.25, 0.5, 0.75], 0.1
+        salary_percentiles = df.select('salary_avg').approxQuantile(
+            'salary_avg', [0.25, 0.5, 0.75], 0.1
         )
 
         # Create salary level categories
         df_with_salary_level = df.withColumn(
             'salary_level',
-            when(col('SALARY_AVG_IMPUTED') <= salary_percentiles[0], 'Low')
-            .when(col('SALARY_AVG_IMPUTED') <= salary_percentiles[1], 'Below_Median')
-            .when(col('SALARY_AVG_IMPUTED') <= salary_percentiles[2], 'Above_Median')
+            when(col('salary_avg') <= salary_percentiles[0], 'Low')
+            .when(col('salary_avg') <= salary_percentiles[1], 'Below_Median')
+            .when(col('salary_avg') <= salary_percentiles[2], 'Above_Median')
             .otherwise('High')
         )
 
@@ -135,12 +135,12 @@ class JobClassificationModel:
         """Create above-average salary classification target variable."""
 
         # Calculate median salary
-        median_salary = df.select('SALARY_AVG_IMPUTED').agg({'SALARY_AVG_IMPUTED': 'median'}).collect()[0][0]
+        median_salary = df.select('salary_avg').agg({'salary_avg': 'median'}).collect()[0][0]
 
         # Create binary classification
         df_with_above_avg = df.withColumn(
             'above_average_salary',
-            when(col('SALARY_AVG_IMPUTED') > median_salary, 1).otherwise(0)
+            when(col('salary_avg') > median_salary, 1).otherwise(0)
         )
 
         return df_with_above_avg
