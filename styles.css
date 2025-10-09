@@ -159,11 +159,11 @@ code {
   .container {
     padding: 0 15px;
   }
-  
+
   .table {
     font-size: 0.9em;
   }
-  
+
   .callout {
     padding: 0.75rem;
   }
@@ -174,30 +174,30 @@ code {
   .navbar, .sidebar {
     display: none !important;
   }
-  
+
   body {
     font-size: 12pt;
   }
-  
+
   .panel-tabset .tab-content {
     display: block !important;
   }
-  
+
   .panel-tabset .nav-tabs {
     display: none;
   }
-  
+
   .panel-tabset .tab-pane {
     display: block !important;
     opacity: 1 !important;
   }
-  
+
   .callout {
     break-inside: avoid;
     page-break-inside: avoid;
     border: 1px solid #ccc;
   }
-  
+
   table {
     break-inside: avoid;
   }
@@ -421,4 +421,51 @@ div[role="doc-toc"],
   background-color: transparent !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Plotly chart responsive layout fixes */
+.plotly-graph-div {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+/* Ensure Plotly charts don't get cut off */
+.js-plotly-plot {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+}
+
+/* Fix for overlapping text in visualizations */
+.plotly .main-svg {
+  overflow: visible !important;
+}
+
+/* Better spacing for metric cards */
+.metric-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Responsive layout for dashboard */
+@media (max-width: 1200px) {
+  .plotly-graph-div {
+    height: 600px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .plotly-graph-div {
+    height: 500px !important;
+  }
+
+  .metric-card {
+    min-height: 100px;
+    padding: 1rem;
+  }
 }

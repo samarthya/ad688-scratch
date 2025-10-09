@@ -1,0 +1,189 @@
+---
+title: "Data Processing Pipeline Demo"
+subtitle: "How the Website Processes Data Automatically"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    css: styles.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Data Processing Pipeline
+
+This page demonstrates how the website automatically processes data according to the [DESIGN.md](DESIGN.md) specification. All data loading, cleaning, analysis, and figure generation happens automatically when the website loads.
+
+```{python}
+#| label: data-processing
+#| echo: false
+#| warning: false
+#| message: false
+
+# Import the website data processor
+from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
+
+# Configure global Plotly theme
+import plotly.io as pio
+pio.templates.default = "plotly_white"
+
+# Set consistent color palette
+COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+
+# Get processed data (this triggers the complete pipeline)
+website_data = get_website_data()
+df = get_processed_dataframe()
+analysis = get_analysis_results()
+figures = get_figure_paths()
+summary = get_website_data_summary()
+
+print(f"Data processing pipeline completed")
+print(f"Loaded {len(df):,} records")
+print(f"Generated {len(figures)} base figures")
+```
+
+## Key Metrics
+
+```{python}
+#| label: key-metrics
+#| echo: false
+
+# Use abstraction layer for key metrics
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_key_metrics_cards()
+fig.show()
+```
+
+## Experience Analysis
+
+```{python}
+#| label: experience-analysis
+#| echo: false
+
+# Use abstraction layer for experience analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_career_progression_analysis()
+fig.show()
+```
+
+## Industry Analysis
+
+```{python}
+#| label: industry-analysis
+#| echo: false
+
+# Use abstraction layer for industry analysis
+from src.visualization import SalaryVisualizer
+from src.config.column_mapping import get_analysis_column
+
+visualizer = SalaryVisualizer(df)
+industry_col = get_analysis_column('industry')
+
+fig = visualizer.plot_salary_by_category(industry_col)
+fig.update_layout(title="Industry Salary Analysis: Top Industries by Median Salary")
+fig.show()
+```
+
+## Geographic Analysis
+
+```{python}
+#| label: geographic-analysis
+#| echo: false
+
+# Use abstraction layer for geographic analysis
+from src.visualization import SalaryVisualizer
+from src.config.column_mapping import get_analysis_column
+
+visualizer = SalaryVisualizer(df)
+city_col = get_analysis_column('city')
+
+fig = visualizer.plot_salary_by_category(city_col)
+fig.update_layout(title="Geographic Salary Analysis: Top Cities by Median Salary")
+fig.show()
+```
+
+## Correlation Analysis
+
+```{python}
+#| label: correlation-analysis
+#| echo: false
+
+# Use abstraction layer for correlation analysis
+from src.visualization import SalaryVisualizer
+
+visualizer = SalaryVisualizer(df)
+fig = visualizer.create_correlation_matrix()
+fig.show()
+```
+
+## Generated Visualizations
+
+```{python}
+#| label: key-findings-dashboard
+#| echo: false
+
+# Display comprehensive dashboards using abstraction layer
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+
+dashboard.create_company_strategy_analysis().show()
+dashboard.create_education_roi_analysis().show()
+dashboard.create_complete_intelligence_dashboard().show()
+```
+
+
+## Data Processing Statistics
+
+```{python}
+#| label: data-processing-stats
+#| echo: false
+
+# Display processing statistics using summary data
+print("=" * 60)
+print("DATA PROCESSING PIPELINE STATISTICS")
+print("=" * 60)
+
+print(f"\nPROCESSED DATA:")
+print(f"  Total Records: {summary['total_records']:,}")
+print(f"  Total Columns: {len(df.columns)}")
+print(f"  Salary Coverage: {summary['salary_coverage']:.1f}%")
+print(f"  Median Salary: ${summary['salary_range']['median']:,.0f}")
+
+print(f"\nKEY COLUMNS:")
+print(f"  Industries: {summary['unique_industries']}")
+print(f"  Locations: {summary['unique_locations']}")
+
+print("\n" + "=" * 60)
+```
+
+## Data Processing Flow
+
+According to DESIGN.md, the website follows this intelligent auto-processing pipeline:
+
+1. **Data Loading**: Tries clean sample data first, then sample data, then raw data with processing
+2. **Data Cleaning**: Applies appropriate cleaning based on data source (including base64 decoding)
+3. **Analysis**: Generates comprehensive analysis results
+4. **Visualization**: Creates all figures automatically using abstraction layer
+5. **Display**: Shows final results without visible processing complexity
+
+This ensures that:
+
+- **No duplicate content** - Each page has a specific purpose
+- **Figures generated as part of data flow** - Not separate scripts
+- **Clean website display** - Only final results shown
+- **Automatic processing** - No manual intervention required
+- **Abstraction layer respected** - Complex logic stays in src/ modules
+
+---
+
+*This demonstrates the proper implementation of the data processing pipeline as specified in DESIGN.md.*

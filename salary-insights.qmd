@@ -1,0 +1,301 @@
+---
+title: "Salary Analysis"
+subtitle: "Comprehensive Salary Insights and Trends"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    css: styles.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Overview
+
+This page provides comprehensive salary analysis based on processed job market data. All data processing, cleaning, and analysis happens automatically when the website loads.
+
+```{python}
+#| label: data-loading
+#| echo: false
+
+# Load data using the website processor
+from src.data.website_processor import get_processed_dataframe, get_analysis_results, get_website_data_summary
+
+# Get processed data
+df = get_processed_dataframe()
+analysis = get_analysis_results()
+summary = get_website_data_summary()
+
+print(f"Loaded {summary['total_records']:,} records")
+print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
+print(f"Industries: {summary['unique_industries']}")
+print(f"Locations: {summary['unique_locations']}")
+```
+
+## Key Salary Metrics
+
+```{python}
+#| label: salary-metrics
+#| echo: false
+#| output: asis
+
+# Display key salary metrics using proper markdown rendering
+from IPython.display import Markdown, display
+
+try:
+    salary_range = summary.get('salary_range', {})
+    median_salary = salary_range.get('median', 0)
+    min_salary = salary_range.get('min', 0)
+    max_salary = salary_range.get('max', 0)
+    total_records = summary.get('total_records', 0)
+    salary_coverage = summary.get('salary_coverage', 0)
+
+    markdown_content = f"""
+- **Median Salary**: ${median_salary:,.0f}
+- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}
+- **Total Records**: {total_records:,}
+- **Data Quality**: {salary_coverage:.1f}% salary coverage
+"""
+
+    display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Error displaying metrics: {str(e)}*"))
+```
+
+## Salary Distribution
+
+```{python}
+#| label: salary-distribution
+#| echo: false
+
+# Display salary distribution chart
+from src.data.website_processor import get_figure_paths
+figures = get_figure_paths()
+
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_company_strategy_analysis()
+fig.show()
+```
+
+## Experience Level Analysis
+
+```{python}
+#| label: experience-analysis
+#| echo: false
+#| output: asis
+
+# Create experience level analysis using abstraction layer
+from src.visualization import SalaryVisualizer
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+from IPython.display import Markdown, display
+
+# Use the abstraction layer for experience analysis
+visualizer = SalaryVisualizer(df)
+dashboard = KeyFindingsDashboard(df)
+
+try:
+    # Get experience progression analysis from the abstraction layer
+    exp_analysis = visualizer.get_experience_progression_analysis()
+
+    # Create the complete experience dashboard
+    exp_fig = dashboard.create_complete_intelligence_dashboard()
+    exp_fig.update_layout(
+        title="Experience Level Analysis: Career Progression and Salary Insights",
+        height=800,
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    exp_fig.show()
+
+    # Display key insights from the analysis
+    if exp_analysis and 'summary' in exp_analysis:
+        summary_data = exp_analysis['summary']
+        markdown_content = "\n### Experience Level Insights:\n\n"
+        for level, data in summary_data.items():
+            median_salary = data.get('median', 0)
+            job_count = data.get('count', 0)
+            markdown_content += f"- **{level}**: ${median_salary:,.0f} median salary ({job_count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Experience analysis error: {e}*"))
+    # Fallback to simple visualization
+    try:
+        exp_fig = visualizer.plot_experience_salary_trend()
+        exp_fig.show() if hasattr(exp_fig, 'show') else plt.show()
+    except:
+        display(Markdown("*Experience analysis temporarily unavailable*"))
+```
+
+**Career Growth Trajectory**: The data shows a clear progression path with significant salary increases at each level, demonstrating the value of experience and skill development in the tech industry.
+
+## Industry Analysis
+
+```{python}
+#| label: industry-analysis
+#| echo: false
+#| output: asis
+
+# Display industry analysis using abstraction layer
+from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Use standardized column names from config
+    from src.config.column_mapping import get_analysis_column
+    industry_col = get_analysis_column('industry')  # Returns 'naics2_name'
+
+    # Use abstraction layer for industry analysis
+    industry_fig = visualizer.plot_salary_by_category(industry_col)
+    industry_fig.update_layout(
+        title="Industry Salary Analysis: Top Industries by Median Salary",
+        height=600,
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+    industry_fig.show()
+
+    # Get industry analysis data
+    industry_data = visualizer.get_industry_salary_analysis(top_n=10)
+    if not industry_data.empty:
+        markdown_content = "\n### Top Industries by Salary:\n\n"
+        for _, row in industry_data.head(5).iterrows():
+            industry = row.get('Industry', 'Unknown')
+            salary = row.get('Median Salary', 0)
+            count = row.get('Job Count', 0)
+            markdown_content += f"- **{industry}**: ${salary:,.0f} median salary ({count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Industry analysis error: {e}*\n\n*Industry analysis temporarily unavailable*"))
+```
+
+## Geographic Analysis
+
+```{python}
+#| label: geographic-analysis
+#| echo: false
+#| output: asis
+
+# Display interactive geographic analysis
+from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Create interactive geographic analysis using standardized city_name column
+    from src.config.column_mapping import get_analysis_column
+    city_col = get_analysis_column('city')  # Returns 'city_name'
+
+    geo_fig = visualizer.plot_salary_by_category(city_col)
+    geo_fig.update_layout(
+        title="Interactive Geographic Salary Analysis: Top Cities by Median Salary",
+        height=600,
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None,
+        font=dict(size=14)
+    )
+    geo_fig.show()
+
+    # Get geographic analysis data from abstraction layer
+    geo_data = visualizer.get_geographic_salary_analysis(top_n=15)
+    if not geo_data.empty:
+        markdown_content = "\n### Top Geographic Markets:\n\n"
+        for _, row in geo_data.head(5).iterrows():
+            location = row.get('Location', 'Unknown')
+            salary = row.get('Median Salary', 0)
+            count = row.get('Job Count', 0)
+            markdown_content += f"- **{location}**: ${salary:,.0f} median salary ({count:,} jobs)\n"
+
+        display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Geographic analysis error: {e}*\n\n*Geographic analysis temporarily unavailable*"))
+```
+
+## Correlation Analysis
+
+```{python}
+#| label: correlation-analysis
+#| echo: false
+#| output: asis
+
+# Display correlation matrix for salary insights
+from src.visualization import SalaryVisualizer
+from IPython.display import Markdown, display
+
+visualizer = SalaryVisualizer(df)
+
+try:
+    # Create interactive correlation matrix
+    corr_fig = visualizer.create_correlation_matrix()
+    corr_fig.update_layout(
+        title="Salary Correlation Matrix: Key Factor Relationships",
+        height=700,
+        margin=dict(l=80, r=80, t=100, b=80),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        autosize=True,
+        width=None,
+        font=dict(size=14)
+    )
+    corr_fig.show()
+
+    markdown_content = """
+### Key Insights from Correlation Analysis:
+
+- **Strong correlations** indicate factors that move together
+- **Weak correlations** suggest independent salary factors
+- **Negative correlations** show inverse relationships
+- Use this matrix to understand which factors most impact salary
+"""
+    display(Markdown(markdown_content))
+
+except Exception as e:
+    display(Markdown(f"*Correlation analysis error: {e}*\n\n*Correlation matrix visualization temporarily unavailable*"))
+```
+
+## Interactive Dashboard
+
+```{python}
+#| label: interactive-dashboard
+#| echo: false
+
+# Display the complete intelligence dashboard
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+
+fig = dashboard.create_complete_intelligence_dashboard()
+fig.show()
+```
+
+## Summary
+
+This analysis provides comprehensive insights into salary trends across experience levels, industries, and geographic locations. The data processing pipeline ensures that all analysis is based on clean, validated data with automatic figure generation.
+
+### Key findings:
+
+   - **Data Quality**: High salary coverage ensures reliable analysis
+   - **Experience Impact**: Clear salary progression with experience level
+   - **Industry Variation**: Significant salary differences across industries
+   - **Geographic Trends**: Location-based salary variations
+   - **Interactive Insights**: Comprehensive dashboard for detailed exploration
+
+---
+
+*All data processing, cleaning, and analysis happens automatically when the website loads, ensuring fresh insights every time.*

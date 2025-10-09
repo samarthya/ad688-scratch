@@ -1,1683 +1,778 @@
 # Technical Design & Implementation Guide
 
-**Authoritative technical reference** for the job market analytics system architecture, data pipeline, and implementation patterns.
+Scalable data processing with PySpark + Interactive analysis with Pandas/Plotly
 
-> **Project overview**: See [README.md](README.md)
+> See [README.md](README.md) for project overview
+> See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system diagrams
+> Last Updated: October 2025
+
+---
 
 ## Table of Contents
 
-1. [System Architecture](#system-architecture)
-2. [Final Implementation Status](#final-implementation-status)
-3. [Quarto Website Data Loading Process Flow](#quarto-website-data-loading-process-flow)
-4. [Data Processing Pipeline](#data-processing-pipeline)
-5. [Class Architecture & Responsibilities](#class-architecture--responsibilities)
-6. [Data Loading Strategy](#data-loading-strategy)
-7. [Storage Strategy](#storage-strategy)
-8. [Data Cleaning & Quality Assurance](#data-cleaning--quality-assurance)
-9. [Robust Casting & Error Prevention](#robust-casting--error-prevention)
-10. [Performance Optimizations](#performance-optimizations)
-11. [Usage Patterns](#usage-patterns)
+1. [Architecture Overview](#architecture-overview)
+2. [Technology Stack](#technology-stack)
+3. [Data Processing Strategy](#data-processing-strategy)
+4. [System Components](#system-components)
+5. [Usage Patterns](#usage-patterns)
+6. [Development Workflow](#development-workflow)
 
 ---
 
-## System Architecture
+## Architecture Overview
 
-**Current Dataset**: Lightcast job postings (72K+ records, 131 columns)
-**Processing Engine**: Apache Spark 4.0.1 with PySpark
-**Output Formats**: Parquet (performance), CSV (compatibility), Interactive dashboards (Plotly)
+### Design Philosophy
 
-### Design Principles
+**Separation of Concerns**: Use the right tool for the right job
 
-- **Big Data First**: PySpark handles datasets from thousands to millions of records
-- **Multi-Format Storage**: Parquet for performance, CSV for compatibility
-- **Class-Based Modularity**: Specialized classes for processing, analysis, and visualization
-- **Quality Assurance**: Comprehensive validation, cleaning, and imputation pipeline
-- **Authentic Error Handling**: Real error messages for educational value in student analysis reports
+- **PySpark**: Heavy data processing (ETL, cleaning, feature engineering) on large datasets
+- **Pandas**: Interactive analysis and visualization on processed datasets
+- **Plotly**: Rich interactive visualizations for web and reports
+- **Parquet**: Efficient columnar storage for fast analytics
 
-## Final Implementation Status
+### Core Principles
 
-### ✅ **Completed Architecture (September 2025)**
-
-**Core Data Pipeline:**
-
-- ✅ `JobMarketDataProcessor` for data processing.
-- ✅ `SalaryVisualizer` for comprehensive salary analysis and visualization
-- ✅ `JobMarketStatistics` for statistical analysis and reporting
-- ✅ Automatic column standardization (SALARY_MIN → salary_min) for compatibility
-- ✅ Real error handling without mock data fallbacks
-
-**Processing Methods:**
-
-- ✅ `load_and_process_data()` - Automatically selects appropriate processing method
-- ✅ `process_sample_data()` - Simplified processing for sample datasets
-- ✅ `clean_and_process_data()` - Full processing pipeline for Lightcast data
-- ✅ Schema-aware processing handles both uppercase (Lightcast) and lowercase (expected) formats
-
-**Quarto Integration:**
-
-- ✅ 6 modular QMD files replacing monolithic analysis
-- ✅ All files use `load_and_process_data()` for consistent data handling
-- ✅ Real error display for educational purposes (no mock data)
-- ✅ Professional class-based architecture throughout all analysis files
-
-**Educational Value:**
-
-- ✅ **Authentic error handling**: Students see real data engineering challenges
-- ✅ **Professional architecture**: Class-based design with proper separation of concerns
-- ✅ **Real schema issues**: Column mapping problems provide learning opportunities
-- ✅ **No fallback data**: Forces students to understand and fix real issues
-
-### Big Data First Approach
-
-The system is designed with **Apache Spark** as the core processing engine, enabling:
-
-- **Distributed processing** for large datasets
-- **SQL-based analysis** for complex analytical queries
-- **Memory optimization** through DataFrame caching and partitioning
-- **Multiple data source support** (CSV, Parquet, JSON)
-
-### Multi-Format Storage Strategy
-
-```bash
-Raw Data (CSV) → Processing (Spark) → Multi-Format Output
-                                    ├── Parquet (Performance)
-                                    ├── CSV (Compatibility)
-                                    └── Relational Tables (Analysis)
-```
-
-### Class-Based Modular Design
-
-Each major functionality is encapsulated in specialized classes:
-
-- **Data Loading**: `SparkJobAnalyzer`
-- **Data Processing**: `JobMarketDataProcessor` & `AdvancedJobDataProcessor`
-- **Visualization**: `SalaryVisualizer`
-- **Full Pipeline**: `full_dataset_processor.py` functions
+1. **Process Once, Use Many Times**: PySpark processes raw data → Parquet → Pandas analytics
+2. **Layered Architecture**: Clear separation between data processing, analysis, and presentation
+3. **Consistent Column Standards**: All processed data uses `snake_case` columns
+4. **Configuration-Driven**: Centralized mappings in `src/config/`
+5. **Type Safety**: Proper DataFrame contracts at layer boundaries
 
 ---
 
-## Quarto Website Data Loading Process Flow
+## Technology Stack
 
-### Overview: From Raw Data to Interactive Website
+### Data Processing Layer (PySpark)
 
-The Quarto website follows a sophisticated data loading and chart generation pipeline that prioritizes performance while maintaining data integrity and fallback capabilities.
+#### Use For
 
-### Complete Process Flow Diagram
+- Loading large CSV files
+- Data cleaning and validation
+- Feature engineering at scale
+- Aggregations and transformations
+- Saving to Parquet
+
+#### Components
+
+- `src/core/processor.py` - JobMarketDataProcessor
+- `src/core/analyzer.py` - SparkJobAnalyzer
+- `src/data/loaders.py` - DataLoader (Spark)
+- `src/data/transformers.py` - DataTransformer (Spark)
+- `src/data/validators.py` - DataValidator (Spark)
+
+### Analysis Layer (PySpark MLlib Only)
+
+#### Use For
+
+- Machine learning models (PySpark MLlib for distributed ML)
+- NLP analysis (PySpark MLlib for TF-IDF, clustering, Word2Vec)
+- Statistical analysis (Pandas for quick exploration)
+- Feature engineering for ML (PySpark transformers)
+
+#### Components
+
+- `src/analytics/salary_models.py` - SalaryAnalyticsModels (PySpark MLlib)
+- `src/analytics/nlp_analysis.py` - JobMarketNLPAnalyzer (PySpark MLlib)
+- `src/ml/` - Advanced ML models (PySpark MLlib)
+
+### Visualization Layer (Plotly + Matplotlib)
+
+**Use For**:
+
+- Interactive charts for Quarto website
+- Static exports for Word reports
+- Dashboard components
+- Executive visualizations
+
+**Components**:
+
+- `src/visualization/charts.py` - SalaryVisualizer
+- `src/visualization/key_findings_dashboard.py` - KeyFindingsDashboard
+- `src/visualization/theme.py` - JobMarketTheme
+
+### Presentation Layer (Quarto)
+
+**Use For**:
+
+- Website generation
+- Report rendering
+- Embedding interactive charts
+- Documentation
+
+**Components**:
+
+- `*.qmd` files (index, salary-insights, predictive-analytics, etc.)
+- HTML output with embedded Plotly charts
+
+---
+
+## Data Processing Strategy
+
+### Three-Tier Data Pipeline
 
 ```mermaid
-flowchart TD
-    %% User Access
-    START([User Visits Quarto Website]) --> RENDER{Quarto Rendering Process}
+flowchart TB
+    subgraph TIER1["TIER 1: RAW DATA - PySpark Processing"]
+        RAW[("data/raw/<br/>lightcast_job_postings.csv<br/>~13M rows, 683 MB")]
 
-    %% Quarto Document Processing
-    RENDER --> QMD[Load .qmd Documents]
-    QMD --> PYTHON{Execute Python Code Blocks}
+        ETL["PySpark ETL Pipeline<br/>(src/core/processor.py)"]
 
-    %% Data Loading Decision Tree
-    PYTHON --> DATACHECK{Check Data Availability}
+        STEPS["<b>Processing Steps:</b><br/>- Load CSV efficiently<br/>- Standardize columns (UPPERCASE → snake_case)<br/>- Clean & validate salary data<br/>- Decode/parse location fields<br/>- Impute missing values<br/>- Filter invalid records<br/>- Feature engineering"]
 
-    %% Data Source Hierarchy
-    DATACHECK -->|Priority 1| PARQUET[Load Processed Parquet<br/>📁 data/processed/job_market_processed.parquet]
-    DATACHECK -->|Priority 2| CSV[Load Processed CSV<br/>📁 data/processed/clean_job_data.csv]
-    DATACHECK -->|Priority 3| RAW[Load Raw Lightcast Data<br/>📁 data/raw/lightcast_job_postings.csv]
+        SAVE["Save to Parquet<br/>(columnar, compressed)"]
 
-    %% Data Processing Branch
-    PARQUET --> VALIDATE{Data Validation}
-    CSV --> VALIDATE
-    RAW --> PROCESS[Data Processing Required]
+        RAW --> ETL
+        ETL --> STEPS
+        STEPS --> SAVE
+    end
 
-    %% Processing Pipeline
-    PROCESS --> CLEAN[Data Cleaning & Standardization]
-    CLEAN --> FEATURE[Feature Engineering]
-    FEATURE --> SAVE[Save Processed Data]
-    SAVE --> VALIDATE
+    subgraph TIER2["TIER 2: PROCESSED DATA - Pandas Analysis"]
+        PARQUET[("data/processed/<br/>job_market_processed.parquet<br/>~30-50K rows, 120 MB")]
 
-    %% Chart Generation Pipeline
-    VALIDATE --> ANALYSIS[Statistical Analysis]
-    ANALYSIS --> CHARTS[Chart Generation]
+        LOAD["Pandas Load<br/>(pd.read_parquet - instant!)"]
 
-    %% Chart Types
-    CHARTS --> EXPERIENCE[Experience Gap Analysis]
-    CHARTS --> EDUCATION[Education Premium Charts]
-    CHARTS --> REMOTE[Remote Work Analysis]
-    CHARTS --> GEOGRAPHIC[Geographic Salary Maps]
-    CHARTS --> INDUSTRY[Industry Comparisons]
+        READY["Analysis-Ready Data:<br/>- snake_case columns<br/>- Clean salary data<br/>- Validated records"]
 
-    %% Output Generation
-    EXPERIENCE --> EXPORT[Chart Export System]
-    EDUCATION --> EXPORT
-    REMOTE --> EXPORT
-    GEOGRAPHIC --> EXPORT
-    INDUSTRY --> EXPORT
+        ANALYSIS["Multiple Analysis Paths"]
 
-    %% Multi-Format Output
-    EXPORT --> HTML[Interactive HTML Charts]
-    EXPORT --> PNG[Static PNG Images]
-    EXPORT --> SVG[Vector SVG Graphics]
+        PATH1["Statistical Analysis<br/>(src/visualization/)"]
+        PATH2["ML Models<br/>(src/analytics/ + src/ml/)"]
+        PATH3["Dashboards<br/>(key_findings_dashboard)"]
+        PATH4["NLP Analysis<br/>(nlp_analysis.py)"]
 
-    %% Registry and Integration
-    HTML --> REGISTRY[Chart Registry JSON]
-    PNG --> REGISTRY
-    SVG --> REGISTRY
+        PARQUET --> LOAD
+        LOAD --> READY
+        READY --> ANALYSIS
+        ANALYSIS --> PATH1
+        ANALYSIS --> PATH2
+        ANALYSIS --> PATH3
+        ANALYSIS --> PATH4
+    end
 
-    %% Final Website Assembly
-    REGISTRY --> INTEGRATE[Quarto Integration]
-    INTEGRATE --> WEBSITE[Live Website with Charts]
+    subgraph TIER3["TIER 3: PRESENTATION <br/> Plotly Visualizations"]
+        FIGURES[("figures/<br/>*.html, *.png, *.svg")]
 
-    %% Error Handling
-    DATACHECK -->|No Data Found| ERROR[Show Real Error]
-    ERROR --> AUTHENTIC[Display Authentic Error Message]
-    AUTHENTIC --> REGISTRY
+        PLOTLY["Plotly Charts"]
 
-    %% Styling
-    classDef dataSource fill:#3498DB,stroke:#2980B9,color:#fff
-    classDef processing fill:#E74C3C,stroke:#C0392B,color:#fff
-    classDef analysis fill:#27AE60,stroke:#229954,color:#fff
-    classDef output fill:#F39C12,stroke:#E67E22,color:#fff
-    classDef final fill:#9B59B6,stroke:#8E44AD,color:#fff
+        OUTPUTS["Output Formats:<br/>- Interactive HTML (Quarto)<br/>- Static PNG/SVG (Reports)<br/>- Themed & consistent"]
 
-    class PARQUET,CSV,RAW dataSource
-    class PROCESS,CLEAN,FEATURE,SAVE processing
-    class ANALYSIS,CHARTS,EXPERIENCE,EDUCATION,REMOTE,GEOGRAPHIC,INDUSTRY analysis
-    class EXPORT,HTML,PNG,SVG,REGISTRY output
-    class WEBSITE final
+        QUARTO["Quarto Website<br/>(*.qmd → _salary/)"]
+
+        PLOTLY --> OUTPUTS
+        OUTPUTS --> FIGURES
+        FIGURES --> QUARTO
+    end
+
+    SAVE -.-> PARQUET
+    PATH1 --> PLOTLY
+    PATH2 --> PLOTLY
+    PATH3 --> PLOTLY
+    PATH4 --> PLOTLY
+
+    style TIER1 fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
+    style TIER2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:3px
+    style TIER3 fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    style RAW fill:#1565c0,stroke:#fff,color:#fff
+    style PARQUET fill:#6a1b9a,stroke:#fff,color:#fff
+    style FIGURES fill:#e65100,stroke:#fff,color:#fff
 ```
 
-### Detailed Step-by-Step Process
+---
 
-#### **Phase 1: Quarto Document Processing**
+## System Components
 
-1. **User Access**: User visits Quarto website
-2. **Document Loading**: Quarto loads `.qmd` documents (e.g., `data-analysis.qmd`, `salary-analysis.qmd`)
-3. **Python Execution**: Quarto executes Python code blocks within documents
+### 1. Configuration (`src/config/`)
 
-#### **Phase 2: Data Source Discovery & Loading**
+**Purpose**: Centralized settings and column mappings
 
-##### Priority 1: Processed Parquet Data
+#### `column_mapping.py`
 
 ```python
-# Fastest loading path - optimized for performance
-data_path = "data/processed/job_market_processed.parquet"
-if Path(data_path).exists():
-    analyzer = SparkJobAnalyzer()
-    df = analyzer.load_full_dataset(data_path)
-    # FAST: Columnar format, schema preserved, type-safe
+# Mapping from raw Lightcast columns to standardized names
+LIGHTCAST_COLUMN_MAPPING = {
+    'SALARY_FROM': 'salary_min',
+    'SALARY_TO': 'salary_max',
+    'TITLE_NAME': 'title',
+    'CITY_NAME': 'city_name',
+    'NAICS2_NAME': 'industry',
+    # ... more mappings
+}
+
+# Analysis-friendly column lookup
+ANALYSIS_COLUMNS = {
+    'salary': 'salary_avg',
+    'city': 'city_name',
+    'industry': 'industry',
+}
+
+def get_analysis_column(key: str) -> str:
+    """Get standardized column name for analysis"""
+    return ANALYSIS_COLUMNS.get(key, key)
 ```
 
-##### Priority 2: Processed CSV Fallback
+#### `settings.py`
 
 ```python
-# Secondary path - good compatibility
-csv_path = "data/processed/clean_job_data.csv"
-if Path(csv_path).exists():
-    df = analyzer.load_full_dataset(csv_path)
-    # COMPATIBLE: Human-readable, broad tool support
+class Settings:
+    """Application configuration"""
+
+    # Data paths
+    RAW_DATA_PATH = "data/raw/lightcast_job_postings.csv"
+    PROCESSED_DATA_PATH = "data/processed/job_market_processed.parquet"
+
+    # Spark configuration
+    SPARK_MEMORY = "8g"
+    SPARK_DRIVER_MEMORY = "4g"
+
+    # Data validation
+    MIN_SALARY = 20000
+    MAX_SALARY = 500000
+
+    # Feature engineering
+    EXPERIENCE_BINS = [0, 2, 5, 10, 20, float('inf')]
+    EXPERIENCE_LABELS = ['Entry', 'Mid', 'Senior', 'Executive', 'C-Level']
 ```
 
-##### Priority 3: Raw Data Processing
+### 2. Data Processing (`src/core/` + `src/data/`)
+
+**Purpose**: PySpark-based ETL pipeline
+
+#### `src/core/processor.py` - JobMarketDataProcessor
+
+Main entry point for data processing:
 
 ```python
-# Last resort - requires processing
-raw_path = "data/raw/lightcast_job_postings.csv"
-df = analyzer.load_full_dataset(force_raw=True)
-# WARNING: SLOW: Requires real-time processing, schema inference
-```
+from src.core import JobMarketDataProcessor
 
-#### **Phase 3: Data Processing (If Required)**
-
-**When Raw Data is Used:**
-
-1. **Data Cleaning**: Handle nulls, standardize formats
-2. **Feature Engineering**: Create derived columns
-3. **Quality Validation**: Check completeness, outliers
-4. **Save Processed**: Store for future fast loading
-
-```python
-# Real-time processing workflow
+# Initialize processor with Spark
 processor = JobMarketDataProcessor()
-raw_df = processor.load_data(raw_path)
-cleaned_df = processor.clean_and_standardize_data(raw_df)
-enhanced_df = processor.engineer_features(cleaned_df)
-processor.save_processed_data(enhanced_df)  # Creates Parquet for next time
+
+# Process raw data and save to Parquet
+df = processor.load_and_process_data()
+
+# Processed data now available at:
+# data/processed/job_market_processed.parquet
 ```
 
-#### **Phase 4: Statistical Analysis & Chart Generation**
+**Key Methods**:
 
-**Analysis Pipeline:**
+- `load_and_process_data()` - Full ETL pipeline
+- `clean_and_standardize_data()` - Data cleaning
+- `engineer_features()` - Feature creation
+- `save_processed_data()` - Save to Parquet
+
+#### `src/core/analyzer.py` - SparkJobAnalyzer
+
+
+Advanced PySpark analysis for large-scale operations:
 
 ```python
-# Core analyses for website charts
-experience_analysis = analyzer.get_experience_analysis()
-industry_analysis = analyzer.get_industry_analysis()
-geographic_analysis = analyzer.get_geographic_analysis()
-salary_statistics = analyzer.get_overall_statistics()
+from src.core import SparkJobAnalyzer
+
+analyzer = SparkJobAnalyzer()
+analyzer.load_full_dataset()
+
+# Run large-scale aggregations
+salary_stats = analyzer.calculate_salary_statistics()
+location_analysis = analyzer.analyze_by_location()
 ```
 
-**Chart Generation System:**
+#### `src/data/loaders.py` - DataLoader
 
 ```python
-# Multi-format chart export
-chart_exporter = QuartoChartExporter(output_dir="figures/")
+class DataLoader:
+    """Load data with PySpark"""
 
-# Generate each chart type
-experience_chart = chart_exporter.create_experience_salary_chart(experience_data)
-education_chart = chart_exporter.create_education_premium_chart(education_data)
-remote_chart = chart_exporter.create_remote_work_chart(remote_data)
+    def load_raw_data(self, path: str) -> DataFrame:
+        """Load large CSV with Spark"""
+        return self.spark.read \
+            .option("header", "true") \
+            .option("inferSchema", "true") \
+            .csv(path)
+
+    def load_processed_data(self, path: str) -> DataFrame:
+        """Load Parquet with Spark"""
+        return self.spark.read.parquet(path)
 ```
 
-#### **Phase 5: Multi-Format Export & Registry**
+### 3. Analysis (`src/analytics/` + `src/ml/`)
 
-**Chart Export Formats:**
+**Purpose**: Pandas-based analysis and ML models
 
-- **Interactive HTML**: Plotly charts with hover, zoom, interactivity
-- **Static PNG**: High-quality images for print/email
-- **Vector SVG**: Scalable graphics for presentations
-
-**Chart Registry System:**
-
-```json
-{
-  "charts": [
-    {
-      "name": "experience_salary_analysis",
-      "title": "Experience Gap Analysis",
-      "type": "plotly",
-      "files": {
-        "html": "figures/experience_salary_analysis.html",
-        "png": "figures/experience_salary_analysis.png",
-        "svg": "figures/experience_salary_analysis.svg"
-      }
-    }
-  ]
-}
-```
-
-#### **Phase 6: Quarto Integration & Website Assembly**
-
-**Dynamic Chart Loading:**
+#### `src/analytics/salary_models.py` - SalaryAnalyticsModels (PySpark MLlib)
 
 ```python
+import pandas as pd
+from src.analytics import SalaryAnalyticsModels
 
-# In Quarto .qmd documents
-with open("figures/chart_registry.json") as f:
-    charts = json.load(f)
+# Load processed data with Pandas
+df = pd.read_parquet('data/processed/job_market_processed.parquet')
 
-for chart in charts["charts"]:
-    if chart["type"] == "plotly":
-        display_html_chart(chart["files"]["html"])
+# Run ML models with PySpark MLlib (distributed machine learning)
+models = SalaryAnalyticsModels(df)
+results = models.run_complete_analysis()
+
+# Results include:
+# - Multiple linear regression (PySpark MLlib)
+# - Random Forest classification (PySpark MLlib)
+# - Feature importance from distributed models
+# - Model evaluation metrics (R², RMSE, Accuracy, F1)
+
+# Models automatically:
+# 1. Convert Pandas → Spark DataFrame
+# 2. Train with PySpark MLlib
+# 3. Return results as Python dict
 ```
 
-**Website Generation:**
-
-1. **Chart Integration**: Embed interactive charts in pages
-2. **Static Fallbacks**: PNG images for email/print versions
-3. **Navigation**: Link charts across different analysis pages
-4. **Responsive Design**: Charts adapt to screen sizes
-
-### Performance Optimizations
-
-#### **Data Loading Speed:**
-
-- **Parquet First**: 10-50x faster than CSV loading
-- **Schema Preservation**: No type inference required
-- **Columnar Access**: Only load needed columns
-
-#### **Chart Generation:**
-
-- **Registry Caching**: Avoid regenerating existing charts
-- **Lazy Loading**: Generate charts only when needed
-- **Format Selection**: Interactive for web, static for print
-
-#### **Error Handling:**
-
-- **Authentic Errors**: Display real error messages for educational value
-- **Progressive Enhancement**: Basic analysis → Rich interactivity
-- **Clear Error Messages**: Guide users to understand data engineering challenges
-
-### Data Flow Checkpoints
-
-#### Checkpoint 1: Data Availability
+#### `src/analytics/nlp_analysis.py` - JobMarketNLPAnalyzer (PySpark MLlib)
 
 ```python
-if not any_data_source_available():
-    raise DataNotFoundError("Real dataset required for analysis")
+from src.analytics import JobMarketNLPAnalyzer
+
+# NLP analysis with PySpark MLlib
+nlp = JobMarketNLPAnalyzer(df)
+skills = nlp.extract_skills_from_text()  # PySpark text processing
+clusters = nlp.cluster_skills_by_topic()  # PySpark TF-IDF + KMeans
+correlations = nlp.analyze_skill_salary_correlation()  # PySpark aggregations
+word_cloud = nlp.create_word_cloud()  # Visualization only
+
+# All NLP operations use PySpark MLlib:
+# - HashingTF + IDF for TF-IDF vectorization
+# - KMeans for clustering
+# - Word2Vec for embeddings
 ```
 
-#### Checkpoint 2: Data Quality
+#### `src/ml/` - Advanced Machine Learning Models (PySpark MLlib)
+
+All ML models use PySpark MLlib for distributed machine learning:
+
+- `regression.py` - Salary prediction models (Linear, Random Forest)
+- `classification.py` - Job categorization (Logistic, Random Forest)
+- `clustering.py` - Market segmentation (KMeans)
+- `feature_engineering.py` - ML feature preparation (PySpark transformers)
+- `evaluation.py` - Model performance metrics (PySpark evaluators)
+- `salary_disparity.py` - Comprehensive analysis orchestration
+
+**Note**: These provide advanced PySpark MLlib capabilities for large-scale ML workloads.
+
+### 4. Visualization (`src/visualization/`)
+
+**Purpose**: Plotly-based interactive and static charts
+
+#### `src/visualization/charts.py` - SalaryVisualizer
 
 ```python
-if data_quality_score < 0.8:
-    trigger_data_cleaning_pipeline()
+from src.visualization import SalaryVisualizer
+import pandas as pd
+
+df = pd.read_parquet('data/processed/job_market_processed.parquet')
+viz = SalaryVisualizer(df)
+
+# Create charts
+salary_dist = viz.plot_salary_distribution()
+experience_prog = viz.plot_experience_salary_trend()
+geo_analysis = viz.plot_salary_by_category('city_name')
+correlation = viz.create_correlation_matrix()
+
+# All return Plotly Figure objects
+salary_dist.show()  # Interactive display
+salary_dist.write_html('figure.html')  # Save for Quarto
+salary_dist.write_image('figure.png')  # Save for Word
 ```
 
-#### Checkpoint 3: Chart Generation
+#### `src/visualization/key_findings_dashboard.py` - KeyFindingsDashboard
 
 ```python
-if chart_generation_fails():
-    fallback_to_static_charts()
+from src.visualization import KeyFindingsDashboard
+
+dashboard = KeyFindingsDashboard(df)
+
+# Executive dashboards
+metrics = dashboard.create_key_metrics_cards()
+career = dashboard.create_career_progression_analysis()
+education = dashboard.create_education_roi_analysis()
+complete = dashboard.create_complete_intelligence_dashboard()
 ```
 
-#### Checkpoint 4: Website Assembly
+#### `src/visualization/theme.py` - JobMarketTheme
 
 ```python
-if interactive_charts_unavailable():
-    use_static_png_fallbacks()
+from src.visualization.theme import JobMarketTheme
+
+# Consistent styling across all charts
+layout = JobMarketTheme.get_plotly_layout(
+    title="Salary Distribution",
+    width=1200,
+    height=600
+)
+
+fig.update_layout(**layout)
 ```
 
-### Key Design Decisions
+### 5. Website Interface (`src/data/website_processor.py`)
 
-1. **Performance First**: Prioritize Parquet for speed
-2. **Fallback Strategy**: Multiple data sources for reliability
-3. **Real-time Capable**: Can process raw data if needed
-4. **Multi-format Output**: Interactive + static for all use cases
-5. **Registry System**: Centralized chart management
-6. **Error Resilience**: Graceful degradation at every step
-
-### 💻 Practical Implementation for Developers
-
-#### **Setting Up Data Processing Pipeline**
-
-##### Step 1: Initial Data Processing (One-time Setup)
-
-```bash
-# Create processed data for fast Quarto loading
-cd /home/samarthya/sourcebox/github.com/project-from-scratch
-python src/data/full_dataset_processor.py
-```
-
-##### Step 2: Verify Processed Data Structure
-
-```bash
-# Expected output structure
-data/processed/
-├── job_market_processed.parquet/     # Primary (fastest)
-├── clean_job_data.csv               # 📄 Fallback (compatible)
-├── job_market_sample.csv            # Quick analysis
-└── processing_report.md             # Quality metrics
-```
-
-#### **Quarto Document Implementation Patterns**
-
-##### Pattern 1: Fast Loading with Validation
+**Purpose**: Simplified interface for Quarto QMD files
 
 ```python
-# In your .qmd document
-from src.data.spark_analyzer import SparkJobAnalyzer
-from pathlib import Path
+# In QMD files - simple, clean API
+from src.data.website_processor import (
+    load_and_process_data,
+    get_processed_dataframe,
+    get_website_data_summary
+)
 
-def load_data_for_quarto():
-    """Optimized data loading for Quarto websites."""
-    analyzer = SparkJobAnalyzer()
+# Load processed data (Pandas)
+df = get_processed_dataframe()
 
-    # Try processed data first (fastest)
-    processed_path = "data/processed/job_market_processed.parquet"
-    if Path(processed_path).exists():
-        print("Loading processed data (optimized)...")
-        return analyzer.load_full_dataset(processed_path)
+# Get summary statistics
+summary = get_website_data_summary()
 
-    # Fallback to raw data with processing
-    print("WARNING: Processing raw data (slower first load)...")
-    df = analyzer.load_full_dataset(force_raw=True)
-
-    # Save processed data for next time
-    from src.data.enhanced_processor import JobMarketDataProcessor
-    processor = JobMarketDataProcessor()
-    processor.save_processed_data(df, "data/processed/")
-    print("Processed data saved for faster future loads")
-
-    return df
+# Use in visualizations
+from src.visualization import SalaryVisualizer
+viz = SalaryVisualizer(df)
+fig = viz.plot_salary_distribution()
+fig.show()
 ```
-
-##### Pattern 2: Chart Generation with Registry
-
-```python
-# In your .qmd document
-from src.visualization.quarto_charts import QuartoChartExporter
-import json
-
-def generate_charts_for_website():
-    """Generate all charts needed for Quarto website."""
-
-    # Initialize chart system
-    chart_exporter = QuartoChartExporter(output_dir="figures/")
-
-    # Load data
-    df = load_data_for_quarto()
-    analyzer = SparkJobAnalyzer()
-    analyzer.job_data = df
-
-    # Generate core analyses
-    experience_data = analyzer.get_experience_analysis()
-    industry_data = analyzer.get_industry_analysis()
-
-    # Create charts with registry tracking
-    charts = []
-
-    # Experience analysis chart
-    exp_chart = chart_exporter.create_experience_salary_chart(
-        experience_data,
-        title="Career Progression: Experience vs Salary"
-    )
-    charts.append(exp_chart)
-
-    # Industry analysis chart
-    ind_chart = chart_exporter.create_industry_salary_chart(
-        industry_data,
-        title="Industry Salary Comparison"
-    )
-    charts.append(ind_chart)
-
-    # Export registry for dynamic loading
-    registry_path = chart_exporter.export_chart_registry()
-    print(f"Chart registry: {registry_path}")
-
-    return charts
-
-# Execute in Quarto
-charts = generate_charts_for_website()
-```
-
-##### Pattern 3: Dynamic Chart Loading in Quarto
-
-```python
-# Load and display charts dynamically
-import json
-from pathlib import Path
-from IPython.display import HTML
-
-def display_website_charts():
-    """Load and display charts from registry."""
-
-    registry_path = Path("figures/chart_registry.json")
-    if registry_path.exists():
-        with open(registry_path) as f:
-            registry = json.load(f)
-
-        for chart in registry.get("charts", []):
-            print(f"{chart['title']}")
-
-            # Display interactive version
-            html_path = chart["files"]["html"]
-            if Path(html_path).exists():
-                with open(html_path) as f:
-                    display(HTML(f.read()))
-
-            # Show static fallback info
-            png_path = chart["files"].get("png")
-            if png_path and Path(png_path).exists():
-                print(f"   📷 Static version: {png_path}")
-    else:
-        print("WARNING: No chart registry found. Run chart generation first.")
-
-# Display in Quarto
-display_website_charts()
-```
-
-#### **Error Handling and Fallbacks**
-
-##### Robust Data Loading
-
-```python
-def robust_data_loading():
-    """Data loading with comprehensive error handling."""
-
-    try:
-        # Primary: Processed Parquet
-        analyzer = SparkJobAnalyzer()
-        df = analyzer.load_full_dataset()
-        print("Loaded processed data")
-        return df, "processed"
-
-    except FileNotFoundError:
-        print("WARNING: No processed data found, trying raw data...")
-
-        try:
-            # Secondary: Raw data processing
-            df = analyzer.load_full_dataset(force_raw=True)
-            print("Loaded and processed raw data")
-            return df, "raw_processed"
-
-        except Exception as e:
-            print(f"Data loading failed: {e}")
-
-            # No fallback - show authentic error for educational purposes
-            raise DataProcessingError(f"Data pipeline error: {e}")
-
-**Robust Casting and Error Prevention**
-
-The system implements comprehensive casting error prevention through specialized utilities:
-
-```python
-# Safe numeric casting prevents NumberFormatException and CAST_INVALID_INPUT errors
-from utils.robust_casting import RobustDataCaster, safe_cast_salary
-
-# Universal safe casting function
-def safe_cast(df, column_name, target_type='double', new_column_name=None):
-    """Safely cast numeric columns with validation."""
-    numeric_pattern = r'^-?[0-9]+\.?[0-9]*$'
-
-    return df.withColumn(
-        new_column_name or f"{column_name}_numeric",
-        when(
-            (col(column_name).isNotNull()) &
-            (length(col(column_name)) > 0) &
-            (~col(column_name).isin(['', 'null', 'NULL', 'None', 'NaN', 'nan'])) &
-            (col(column_name).rlike(numeric_pattern)),
-            col(column_name).cast(target_type)
-        ).otherwise(None)
-    )
-
-# Safe string filtering prevents null operation errors
-def safe_filter(df, column_name):
-    """Filter DataFrame safely handling null/empty values."""
-    return df.filter(
-        (col(column_name).isNotNull()) &
-        (length(col(column_name)) > 0) &
-        (col(column_name) != '') &
-        (col(column_name) != 'null') &
-        (col(column_name) != 'NULL')
-    )
-
-# Usage in notebooks - load robust template
-exec(open('robust_template.py').read())
-
-# Safe operations replace risky direct casting
-df_safe = safe_cast(df, 'SALARY', 'double', 'salary_numeric')
-df_filtered = safe_filter(df_safe, 'CITY')
-stats = safe_group_count(df_filtered, 'STATE')
-```
-
-**Error Prevention Architecture:**
-
-- Regex validation before casting operations
-- Null and empty string handling
-- Graceful degradation with None values for invalid data
-- Ultra-safe aggregation operations
-- Comprehensive data quality reporting
-
----
-
-## Robust Casting & Error Prevention
-
-The system implements comprehensive casting error prevention through specialized utilities to handle NumberFormatException and CAST_INVALID_INPUT errors that commonly occur with malformed data.
-
-### Architecture Components
-
-- **RobustDataCaster**: Core utility class with safe casting methods
-- **Universal Functions**: Template functions that work with or without utilities
-- **Notebook Template**: Standardized robust patterns for all notebooks
-- **Validation System**: Project-wide notebook analysis and health reporting
-
-### Implementation Files
-
-- `src/utils/robust_casting.py` - Core robust utilities
-- `notebooks/robust_template.py` - Simple template with essential safe functions  
-- `src/data/enhanced_processor.py` - Data processing pipeline with integrated validation
-- `notebooks/job_market_skill_analysis.ipynb` - Example usage in existing analysis
-
-### Simple Usage Pattern
-
-All notebooks now load the template with:
-```python
-exec(open('robust_template.py').read())
-```
-
-Then use essential safe functions:
-```python
-# Safe casting
-df_safe = safe_cast(df, 'SALARY', 'double', 'salary_numeric')
-
-# Safe filtering  
-df_filtered = safe_filter(df_safe, 'CITY')
-
-# Quick validation
-validation_passed = quick_validation_check(df, ['TITLE', 'COMPANY', 'CITY'])
-```
-
----
-
-def validate_data_requirements():
-    """Validate that all required data sources and processing components are available."""
-    import pandas as pd
-    from pathlib import Path
-    
-    required_files = [
-        'data/processed/clean_job_data.csv',
-        'data/processed/job_market_sample.csv'
-    ]
-    
-    available_files = [f for f in required_files if Path(f).exists()]
-    
-    if not available_files:
-        raise FileNotFoundError(
-            "No processed data files found. Please run data processing pipeline first."
-        )
-    
-    return available_files[0]  # Return first available file
-```
-
-#### **Performance Monitoring**
-
-##### Execution Time Tracking
-
-```python
-import time
-from contextlib import contextmanager
-
-@contextmanager
-def timer(operation_name):
-    """Time operations for performance monitoring."""
-    start = time.time()
-    print(f"⏱️ Starting: {operation_name}")
-    yield
-    duration = time.time() - start
-    print(f"Completed: {operation_name} in {duration:.2f}s")
-
-# Usage in Quarto
-with timer("Data Loading"):
-    df = load_data_for_quarto()
-
-with timer("Chart Generation"):
-    charts = generate_charts_for_website()
-```
-
-#### **Development vs Production Modes**
-
-```python
-import os
-
-def get_execution_mode():
-    """Determine execution mode for appropriate optimizations."""
-
-    # Check if running in development
-    if os.environ.get("QUARTO_DEV_MODE") == "true":
-        return "development"
-
-    # Check if processed data exists (production ready)
-    if Path("data/processed/job_market_processed.parquet").exists():
-        return "production"
-
-    # Default to setup mode
-    return "setup"
-
-def load_data_by_mode():
-    """Load data optimized for current mode."""
-
-    mode = get_execution_mode()
-
-    if mode == "development":
-        # Fast loading with smaller sample
-        print("Development mode: Using sample data")
-        df = load_sample_data()
-
-    elif mode == "production":
-        # Full data with all optimizations
-        print("Production mode: Loading full processed data")
-        df = load_data_for_quarto()
-
-    else:  # setup mode
-        # Process data for future fast loading
-        print("Setup mode: Processing data for optimization")
-        df = setup_processed_data()
-
-    return df
-```
-
-This comprehensive process flow provides developers with:
-
-- **Clear execution sequence** from website load to chart display
-- **Practical implementation patterns** for Quarto documents
-- **Error handling strategies** for robust websites
-- **Performance optimization** for fast loading
-- **Development workflow** for iterative improvement
-
----
-
-## Source Code Organization
-
-```bash
-src/
-├── data/                         # Data processing modules
-│   ├── spark_analyzer.py         # Core Spark-based analysis engine
-│   ├── enhanced_processor.py     # Advanced data processing & cleaning
-│   ├── full_dataset_processor.py # Complete pipeline functions
-│   └── preprocess_data.py        # Initial data preprocessing
-├── visualization/                # Visualization & chart generation
-│   ├── simple_plots.py           # Matplotlib/Seaborn visualizations
-│   ├── plots.py                  # Advanced plotting utilities
-│   ├── chart_config.py           # Salary disparity chart styling & configuration
-│   └── quarto_charts.py          # Quarto-integrated chart export system
-├── config/                       # Configuration and mapping utilities
-├── utilities/                    # Analysis utilities & helper functions
-│   └── get_stats.py              # Quick salary disparity statistics calculator
-└── demo_class_usage.py           # Usage examples
-```
-
-### Component Roles & Architecture Fit
-
-#### **Utilities Layer** (`src/utilities/`)
-
-- **`get_stats.py`**: **Quick Statistics Calculator**
-  - **Purpose**: Fast salary disparity analysis for validation & debugging
-  - **Architecture Role**: Analysis validation layer
-  - **Capabilities**: Experience gaps, education premiums, company size impacts
-  - **Usage**: Rapid prototyping, data validation, initial analysis
-  - **Output**: Console statistics with salary gap percentages
-
-#### **Visualization Configuration** (`src/visualization/`)
-
-- **`chart_config.py`**: **Salary Disparity Chart Standardization**
-  - **Purpose**: Unified styling for readable salary disparity visualizations
-  - **Architecture Role**: Presentation layer configuration
-  - **Features**: Standard layouts, color schemes, font sizes, chart dimensions
-  - **Theme**: Salary disparity focus with professional presentation
-
-- **`quarto_charts.py`**: **Quarto Integration Engine**
-  - **Purpose**: Chart generation optimized for Quarto website integration
-  - **Architecture Role**: Output layer orchestrator
-  - **Capabilities**: Multi-format export (HTML, PNG, SVG), disparity annotations
-  - **Integration**: Uses `chart_config.py` for styling, exports to `figures/`
-
-### Design Rationale
-
-- **Separation of Concerns**: Each module has a single, well-defined responsibility
-- **Technology Layering**: Clear separation between data processing (Spark) and visualization (Pandas/Matplotlib)
-- **Progressive Complexity**: From simple preprocessing to advanced analytics
-- **Reusability**: Classes can be used independently or in combination
-
----
-
-## Information Flow Architecture
-
-### End-to-End Data Journey
-
-The system follows a structured information flow optimized for salary disparity analysis:
-
-```mermaid
-graph TB
-    subgraph "Data Sources"
-        A[Raw Lightcast CSV<br/>72K+ job postings]
-        A1[Additional Data Sources<br/>Future extensibility]
-    end
-
-    subgraph "Data Ingestion Layer"
-        B[SparkJobAnalyzer<br/>Schema validation & loading]
-        B --> B1[Column mapping & standardization]
-        B1 --> B2[Data quality assessment]
-    end
-
-    subgraph "Processing Layer"
-        C[JobMarketDataProcessor<br/>Enhanced cleaning pipeline]
-        C --> C1[Company name standardization<br/>'Undefined' for nulls]
-        C1 --> C2[Salary data cleaning & imputation]
-        C2 --> C3[Feature engineering<br/>Disparity metrics]
-    end
-
-    subgraph "Analysis Layer"
-        D[Statistical Analysis<br/>Salary disparity calculations]
-        D --> D1[Experience-based disparities]
-        D1 --> D2[Company size impact]
-        D2 --> D3[Geographic variations]
-        D3 --> D4[Education premium analysis]
-
-        U[get_stats.py<br/>Quick validation & debugging]
-        U --> U1[Rapid gap analysis]
-        U1 --> U2[Console-based statistics]
-    end
-
-    subgraph "Visualization Layer"
-        E[SalaryDisparityChartConfig<br/>Standardized chart styling]
-        E --> E1[QuartoChartExporter<br/>Multi-format output]
-        E1 --> E2[Interactive Plotly charts]
-        E2 --> E3[Static PNG/SVG exports]
-    end
-
-    subgraph "Output Layer"
-        F[Quarto Website<br/>_output/ directory]
-        F --> F1[HTML dashboards]
-        F1 --> F2[PDF reports]
-        F2 --> F3[Interactive notebooks]
-    end
-
-    A --> B
-    A1 --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-
-    style A fill:#E74C3C,color:#fff
-    style C1 fill:#F39C12,color:#fff
-    style D fill:#27AE60,color:#fff
-    style E fill:#8E44AD,color:#fff
-    style F fill:#3498DB,color:#fff
-```
-
-### Critical Information Checkpoints
-
-#### 1. **Data Quality Gates**
-
-- **Checkpoint A**: Raw data validation (schema, completeness)
-- **Checkpoint B**: Post-cleaning validation (null handling, outliers)
-- **Checkpoint C**: Feature engineering validation (derived metrics)
-
-#### 2. **Salary Disparity Focus Points**
-
-- **Company Name Handling**: Null/empty → "Undefined" (standardized)
-- **Salary Outlier Detection**: Remove unrealistic values (< $20K, > $500K)
-- **Experience Level Mapping**: Consistent categorization across sources
-- **Geographic Standardization**: State codes, city name normalization
-
-#### 3. **Information Propagation**
-
-```bash
-Raw Data → Cleaned Data → Analytics → Visualizations → Reports
-   ↓            ↓            ↓            ↓            ↓
-Quality      Completeness  Accuracy    Readability  Insights
-Validation   Verification  Validation  Optimization Validation
-```
-
----
-
-## Data Processing Pipeline
-
-### High-Level Flow
-
-```mermaid
-graph TD
-    A[Raw Lightcast CSV] --> B[Schema Validation]
-    B --> C[Data Quality Assessment]
-    C --> D[Data Cleaning & Standardization]
-    D --> E[Missing Value Imputation]
-    E --> F[Feature Engineering]
-    F --> G[Multi-Format Export]
-    G --> H[Parquet Storage]
-    G --> I[CSV Export]
-    G --> J[Relational Tables]
-```
-
-### Processing Stages
-
-#### Stage 1: Data Ingestion & Column Mapping
-
-**Raw Lightcast Dataset Schema**: 131 columns containing comprehensive job market data
-
-**Core Column Mapping (Raw → Processed)**:
-
-```python
-# Column mapping from Lightcast raw data to analysis-ready format
-COLUMN_MAPPING = {
-    # Core Identification
-    'ID': 'job_id',
-    'TITLE': 'title',
-    'TITLE_CLEAN': 'title_clean',
-    'COMPANY': 'company',
-    'LOCATION': 'location',
-
-    # Salary Data (Key Challenge - Multiple Sources + Standardization)
-    'SALARY_FROM': 'salary_min',      # Coverage varies by industry
-    'SALARY_TO': 'salary_max',        # Coverage varies by industry
-    'SALARY': 'salary_single',        # Direct salary when available
-    'ORIGINAL_PAY_PERIOD': 'pay_period',  # CRITICAL: hourly/monthly/yearly standardization
-
-    # Industry & Experience
-    'NAICS2_NAME': 'industry',        # 2-digit NAICS classification (used for salary imputation)
-    'MIN_YEARS_EXPERIENCE': 'experience_min',
-    'MAX_YEARS_EXPERIENCE': 'experience_max',
-
-    # Skills & Requirements
-    'SKILLS_NAME': 'required_skills',
-    'EDUCATION_LEVELS_NAME': 'education_required',
-
-    # Work Arrangements (critical for salary imputation)
-    'REMOTE_TYPE_NAME': 'remote_type',     # Remote/Hybrid/On-site (affects salary)
-    'EMPLOYMENT_TYPE_NAME': 'employment_type'  # Full-time/Part-time/Contract (affects salary)
-}
-
-# Derived columns created during processing
-DERIVED_COLUMNS = [
-    'salary_avg_imputed',    # Smart salary calculation with imputation
-    'ai_related',           # AI/ML role classification
-    'remote_allowed',       # Boolean remote work flag
-    'experience_level',     # Standardized experience categories
-    'industry_clean'        # Cleaned industry names
-]
-```
-
-**Salary Processing Strategy**:
-
-The salary calculation process now incorporates **granular imputation** considering employment type, remote work, and industry context:
-
-```python
-# Enhanced multi-source salary calculation with context-aware imputation
-def calculate_salary_avg_imputed(row):
-    # Step 1: Get raw salary value using priority hierarchy
-    raw_salary = None
-
-    if pd.notna(row['SALARY']):
-        raw_salary = row['SALARY']
-    elif pd.notna(row['SALARY_FROM']) and pd.notna(row['SALARY_TO']):
-        raw_salary = (row['SALARY_FROM'] + row['SALARY_TO']) / 2
-    elif pd.notna(row['SALARY_FROM']):
-        raw_salary = row['SALARY_FROM'] * 1.125  # Estimate midpoint
-    elif pd.notna(row['SALARY_TO']):
-        raw_salary = row['SALARY_TO'] * 0.889    # Estimate midpoint
-    else:
-        # No direct salary data - use context-aware imputation
-        return impute_salary_by_context(row)
-
-    # Step 2: Standardize to annual salary using ORIGINAL_PAY_PERIOD
-    pay_period = str(row.get('ORIGINAL_PAY_PERIOD', 'yearly')).lower()
-
-    annual_multipliers = {
-        'yearly': 1, 'annual': 1, 'year': 1,
-        'monthly': 12, 'month': 12,
-        'weekly': 52, 'week': 52,
-        'daily': 365, 'day': 365,
-        'hourly': 2080, 'hour': 2080  # 40 hours/week * 52 weeks
-    }
-
-    # Find matching multiplier (partial match for flexibility)
-    multiplier = 1  # Default to yearly
-    for period_key, mult in annual_multipliers.items():
-        if period_key in pay_period:
-            multiplier = mult
-            break
-
-    annual_salary = raw_salary * multiplier
-
-    # Step 3: Validate reasonable salary range (10K - 1M annually)
-    if 10000 <= annual_salary <= 1000000:
-        return annual_salary
-    else:
-        # Invalid salary - use context-aware imputation
-        return impute_salary_by_context(row)
-
-def impute_salary_by_context(row):
-    """Context-aware salary imputation using job characteristics"""
-
-    # Extract context for imputation
-    industry = row.get('NAICS2_NAME')
-    employment_type = row.get('EMPLOYMENT_TYPE_NAME')
-    remote_type = row.get('REMOTE_TYPE_NAME')
-    experience = row.get('experience_level')
-
-    # Apply 6-level hierarchical imputation (see detailed implementation below)
-    # This considers employment type and remote work patterns that significantly affect salary
-
-    # Key insight: Contract roles often pay 20-40% more hourly but less annually
-    # Remote roles may pay 5-15% differently depending on industry
-    # Full-time vs Part-time has major structural differences
-
-    return get_contextual_median(industry, employment_type, remote_type, experience)
-
-# Hierarchical imputation for missing salary data
-def impute_missing_salaries(df):
-    """Apply multi-level imputation strategy for salary_avg_imputed column"""
-
-    # Level 1: Full context medians (Industry + Employment Type + Remote Type + Experience)
-    full_context_medians = df.groupby([
-        'NAICS2_NAME',           # Industry classification
-        'EMPLOYMENT_TYPE_NAME',   # Full-time, Part-time, Contract, etc.
-        'REMOTE_TYPE_NAME',       # Remote, Hybrid, On-site
-        'experience_level'
-    ])['salary_avg_imputed'].median()
-
-    # Level 2: Industry + Employment + Remote (without experience)
-    industry_emp_remote_medians = df.groupby([
-        'NAICS2_NAME', 'EMPLOYMENT_TYPE_NAME', 'REMOTE_TYPE_NAME'
-    ])['salary_avg_imputed'].median()
-
-    # Level 3: Industry + Employment type medians
-    industry_emp_medians = df.groupby(['NAICS2_NAME', 'EMPLOYMENT_TYPE_NAME'])['salary_avg_imputed'].median()
-
-    # Level 4: Industry-only medians (fallback)
-    industry_medians = df.groupby('NAICS2_NAME')['salary_avg_imputed'].median()
-
-    # Level 5: Employment type medians (cross-industry)
-    employment_medians = df.groupby('EMPLOYMENT_TYPE_NAME')['salary_avg_imputed'].median()
-
-    # Level 6: Overall median (final fallback)
-    overall_median = df['salary_avg_imputed'].median()
-
-    # Apply imputation hierarchy
-    null_mask = df['salary_avg_imputed'].isnull()
-
-    # Try progressively broader groupings
-    for idx in df[null_mask].index:
-        industry = df.loc[idx, 'NAICS2_NAME']
-        employment = df.loc[idx, 'EMPLOYMENT_TYPE_NAME']
-        remote = df.loc[idx, 'REMOTE_TYPE_NAME']
-        exp_level = df.loc[idx, 'experience_level']
-
-        # Try Level 1: Full context
-        if (industry, employment, remote, exp_level) in full_context_medians:
-            df.loc[idx, 'salary_avg_imputed'] = full_context_medians[(industry, employment, remote, exp_level)]
-        # Try Level 2: Industry + Employment + Remote
-        elif (industry, employment, remote) in industry_emp_remote_medians:
-            df.loc[idx, 'salary_avg_imputed'] = industry_emp_remote_medians[(industry, employment, remote)]
-        # Try Level 3: Industry + Employment
-        elif (industry, employment) in industry_emp_medians:
-            df.loc[idx, 'salary_avg_imputed'] = industry_emp_medians[(industry, employment)]
-        # Try Level 4: Industry only
-        elif industry in industry_medians:
-            df.loc[idx, 'salary_avg_imputed'] = industry_medians[industry]
-        # Try Level 5: Employment type only
-        elif employment in employment_medians:
-            df.loc[idx, 'salary_avg_imputed'] = employment_medians[employment]
-        # Level 6: Overall median
-        else:
-            df.loc[idx, 'salary_avg_imputed'] = overall_median
-
-    return df
-```
-
-### **Impact of Granular Salary Processing**
-
-This enhanced approach produces **significantly more accurate salary estimates** by recognizing real market patterns:
-
-#### **Employment Type Effects on Salary**
-
-```python
-# Example salary variations by employment type (same role, same industry):
-
-Technology Industry - Software Engineer:
-├── Full-time: $95K median (stable, benefits included)
-├── Contract: $65/hour → $135K annual (higher rate, no benefits)
-├── Part-time: $48/hour → $50K annual (pro-rated)
-└── Temporary: $40/hour → $83K annual (project-based)
-
-# Previous approach: Single median ~$90K (inaccurate for 75% of cases)
-# New approach: Context-specific medians (accurate for each employment type)
-```
-
-#### **Remote Work Impact on Compensation**
-
-```python
-# Geographic salary adjustments by remote policy:
-
-Finance Industry - Data Analyst in expensive metros:
-├── Remote: $88K (location-agnostic, national rates)
-├── Hybrid: $92K (metro premium + flexibility bonus)
-└── On-site: $95K (full metro cost-of-living adjustment)
-
-# Captures 5-15% salary variation based on remote work policy
-```
-
-#### **Cross-Factor Salary Matrix Example**
-
-| Industry | Employment | Remote | Experience | Median Salary | Sample Size |
-|----------|------------|--------|------------|---------------|-------------|
-| Technology | Full-time | Remote | Senior | $125K | 1,200+ jobs |
-| Technology | Contract | Remote | Senior | $85/hr ($177K) | 350+ jobs |
-| Finance | Full-time | On-site | Senior | $110K | 800+ jobs |
-| Healthcare | Part-time | Hybrid | Entry | $28/hr ($58K) | 150+ jobs |
-
-**Key Improvements**:
-
-- SUCCESS: **20-40% more accurate** salary estimates for contract vs full-time roles
-- SUCCESS: **Captures remote work premiums/discounts** (5-15% typical variation)
-- SUCCESS: **Industry-specific employment patterns** (e.g., tech contract rates vs finance full-time)
-- SUCCESS: **Realistic fallback hierarchy** when specific combinations have low data
-
-```python
-# Load with Lightcast-specific processing
-df = spark.read.option("header", "true").option("inferSchema", "true").csv(file_path)
-```
-
-#### Stage 2: Data Quality Assessment
-
-- **Null value analysis** across all columns
-- **Duplicate detection** based on key fields (title, company, location, date)
-- **Data type validation** and conversion
-- **Outlier detection** for salary ranges
-
-#### Stage 3: Data Cleaning & Standardization
-
-- **Text normalization**: Consistent casing, trimming whitespace
-- **Categorical standardization**: Industry names, experience levels
-- **Location parsing**: Extract city, state information
-- **Date formatting**: Standardize posting dates
-
-#### Stage 4: Missing Value Imputation
-
-- **Hierarchical imputation strategy**: Industry → Experience Level → Global median
-- **Salary range validation**: Ensure min ≤ avg ≤ max constraints
-- **Smart defaults**: Location-based and role-based imputation
-
-#### Stage 5: Feature Engineering
-
-- **Derived columns**: `salary_avg_imputed`, `is_ai_role`, `remote_allowed_clean`
-- **Classification features**: AI/ML role detection based on title patterns
-- **Geographic features**: State/city extraction and standardization
-
----
-
-## Class Architecture & Responsibilities
-
-### 1. SparkJobAnalyzer (`src/data/spark_analyzer.py`)
-
-**Purpose**: Core Spark-based analysis engine for SQL-driven analytics
-
-**Key Responsibilities**:
-
-```python
-class SparkJobAnalyzer:
-    def __init__(self, spark_session: Optional[SparkSession] = None)
-    def load_full_dataset(self, data_path: str) -> DataFrame
-    def get_industry_analysis(self, top_n: int = 10) -> pd.DataFrame
-    def get_experience_analysis(self) -> pd.DataFrame
-    def get_geographic_analysis(self, top_n: int = 10) -> pd.DataFrame
-    def execute_custom_query(self, query: str) -> pd.DataFrame
-```
-
-**Design Features**:
-
-- **3-tier data loading**: Parquet → Processed CSV → Raw Lightcast data fallback
-- **Robust error handling**: Clear exceptions for missing or corrupted data
-- **Data quality validation**: Comprehensive dataset validation on every load
-- **SQL-first approach**: Complex analytics using Spark SQL
-- **Pandas integration**: Converts results to Pandas for visualization compatibility
-- **Performance optimized**: Adaptive query execution and Arrow optimization
-
-### 2. JobMarketDataProcessor (`src/data/enhanced_processor.py`)
-
-**Purpose**: Advanced data processing with comprehensive cleaning and validation
-
-**Key Responsibilities**:
-
-```python
-class JobMarketDataProcessor:
-    def __init__(self, app_name: str = "JobMarketAnalysis")
-    def load_data(self, file_path: str, use_sample: bool = False) -> DataFrame
-    def assess_data_quality(self, df: DataFrame) -> Dict
-    def clean_and_standardize_data(self, df: DataFrame) -> DataFrame
-    def engineer_features(self, df: DataFrame) -> DataFrame
-    def save_processed_data(self, df: DataFrame, output_path: str)
-```
-
-**Design Features**:
-
-- **Comprehensive schema definition**: Full Lightcast field specification
-- **Multi-strategy imputation**: Hierarchical missing value handling
-- **Quality metrics**: Detailed data quality assessment and reporting
-- **Feature engineering**: AI role detection, location parsing, salary validation
-
-### 3. SalaryVisualizer (`simple_plots.py`)
-
-**Purpose**: Pandas-based visualization for processed data analysis
-
-**Key Responsibilities**:
-
-```python
-class SalaryVisualizer:
-    def __init__(self, df: pd.DataFrame)
-    def get_industry_salary_analysis(self, top_n: int = 10) -> pd.DataFrame
-    def analyze_experience_salary_progression(self) -> pd.DataFrame
-    def get_location_salary_analysis(self, top_n: int = 15) -> pd.DataFrame
-    def calculate_ai_skill_premiums(self) -> pd.DataFrame
-```
-
-**Design Features**:
-
-- **Pandas-native operations**: Fast in-memory analysis for visualization
-- **Statistical analysis**: Comprehensive salary statistics and trends
-- **Visualization ready**: Data formatted for direct plotting with matplotlib/seaborn
-
----
-
-## Data Loading Strategy
-
-### 3-Tier Loading Approach
-
-The system implements a **comprehensive fallback strategy** for production-ready data loading:
-
-```python
-def load_full_dataset(self, data_path: str) -> DataFrame:
-    """Production-ready data loading with comprehensive fallback"""
-    # Tier 1: Optimized Parquet (fastest - fully processed)
-    if Path(data_path).exists():
-        self.job_data = self.spark.read.parquet(data_path)
-    else:
-        # Tier 2: Processed CSV (medium - cleaned data)
-        csv_path = "data/processed/clean_job_data.csv"
-        if Path(csv_path).exists():
-            self.job_data = self.spark.read.option("header", "true").csv(csv_path)
-        else:
-            # Tier 3: Raw Lightcast data (slowest - original source)
-            raw_data_path = "data/raw/lightcast_job_postings.csv"
-            if Path(raw_data_path).exists():
-                self.job_data = self.spark.read.option("header", "true").csv(raw_data_path)
-            else:
-                raise FileNotFoundError("No data sources found")
-
-    # Always validate loaded data
-    self._validate_dataset(self.job_data)
-```
-
-### Loading Performance Comparison
-
-| Data Source | Load Time | Processing Level | Query Performance | Data Quality |
-|-------------|-----------|------------------|-------------------|---------------|
-| **Parquet** | ~3-5 sec | Fully processed | **Fastest** (columnar) | SUCCESS: Optimal |
-| **Processed CSV** | ~15-30 sec | Cleaned & standardized | Good (row-based) | SUCCESS: High |
-| **Raw Lightcast** | ~30-60 sec | Raw data | Moderate (requires processing) | WARNING: Variable |
-
-### Schema Management
-
-- **Predefined schema**: Explicit type definitions prevent inference overhead
-- **Schema evolution**: Parquet preserves exact data types across sessions
-- **Multi-schema support**: Handles both processed and raw Lightcast column names
-- **Validation**: Automatic schema compliance checking during load
-
-### Data Validation Framework
-
-Every dataset load includes comprehensive validation:
-
-```python
-def _validate_dataset(self, df: DataFrame) -> None:
-    """Validate dataset for production readiness"""
-    # Critical validations (will throw exceptions)
-    if df.count() == 0: raise Exception("Empty dataset")
-
-    required_columns = ["salary_avg_imputed", "industry", "title", "location"]
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    if missing_columns: raise Exception(f"Missing columns: {missing_columns}")
-
-    # Quality warnings (logged but not blocking)
-    null_salary_pct = df.filter(col("salary_avg_imputed").isNull()).count() / df.count() * 100
-    if null_salary_pct > 90: logger.warning(f"High missing salary data: {null_salary_pct:.1f}%")
-```
-
-**Validation Checks**:
-
-- SUCCESS: **Empty dataset detection**: Prevents analysis on zero records
-- SUCCESS: **Required column validation**: Ensures critical fields exist
-- WARNING: **Data quality warnings**: Alerts for high null percentages or invalid ranges
-- DATA: **Quality metrics**: Reports completeness and consistency statistics
-
----
-
-## Data Cleaning & Quality Assurance
-
-### Quality Assessment Framework
-
-The system performs comprehensive data quality analysis:
-
-```python
-def assess_data_quality(self, df: DataFrame) -> Dict:
-    """Comprehensive data quality assessment"""
-    return {
-        "total_records": df.count(),
-        "duplicate_analysis": self._analyze_duplicates(df),
-        "missing_value_analysis": self._analyze_missing_values(df),
-        "salary_quality": self._validate_salary_data(df),
-        "categorical_distribution": self._analyze_categorical_fields(df)
-    }
-```
-
-### Data Cleaning Pipeline
-
-#### 1. Duplicate Removal
-
-```python
-# Remove duplicates based on business logic
-df_clean = df.dropDuplicates(["TITLE", "COMPANY", "LOCATION", "POSTED"])
-```
-
-#### 2. Text Standardization
-
-```python
-# Standardize categorical fields
-df = df.withColumn("INDUSTRY_CLEAN",
-    when(col("INDUSTRY").rlike("(?i)tech|software|computer"), "Technology")
-    .when(col("INDUSTRY").rlike("(?i)finance|banking|investment"), "Finance")
-    .otherwise(trim(upper(col("INDUSTRY")))))
-```
-
-#### 3. Salary Validation
-
-```python
-# Ensure salary range consistency
-df = df.withColumn("salary_valid",
-    (col("salary_min_clean") <= col("salary_max_clean")) &
-    (col("salary_min_clean") >= 20000) &
-    (col("salary_max_clean") <= 500000))
-```
-
-### Quality Metrics
-
-- **Completeness**: % of non-null values per column
-- **Consistency**: Salary range validation, date format compliance
-- **Accuracy**: Industry/location standardization success rate
-- **Uniqueness**: Duplicate detection and removal statistics
-
----
-
-## Data Imputation & Feature Engineering
-
-### Hierarchical Imputation Strategy
-
-For missing salary values, the system uses a **multi-level median imputation**:
-
-```python
-# Level 1: Industry + Experience Level median
-# Level 2: Industry median (if Level 1 unavailable)
-# Level 3: Experience Level median (if Level 2 unavailable)
-# Level 4: Global median (final fallback)
-
-salary_window = Window.partitionBy("INDUSTRY_CLEAN", "EXPERIENCE_LEVEL_CLEAN")
-df = df.withColumn("salary_industry_exp_median",
-    percentile_approx("salary_avg", 0.5).over(salary_window))
-```
-
-### Feature Engineering Pipeline
-
-#### 1. AI Role Classification
-
-```python
-df = df.withColumn("is_ai_role",
-    when(lower(col("TITLE")).rlike(
-        "(ai|machine learning|data scientist|ml engineer|artificial intelligence)"
-    ), 1).otherwise(0))
-```
-
-#### 2. Remote Work Detection
-
-```python
-df = df.withColumn("remote_allowed_clean",
-    when(lower(col("REMOTE_ALLOWED")).rlike("(yes|remote|anywhere|wfh)"), 1)
-    .otherwise(0))
-```
-
-#### 3. Geographic Feature Extraction
-
-```python
-df = df.withColumn("city", split(col("LOCATION"), ",").getItem(0))
-df = df.withColumn("state", trim(split(col("LOCATION"), ",").getItem(1)))
-```
-
-### Derived Metrics
-
-- **Salary Average Imputed**: `(salary_min + salary_max) / 2` with missing value handling
-- **Company Size Classification**: Based on known company patterns
-- **Industry Technology Score**: AI/Tech role concentration by industry
-- **Location Cost of Living Index**: Derived from salary patterns by geography
-
----
-
-## Storage Strategy
-
-### Multi-Format Export Pipeline
-
-The processed data is saved in **three complementary formats**:
-
-#### 1. Parquet Format (Primary)
-
-```python
-# Optimized for Spark processing
-df.write.mode("overwrite").option("compression", "snappy").parquet(parquet_path)
-```
-
-**Benefits**:
-
-- **5-10x faster** loading for Spark operations
-- **Columnar storage** optimizes analytical queries
-- **Schema preservation** maintains exact data types
-- **Compression** reduces storage by 60-80%
-
-#### 2. CSV Format (Compatibility)
-
-```python
-# Sample and clean versions for broad compatibility
-clean_df.toPandas().to_csv(csv_path, index=False)
-```
-
-**Benefits**:
-
-- **Universal compatibility** with any analytics tool
-- **Human readable** for manual inspection
-- **Small sample sizes** for quick prototyping
-
-#### 3. Relational Tables (Analysis)
-
-```python
-# Normalized tables for advanced analytics
-create_relational_tables(processed_df, "data/processed/relational_tables/")
-```
-
-**Tables Created**:
-
-- `companies.parquet`: Company dimension with size classifications
-- `locations.parquet`: Geographic dimension with state/city breakdown
-- `industries.parquet`: Industry dimension with standardized categories
-- `job_postings_fact.parquet`: Main fact table with all metrics
-
-### Storage Performance Impact
-
-| Operation | CSV | Parquet | Performance Gain |
-|-----------|-----|---------|------------------|
-| **Full Dataset Load** | 30 sec | 3 sec | **10x faster** |
-| **Salary Analysis** | 15 sec | 2 sec | **7.5x faster** |
-| **Industry Filtering** | 25 sec | 1 sec | **25x faster** |
-| **Geographic Analysis** | 20 sec | 2 sec | **10x faster** |
-
----
-
-## Performance Optimization
-
-### Spark Configuration
-
-```python
-spark = SparkSession.builder \
-    .config("spark.sql.adaptive.enabled", "true") \
-    .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
-    .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
-    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
-    .getOrCreate()
-```
-
-### Memory Management
-
-- **DataFrame Caching**: Cache frequently accessed datasets in memory
-- **Partition Optimization**: Automatic partition sizing for optimal performance
-- **Adaptive Query Execution**: Dynamic optimization based on data characteristics
-
-### Query Optimization Strategies
-
-1. **Predicate Pushdown**: Filter operations pushed to storage layer
-2. **Column Pruning**: Only load required columns for analysis
-3. **Broadcast Joins**: Small dimension tables broadcasted for faster joins
-4. **Bucketing**: Pre-sort data for join and aggregation optimization
 
 ---
 
 ## Usage Patterns
 
-### Pattern 1: Quick Analysis (Production-Ready)
+### Pattern 1: Initial Data Processing (PySpark)
+
+**When**: First time setup or when raw data changes
+
+**How**:
 
 ```python
-# For notebook/interactive analysis with automatic fallback
-from src.data.spark_analyzer import create_spark_analyzer
+# scripts/generate_processed_data.py (or use website_processor directly)
+from src.core import JobMarketDataProcessor
+from src.config.settings import Settings
 
-# Automatically uses best available data source
-analyzer = create_spark_analyzer()
-# INFO: Loading full dataset from data/processed/job_market_processed.parquet
-# INFO: Dataset loaded and validated: 50,847 job postings
+def main():
+    print("Processing raw data with PySpark...")
 
-industry_analysis = analyzer.get_industry_analysis(top_n=10)
+    # Initialize processor
+    settings = Settings()
+    processor = JobMarketDataProcessor(settings=settings)
+
+    # Process raw CSV with PySpark (13M rows)
+    # This automatically saves to Parquet
+    spark_df = processor.load_and_process_data(
+        data_path="data/raw/lightcast_job_postings.csv"
+    )
+
+    print(f"Processed {spark_df.count():,} records")
+    print("Saved to data/processed/job_market_processed.parquet")
+
+    # Stop Spark to free memory
+    processor.spark.stop()
+
+    # Now Pandas can load the much smaller Parquet file
+    import pandas as pd
+    df = pd.read_parquet('data/processed/job_market_processed.parquet')
+    print(f"Pandas loaded {len(df):,} records for analysis")
+
+if __name__ == "__main__":
+    main()
 ```
 
-### Pattern 1b: Custom Data Source
+**Run**: `python scripts/generate_processed_data.py`
+
+**Key Points**:
+
+- PySpark processes ALL 13M rows from CSV
+- PySpark filters/cleans and saves to Parquet (~30-50K rows)
+- Spark session stopped to free memory
+- Pandas loads the small Parquet for analysis (fast!)
+
+### Pattern 2: Analysis in Notebooks (Pandas)
+
+**When**: Exploratory analysis, ML experiments, visualization development
+
+**How**:
 
 ```python
-# For specific data source (useful for testing different data states)
-analyzer = create_spark_analyzer("data/raw/lightcast_job_postings.csv")
-# WARNING: Loading from original raw data - may require processing
-# INFO: Successfully loaded raw Lightcast data: 245,678 records
-```
-
-### Pattern 2: Full Processing Pipeline
-
-```python
-# For complete data processing
-from src.data.enhanced_processor import JobMarketDataProcessor
-processor = JobMarketDataProcessor()
-df = processor.load_data("data/raw/lightcast_job_postings.csv")
-processed_df = processor.clean_and_standardize_data(df)
-processor.save_processed_data(processed_df)
-```
-
-### Pattern 3: Visualization Workflow
-
-```python
-# For creating visualizations
-from src.visualization.simple_plots import SalaryVisualizer
+# notebooks/analysis.ipynb
 import pandas as pd
+from src.visualization import SalaryVisualizer
+from src.analytics import SalaryAnalyticsModels
 
-df = pd.read_csv("data/processed/clean_job_data.csv")
-visualizer = SalaryVisualizer(df)
-salary_analysis = visualizer.get_industry_salary_analysis()
+# Load processed data (fast with Pandas)
+df = pd.read_parquet('../data/processed/job_market_processed.parquet')
+
+# Explore data
+print(df.shape)
+print(df['salary_avg'].describe())
+
+# Create visualizations
+viz = SalaryVisualizer(df)
+viz.plot_salary_distribution().show()
+
+# Run ML models
+models = SalaryAnalyticsModels(df)
+results = models.run_complete_analysis()
 ```
 
-### Pattern 4: Key Findings Generation
+### Pattern 3: Quarto Website (Pandas + Plotly)
+
+**When**: Generating website content
+
+**How**:
 
 ```python
-# For generating website key findings graphics
-from create_key_findings import create_key_findings_graphics
+# salary-insights.qmd
+from src.data.website_processor import get_processed_dataframe
+from src.visualization import SalaryVisualizer
 
-# Creates interactive charts for homepage embedding
-stats = create_key_findings_graphics()
-# Outputs: figures/key_finding_*.html files
-# Returns: {'experience_gap': 233.0, 'education_gap': 177.3, 'company_size_gap': 39.5}
+# Load data
+df = get_processed_dataframe()
+
+# Create visualization
+viz = SalaryVisualizer(df)
+fig = viz.plot_salary_distribution()
+
+# Display in Quarto
+fig.show()
 ```
 
-### Pattern 4: Custom SQL Analysis
+**Run**: `quarto render` or `quarto preview`
+
+### Pattern 4: Advanced Spark Analysis (PySpark)
+
+**When**: Large-scale aggregations or custom Spark operations
+
+**How**:
 
 ```python
-# For advanced SQL-based analysis with validation
-try:
-    analyzer = create_spark_analyzer()
-    custom_query = """
-        SELECT industry, COUNT(*) as jobs,
-               ROUND(AVG(salary_avg_imputed), 0) as avg_salary
-        FROM job_postings
-        WHERE salary_avg_imputed IS NOT NULL
-        GROUP BY industry
-        ORDER BY avg_salary DESC
-    """
-    ai_salaries = analyzer.execute_custom_query(custom_query)
-except FileNotFoundError as e:
-    print(f"Data source missing: {e}")
-    # Clear guidance on which files need to be created
-except Exception as e:
-    print(f"Data quality issue: {e}")
-    # Specific error about data corruption or schema problems
-```
+from src.core import SparkJobAnalyzer
 
-### Pattern 5: Error Handling & Recovery
+# Initialize with Spark
+analyzer = SparkJobAnalyzer()
+analyzer.load_full_dataset()
 
-```python
-# Robust data loading with error handling
-from pathlib import Path
+# Run Spark-based analysis
+salary_by_location = analyzer.analyze_by_location()
+experience_trends = analyzer.calculate_experience_trends()
 
-def safe_create_analyzer():
-    try:
-        return create_spark_analyzer()
-    except FileNotFoundError as e:
-        print("ERROR: No data sources found!")
-        print("Required files:")
-        print("  - data/processed/job_market_processed.parquet/ (preferred)")
-        print("  - data/processed/clean_job_data.csv (fallback)")
-        print("  - data/raw/lightcast_job_postings.csv (final fallback)")
-        return None
-    except Exception as e:
-        print(f"WARNING:  Data quality issue: {e}")
-        print("Consider re-running data processing pipeline")
-        return None
-
-analyzer = safe_create_analyzer()
-if analyzer:
-    # Safe to proceed with analysis
-    results = analyzer.get_industry_analysis()
+# Convert to Pandas for visualization
+pandas_df = salary_by_location.toPandas()
 ```
 
 ---
 
-## How the Parquet File Was Created
+## Development Workflow
 
-The `job_market_processed.parquet` file was created through the **production-ready processing pipeline**:
-
-### Data Pipeline Flow
+### Setup
 
 ```bash
-Raw Lightcast CSV → Validation → Cleaning → Feature Engineering → Multi-Format Export
-     ↓                 ↓           ↓              ↓                    ↓
-Original Data    Schema Check   Standardize   AI Detection      Parquet + CSV
-245K+ records    Column Types   Missing Data   Remote Work      Optimized Storage
+# 1. Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Verify Spark installation
+python -c "from pyspark.sql import SparkSession; print('Spark OK')"
 ```
 
-### Execution Path
+### Initial Data Processing
 
-1. **Raw Data Source**: `data/raw/lightcast_job_postings.csv` (Original Lightcast dataset)
-2. **Processing Engine**: `src/data/full_dataset_processor.py` or `enhanced_processor.py`
-3. **Pipeline Execution**:
+```bash
+# Process raw data (run once)
+python scripts/generate_processed_data.py
+
+# Output: data/processed/job_market_processed.parquet
+```
+
+### Development Cycle
+
+```bash
+# 1. Develop in notebooks
+jupyter lab
+
+# 2. Move stable code to src/ modules
+# 3. Test visualizations in Quarto
+quarto preview --port 4200
+
+# 4. Generate final website
+quarto render
+```
+
+### Testing
+
+```bash
+# Run unit tests
+pytest tests/
+
+# Validate data pipeline
+python -m src.data.validators
+
+# Check Parquet file
+python -c "import pandas as pd; df = pd.read_parquet('data/processed/job_market_processed.parquet'); print(df.info())"
+```
+
+---
+
+## Column Standardization
+
+All processed data uses consistent `snake_case` column names:
+
+| Raw Column (Lightcast) | Processed Column | Type | Description |
+|------------------------|------------------|------|-------------|
+| `SALARY_FROM` | `salary_min` | float | Minimum salary in range |
+| `SALARY_TO` | `salary_max` | float | Maximum salary in range |
+| *(computed)* | `salary_avg` | float | **Primary salary metric** |
+| `TITLE_NAME` | `title` | string | Job title |
+| `CITY_NAME` | `city_name` | string | City location |
+| `NAICS2_NAME` | `industry` | string | Industry classification |
+| `MIN_YEARS_EXPERIENCE` | `experience_min` | int | Minimum experience |
+| `MAX_YEARS_EXPERIENCE` | `experience_max` | int | Maximum experience |
+| *(computed)* | `experience_level` | category | Entry/Mid/Senior/Executive |
+| `SKILLS_NAME` | `skills` | string | Required skills |
+| `COMPANY_NAME` | `company` | string | Company name |
+| `COMPANY_SIZE` | `company_size` | int | Number of employees |
+
+**Key Computed Columns**:
+
+- `salary_avg` = (salary_min + salary_max) / 2 with intelligent imputation
+- `experience_level` = binned from experience_min (Entry, Mid, Senior, Executive, C-Level)
+- `experience_avg` = (experience_min + experience_max) / 2
+- `company_size_numeric` = cleaned and validated company size
+
+---
+
+## File Structure
+
+```bash
+ad688-scratch/
+├── data/
+│   ├── raw/
+│   │   └── lightcast_job_postings.csv     # Source data (~13M rows)
+│   └── processed/
+│       └── job_market_processed.parquet   # Clean data (~30-50K rows)
+│
+├── src/
+│   ├── config/
+│   │   ├── column_mapping.py              # Column standardization
+│   │   └── settings.py                    # Application config
+│   │
+│   ├── core/                              # PySpark processing
+│   │   ├── processor.py                   # JobMarketDataProcessor
+│   │   └── analyzer.py                    # SparkJobAnalyzer
+│   │
+│   ├── data/                              # Data utilities
+│   │   ├── loaders.py                     # DataLoader (Spark)
+│   │   ├── transformers.py                # DataTransformer (Spark)
+│   │   ├── validators.py                  # DataValidator (Spark)
+│   │   ├── auto_processor.py              # Helper functions
+│   │   └── website_processor.py           # Quarto interface
+│   │
+│   ├── analytics/                         # Pandas analysis
+│   │   ├── salary_models.py               # ML models
+│   │   ├── nlp_analysis.py                # NLP analysis
+│   │   ├── predictive_dashboard.py        # ML dashboards
+│   │   └── docx_report_generator.py       # Word reports
+│   │
+│   ├── ml/                                # ML models (can use Pandas)
+│   │   ├── regression.py
+│   │   ├── classification.py
+│   │   ├── clustering.py
+│   │   ├── feature_engineering.py
+│   │   └── evaluation.py
+│   │
+│   ├── visualization/                     # Plotly charts
+│   │   ├── charts.py                      # SalaryVisualizer
+│   │   ├── key_findings_dashboard.py      # Dashboards
+│   │   └── theme.py                       # Styling
+│   │
+│   └── utils/
+│       └── spark_utils.py                 # Spark helpers
+│
+├── scripts/
+│   └── generate_processed_data.py         # Data processing script
+│
+├── notebooks/                             # Jupyter notebooks (Pandas)
+│   ├── data_processing_pipeline_demo.ipynb
+│   ├── ml_feature_engineering_lab.ipynb
+│   └── job_market_skill_analysis.ipynb
+│
+├── *.qmd                                  # Quarto website pages
+├── figures/                               # Generated charts
+└── _salary/                               # Rendered website
+```
+
+---
+
+## Best Practices
+
+### Data Processing
+
+1. **Always use PySpark for initial processing** of the 13M row CSV
+2. **Save results to Parquet** for efficient downstream use
+3. **Standardize column names immediately** in the processing layer
+4. **Validate data quality** before saving to Parquet
+5. **Document all transformations** in processor classes
+
+### Analysis
+
+1. **Load from Parquet with Pandas** for analysis and visualization
+2. **Use consistent column names** from `ANALYSIS_COLUMNS`
+3. **Keep business logic in src/ modules**, not in QMD files
+4. **Test with processed data**, not raw data
+5. **Use type hints** for DataFrame contracts
+
+### Visualization
+
+1. **Use Plotly** for all interactive charts
+2. **Apply JobMarketTheme** for consistent styling
+3. **Save multiple formats** (HTML for web, PNG/SVG for reports)
+4. **Make charts self-contained** with clear titles and labels
+5. **Optimize for performance** (downsample if needed)
+
+### Documentation
+
+1. **Document the "why"**, not just the "what"
+2. **Keep DESIGN.md in sync** with implementation
+3. **Include code examples** in documentation
+4. **Explain design decisions** in comments
+5. **Update diagrams** when architecture changes
+
+---
+
+## Migration Path
+
+If you need to convert existing Pandas-based processing to PySpark:
+
+```python
+# Old (Pandas)
+import pandas as pd
+df = pd.read_csv('large_file.csv')
+df['new_col'] = df['old_col'].apply(some_function)
+df.to_parquet('output.parquet')
+
+# New (PySpark)
+from pyspark.sql import functions as F
+df = spark.read.csv('large_file.csv', header=True, inferSchema=True)
+df = df.withColumn('new_col', some_udf(F.col('old_col')))
+df.write.parquet('output.parquet', mode='overwrite')
+```
+
+Or keep existing ML models in Pandas and only use Spark for ETL:
 
    ```python
-   # Complete processing pipeline
-   python src/data/full_dataset_processor.py
+# ETL with PySpark
+from src.core import JobMarketDataProcessor
+processor = JobMarketDataProcessor()
+processor.load_and_process_data()  # Saves to Parquet
 
-   # OR programmatic processing
-   from src.data.enhanced_processor import JobMarketDataProcessor
-   processor = JobMarketDataProcessor()
-   df = processor.load_data("data/raw/lightcast_job_postings.csv")
-
-   # Comprehensive processing steps
-   quality_report = processor.assess_data_quality(df)
-   clean_df = processor.clean_and_standardize_data(df)
-   enhanced_df = processor.engineer_features(clean_df)
-
-   # Multi-format export
-   processor.save_processed_data(enhanced_df, "data/processed/")
+# Analysis with Pandas
+import pandas as pd
+   df = pd.read_parquet('data/processed/job_market_processed.parquet')
+# ... use for analysis and visualization
    ```
 
-### Processing Steps Applied
+---
 
-1. SUCCESS: **Raw data ingestion** with Lightcast schema validation
-2. SUCCESS: **Comprehensive data quality assessment** (null analysis, duplicates, outliers)
-3. SUCCESS: **Data cleaning pipeline** (text standardization, categorical mapping)
-4. SUCCESS: **Hierarchical missing value imputation** (industry → experience → global medians)
-5. SUCCESS: **Advanced feature engineering** (AI role classification, remote work detection)
-6. SUCCESS: **Data validation** (salary range validation, consistency checks)
-7. SUCCESS: **Multi-format export** with optimized Parquet storage
-
-### Current System Benefits
-
-- **PROCESSING: Automatic Fallback**: System works even if only raw data exists
-- **SUCCESS: Data Validation**: Every load includes quality validation
-- **FAST: Performance Tiers**: 3-tier loading (Parquet→CSV→Raw) for optimal speed
-- **SECURITY: Error Handling**: Clear error messages for missing/corrupted data
-- **DATA: Quality Reporting**: Detailed statistics on data completeness and consistency
-
-### Result Files Created
-
-```bash
-data/processed/
-├── job_market_processed.parquet/     # STARTING: Primary (fastest loading)
-│   ├── part-00000-*.snappy.parquet  # Compressed columnar data
-│   └── _SUCCESS                      # Processing completion marker
-├── clean_job_data.csv               # PROCESSING: Fallback (broad compatibility)
-├── data_schema.json                 # LIST: Schema documentation
-└── processing_report.md             # ANALYSIS: Quality metrics & statistics
-```
-
-### Performance Impact
-
-| Operation | Raw CSV | Processed Parquet | Improvement |
-|-----------|---------|-------------------|-------------|
-| **Data Loading** | ~45 sec | ~3 sec | **15x faster** |
-| **Industry Analysis** | ~25 sec | ~2 sec | **12x faster** |
-| **Geographic Queries** | ~30 sec | ~1 sec | **30x faster** |
-| **Salary Statistics** | ~20 sec | ~1 sec | **20x faster** |
-
-This architecture provides a **production-ready, fault-tolerant, and high-performance** foundation for job market analytics that gracefully handles data availability scenarios while maintaining optimal performance when fully processed data exists.
+**Questions or issues?** See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed system diagrams or open an issue on GitHub.

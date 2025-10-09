@@ -1,0 +1,247 @@
+---
+title: "Key Findings Dashboard"
+subtitle: "Interactive Job Market Intelligence"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    css: styles.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Executive Summary
+
+This dashboard provides comprehensive job market intelligence with key metrics, career progression insights, and strategic recommendations. All data processing and visualization happens automatically when the website loads.
+
+```{python}
+#| label: data-loading
+#| echo: false
+
+# Load data using the website processor
+from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
+
+# Get processed data - this triggers the complete pipeline including figure generation
+website_data = get_website_data()
+df = get_processed_dataframe()
+analysis = get_analysis_results()
+figures = get_figure_paths()
+summary = get_website_data_summary()
+
+print(f"Loaded {summary['total_records']:,} records")
+print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
+print(f"Generated {len(figures)} figures")
+
+# Ensure figures are saved to disk
+import os
+figures_dir = "figures"
+if not os.path.exists(figures_dir):
+    os.makedirs(figures_dir)
+    print(f"Created {figures_dir} directory")
+
+# List generated figures
+if figures:
+    print("Figure files generated:")
+    for name, path in figures.items():
+        exists = os.path.exists(path)
+        print(f"  {name}: {path} - {'[OK]' if exists else '[ERROR]'}")
+else:
+    print("[WARNING] No figures were generated")
+```
+
+## Key Metrics Overview
+
+```{python}
+#| label: key-metrics
+#| echo: false
+
+# Display key metrics cards
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_key_metrics_cards()
+fig.show()
+```
+
+## Executive Market Overview
+
+```{python}
+#| label: executive-overview
+#| echo: false
+
+# Display executive market overview - different from career progression
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_complete_intelligence_dashboard()
+fig.show()
+```
+
+## Salary Insights
+
+```{python}
+#| label: salary-insights
+#| echo: false
+
+# Display salary insights
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_company_strategy_analysis()
+fig.show()
+```
+
+## Geographic Analysis
+
+```{python}
+#| label: geographic-analysis
+#| echo: false
+
+# Display geographic salary analysis using city_name (plain text)
+from src.visualization import SalaryVisualizer
+visualizer = SalaryVisualizer(df)
+
+# Use city_name which has clean, plain text city names
+geo_fig = visualizer.plot_salary_by_category('city_name')
+geo_fig.update_layout(
+    title="Geographic Salary Analysis: Top Cities by Median Salary",
+    height=600,
+    margin=dict(l=80, r=80, t=100, b=80)
+)
+geo_fig.show()
+```
+
+## AI & Technology Salary Analysis
+
+```{python}
+#| label: ai-analysis
+#| echo: false
+
+# Display AI salary comparison analysis using proper abstraction layer
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_ai_technology_analysis()
+fig.show()
+```
+
+## Career Progression Analysis
+
+```{python}
+#| label: career-progression
+#| echo: false
+
+# Display career progression analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_career_progression_analysis()
+fig.show()
+```
+
+## Education ROI Analysis
+
+```{python}
+#| label: education-roi
+#| echo: false
+
+# Display education ROI analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_education_roi_analysis()
+fig.show()
+```
+
+## Company Strategy Analysis
+
+```{python}
+#| label: company-strategy
+#| echo: false
+
+# Display company strategy analysis
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_company_strategy_analysis()
+fig.show()
+```
+
+## Complete Intelligence Dashboard
+
+```{python}
+#| label: complete-dashboard
+#| echo: false
+
+# Display the complete intelligence dashboard
+from src.visualization.key_findings_dashboard import KeyFindingsDashboard
+dashboard = KeyFindingsDashboard(df)
+fig = dashboard.create_complete_intelligence_dashboard()
+fig.show()
+```
+
+## Key Findings Summary
+
+Based on the comprehensive analysis of job market data:
+
+```{python}
+#| label: summary-stats
+#| echo: false
+#| output: asis
+
+# Display summary statistics using markdown output with error handling
+try:
+    from IPython.display import Markdown, display
+
+    # Build markdown content
+    markdown_content = f"""
+### Market Overview
+
+- **Total Records**: {summary.get('total_records', 'N/A'):,} job postings analyzed
+- **Salary Coverage**: {summary.get('salary_coverage', 0):.1f}% of records have salary data
+- **Industries**: {summary.get('unique_industries', 'N/A')} unique industries represented
+- **Locations**: {summary.get('unique_locations', 'N/A')} unique locations analyzed
+
+### Salary Insights
+"""
+
+    salary_range = summary.get('salary_range', {})
+    median_salary = salary_range.get('median', 0)
+    min_salary = salary_range.get('min', 0)
+    max_salary = salary_range.get('max', 0)
+
+    markdown_content += f"""
+- **Median Salary**: ${median_salary:,.0f}
+- **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}
+- **Data Quality**: High-quality dataset with comprehensive coverage
+
+### Strategic Recommendations
+
+1. **Career Development**: Focus on experience progression for salary growth
+2. **Industry Selection**: Consider high-paying industries for career advancement
+3. **Location Strategy**: Geographic factors significantly impact compensation
+4. **Education Investment**: ROI varies by industry and experience level
+"""
+
+    # Display as markdown
+    display(Markdown(markdown_content))
+
+except Exception as e:
+    # Fallback to basic information
+    from IPython.display import Markdown, display
+
+    fallback_content = f"""
+### Summary Information
+
+**Debug Info**: Error rendering summary - {str(e)}
+
+### Basic Statistics
+
+- **Dataset Shape**: {df.shape}
+- **Available Columns**: {len(df.columns)}
+- **Data Quality**: Processing complete
+"""
+    display(Markdown(fallback_content))
+```
+
+---
+
+*This dashboard provides real-time job market intelligence with automatic data processing and visualization updates.*

@@ -7,7 +7,7 @@ A comprehensive job market analysis platform providing data-driven career insigh
 Transforms complex job market data into actionable career intelligence:
 
 - **Salary Analysis**: Real compensation data across experience levels, education, and geography
-- **Education ROI**: Quantified return on investment for different degree paths  
+- **Education ROI**: Quantified return on investment for different degree paths
 - **Remote Work Intelligence**: Modern workplace flexibility impact on compensation
 - **Geographic Insights**: Location-based career optimization strategies
 
@@ -24,24 +24,47 @@ Transforms complex job market data into actionable career intelligence:
 3. **Explore Core Analysis**: Use sidebar navigation for specific questions
 4. **Interactive Features**: Click charts and dashboards for detailed exploration
 
-### **Code setup**
+### **Developer Setup**
+
+#### First Time Setup
 
 ```bash
 # 1. Clone and setup environment
 git clone https://github.com/samarthya/ad688-scratch
-cd project-from-scratch
+cd ad688-scratch
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 2. Install dependencies  
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Generate website
-quarto render
+# 3. IMPORTANT: Generate processed data (run ONCE, saves 5-10 min on every render!)
+python scripts/generate_processed_data.py
 
-# 4. View website
-quarto preview --no-browser
+# 4. Generate website (fast with preprocessed data!)
+source .venv/bin/activate  # Ensure venv is active
+quarto preview --port 4200
 ```
+
+#### Daily Development Workflow
+
+```bash
+source .venv/bin/activate
+quarto preview --port 4200
+# Edit .qmd files → Changes auto-reload instantly!
+```
+
+#### Regenerate Data (if raw CSV changes)
+
+```bash
+python scripts/generate_processed_data.py --force
+```
+
+**Why the preprocessing step?**
+
+- Raw CSV: 13M rows, 683 MB → Takes 5-10 minutes to process
+- Processed Parquet: 30-50K rows, 120 MB → Loads in 1-2 seconds
+- Run preprocessing ONCE → All subsequent Quarto renders are instant!
 
 ---
 
@@ -56,7 +79,7 @@ quarto preview --no-browser
 - **Industry Benchmarks**: Technology sector salary ranges and percentiles
 - **Company Size Impact**: Startup vs Enterprise compensation strategies (40% average difference)
 
-#### **"Where should I work for best opportunities?"** 
+#### **"Where should I work for best opportunities?"**
 
 - **Geographic Analysis**: Metropolitan area salary comparisons with cost-of-living adjustments
 - **Regional Intelligence**: Industry concentration and growth patterns by location
@@ -81,22 +104,22 @@ quarto preview --no-browser
 ```bash
 ├── Core Analysis (Quarto Website)
 │   ├── index.qmd                 # Homepage with key insights dashboard
-│   ├── salary-analysis.qmd       # Comprehensive compensation analysis  
+│   ├── salary-analysis.qmd       # Comprehensive compensation analysis
 │   ├── regional-trends.qmd       # Geographic intelligence and opportunities
 │   ├── remote-work.qmd           # Remote work impact and strategies
 │   └── data-methodology.qmd      # Technical methodology and validation
 │
-├── Interactive Analysis  
+├── Interactive Analysis
 │   └── notebooks/job_market_skill_analysis.ipynb  # Deep-dive technical analysis
 │
 ├── Data & Processing
 │   ├── src/                      # Python classes and processing pipeline
-│   ├── data/                     # Raw, processed, and external datasets  
+│   ├── data/                     # Raw, processed, and external datasets
 │   └── figures/                  # Generated charts and visualizations
 │
 └── Documentation
     ├── README.md                 # This file - project overview and setup
-    ├── DESIGN.md                 # Technical architecture and implementation  
+    ├── DESIGN.md                 # Technical architecture and implementation
     └── SETUP.md                  # Environment configuration and setup
 ```
 
@@ -107,7 +130,7 @@ quarto preview --no-browser
 ### **For Students Planning Careers:**
 
 1. **Set Realistic Expectations**: Use salary benchmarks for post-graduation planning
-2. **Calculate Education ROI**: Evaluate Master's/PhD investment returns  
+2. **Calculate Education ROI**: Evaluate Master's/PhD investment returns
 3. **Plan Geographic Strategy**: Consider location for internships and first jobs
 4. **Understand Modern Workplace**: Factor remote work into job search strategy
 
@@ -131,11 +154,11 @@ quarto preview --no-browser
 ### **Experience Progression Analysis**
 
 - **Entry Level (0-2 years)**: $65,000 average starting salary
-- **Mid Level (3-7 years)**: $85,000 average (+31% growth)  
+- **Mid Level (3-7 years)**: $85,000 average (+31% growth)
 - **Senior Level (8-15 years)**: $120,000 average (+41% growth)
 - **Executive (15+ years)**: $150,000+ average (+25% leadership premium)
 
-### **Education Return on Investment** 
+### **Education Return on Investment**
 
 - **Bachelor's Degree**: Market baseline (100%)
 - **Master's Degree**: +25% average salary premium
@@ -153,7 +176,7 @@ quarto preview --no-browser
 
 - **Remote Available**: 45% of positions offer full remote work
 - **Hybrid Options**: 30% provide flexible arrangements
-- **On-Site Only**: 25% require physical presence  
+- **On-Site Only**: 25% require physical presence
 - **Salary Impact**: Remote work doesn't reduce compensation in most cases
 
 ---
@@ -170,7 +193,7 @@ quarto preview --no-browser
 ### **Analysis Methods**
 
 - **Statistical Modeling**: Python with pandas, numpy, scipy
-- **Machine Learning**: Scikit-learn for prediction and classification models
+- **Machine Learning**: PySpark MLlib for scalable prediction and classification models
 - **Visualization**: Plotly for interactive charts, matplotlib for static analysis
 - **Web Framework**: Quarto for integrated analysis and presentation
 
@@ -189,14 +212,14 @@ quarto preview --no-browser
 
 This analysis is designed for educational purposes. Please cite appropriately if used in academic work.
 
-### **For Professional Application** 
+### **For Professional Application**
 
 The insights are based on real market data and suitable for career planning and salary benchmarking.
 
 ### **Technical Contributions**
 
 - Enhance analysis methodology in `src/` modules
-- Improve visualizations in `notebooks/` 
+- Improve visualizations in `notebooks/`
 - Extend geographic or industry coverage
 - Optimize data processing pipeline
 
@@ -205,7 +228,7 @@ The insights are based on real market data and suitable for career planning and 
 ## **Contact & Support**
 
 **Author**: Saurabh Sharma (Boston University)
-**Repository**: [GitHub - ad688-scratch](https://github.com/samarthya/ad688-scratch)  
+**Repository**: [GitHub - ad688-scratch](https://github.com/samarthya/ad688-scratch)
 **Technical Documentation**: See `DESIGN.md` for detailed implementation guide
 **Analysis Methodology**: See `salary-analysis.qmd` for detailed methodology and interpretation
 

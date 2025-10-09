@@ -16,14 +16,9 @@ Modules:
     quarto_charts: Quarto-specific chart exports
 """
 
-from .quarto_charts import QuartoChartExporter
-from .chart_config import SalaryDisparityChartConfig
-from . import plots
-from . import simple_plots
+from .charts import SalaryVisualizer, QuartoChartExporter
 
 __all__ = [
+    "SalaryVisualizer",
     "QuartoChartExporter",
-    "SalaryDisparityChartConfig",
-    "plots",
-    "simple_plots",
 ]
