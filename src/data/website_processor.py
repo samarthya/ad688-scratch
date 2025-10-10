@@ -51,7 +51,7 @@ def _generate_common_figures(df: Any) -> None:
 
     # Generate figures
     print("\n[FIGURES] Generating common visualizations...")
-    print(f"  Output directory: {figures_dir}")
+    print(f" Output directory: {figures_dir}")
 
     try:
         from src.visualization.charts import SalaryVisualizer
@@ -60,16 +60,16 @@ def _generate_common_figures(df: Any) -> None:
 
         # Generate key findings graphics
         key_findings = visualizer.create_key_findings_graphics(str(figures_dir))
-        print(f"  ✓ Generated {len(key_findings)} key finding graphics")
+        print(f" Generated {len(key_findings)} key finding graphics")
 
         # Generate executive dashboard suite
         dashboard = visualizer.create_executive_dashboard_suite(str(figures_dir))
-        print(f"  ✓ Generated {len(dashboard)} executive dashboard graphics")
+        print(f" Generated {len(dashboard)} executive dashboard graphics")
 
-        print(f"  ✓ Total figures saved: {len(key_findings) + len(dashboard)}")
+        print(f" Total figures saved: {len(key_findings) + len(dashboard)}")
 
     except Exception as e:
-        print(f"  [WARNING] Figure generation failed: {e}")
+        print(f" [WARNING] Figure generation failed: {e}")
         # Don't fail the entire load if figure generation fails
         import traceback
         traceback.print_exc()
@@ -97,9 +97,9 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
     # Check if processed data exists (FAST PATH)
     if parquet_path.exists():
         print("Loading job market data...")
-        print(f"  Loading processed Parquet (fast!)...")
+        print(f" Loading processed Parquet (fast!)...")
         df = pd.read_parquet(parquet_path)
-        print(f"  Loaded {len(df):,} records in 1-2 seconds")
+        print(f" Loaded {len(df):,} records in 1-2 seconds")
 
         # Generate common figures if they don't exist (OPTIMIZATION)
         _generate_common_figures(df)
@@ -112,13 +112,13 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
         raise FileNotFoundError(
             "No data source found.\n\n"
             "Expected data location:\n"
-            f"  {raw_csv_path}\n\n"
+            f" {raw_csv_path}\n\n"
             "Please ensure raw data file exists in the data/raw/ directory."
         )
 
     print("Loading job market data...")
-    print(f"  Processing raw data with PySpark (first time - may take 5-10 minutes)...")
-    print(f"  Raw CSV: {raw_csv_path.name}")
+    print(f" Processing raw data with PySpark (first time - may take 5-10 minutes)...")
+    print(f" Raw CSV: {raw_csv_path.name}")
 
     # Import PySpark processor
     from src.core.processor import JobMarketDataProcessor
@@ -128,7 +128,7 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
     settings = Settings()
     processor = JobMarketDataProcessor(settings=settings)
 
-    print(f"  [PySpark] Loading {raw_csv_path.name}...")
+    print(f" [PySpark] Loading {raw_csv_path.name}...")
 
     # Process with PySpark (this does all the heavy lifting)
     # The processor automatically saves to Parquet in process_raw_data()
@@ -147,27 +147,27 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
 
         if parquet_path.exists():
             file_size = parquet_path.stat().st_size / (1024*1024)
-            print(f"  Saved to {parquet_path.name} ({file_size:.1f} MB)")
-            print(f"  Processed {record_count:,} records")
+            print(f" Saved to {parquet_path.name} ({file_size:.1f} MB)")
+            print(f" Processed {record_count:,} records")
         else:
-            print(f"  [WARNING] Expected Parquet file not found at {parquet_path}")
+            print(f" [WARNING] Expected Parquet file not found at {parquet_path}")
 
-        print(f"  Next run will load from Parquet instantly!")
+        print(f" Next run will load from Parquet instantly!")
 
         # Now load the Parquet with Pandas (efficient for the filtered/processed data)
-        print(f"  [Pandas] Loading processed Parquet...")
+        print(f" [Pandas] Loading processed Parquet...")
         df = pd.read_parquet(parquet_path)
 
         # Generate common figures (OPTIMIZATION)
         _generate_common_figures(df)
 
         summary = get_data_summary(df)
-        print(f"  Loaded {len(df):,} records for analysis")
+        print(f" Loaded {len(df):,} records for analysis")
 
         return df, summary
 
     except Exception as e:
-        print(f"  [ERROR] PySpark processing failed: {e}")
+        print(f" [ERROR] PySpark processing failed: {e}")
         import traceback
         traceback.print_exc()
         # Try to stop Spark if it was started

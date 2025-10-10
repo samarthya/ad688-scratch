@@ -36,8 +36,8 @@ salary_col = get_analysis_column('salary')
 city_col = get_analysis_column('city')
 
 print(f"[OK] Loaded {len(df):,} records")
-print(f"   Salary column: {salary_col}")
-print(f"   Location column: {city_col}")
+print(f" Salary column: {salary_col}")
+print(f" Location column: {city_col}")
 ```
 
 ## Salary Distribution Analysis
@@ -81,10 +81,10 @@ fig.show()
 
 # Print key statistics
 print(f"\n[DATA] Salary Statistics:")
-print(f"   Median: ${median_salary:,.0f}")
-print(f"   Mean: ${df[salary_col].mean():,.0f}")
-print(f"   25th percentile: ${df[salary_col].quantile(0.25):,.0f}")
-print(f"   75th percentile: ${df[salary_col].quantile(0.75):,.0f}")
+print(f" Median: ${median_salary:,.0f}")
+print(f" Mean: ${df[salary_col].mean():,.0f}")
+print(f" 25th percentile: ${df[salary_col].quantile(0.25):,.0f}")
+print(f" 75th percentile: ${df[salary_col].quantile(0.75):,.0f}")
 ```
 
 ## Geographic Salary Analysis
@@ -125,11 +125,11 @@ spark = SparkSession.builder \
 
 # Filter out rows with null salaries FIRST
 print(f"\n[DATA] Filtering for valid salaries:")
-print(f"   Total records: {len(df):,}")
+print(f" Total records: {len(df):,}")
 valid_salary_mask = df[salary_col].notna()
 df_model = df[valid_salary_mask].copy()
-print(f"   With valid salary: {len(df_model):,}")
-print(f"   Filtered out: {len(df) - len(df_model):,}")
+print(f" With valid salary: {len(df_model):,}")
+print(f" Filtered out: {len(df) - len(df_model):,}")
 
 # Convert to Spark DataFrame
 spark_df = spark.createDataFrame(df_model)
@@ -194,15 +194,15 @@ evaluator_mae = RegressionEvaluator(labelCol=salary_col, predictionCol="predicti
 mae = evaluator_mae.evaluate(predictions)
 
 print(f"\n[MODEL] PySpark MLlib Linear Regression Results:")
-print(f"   R² Score: {r2:.3f} (explains {r2*100:.1f}% of variance)")
-print(f"   Mean Absolute Error: ${mae:,.0f}")
-print(f"   Training samples: {train_df.count():,}")
-print(f"   Test samples: {test_df.count():,}")
+print(f" R² Score: {r2:.3f} (explains {r2*100:.1f}% of variance)")
+print(f" Mean Absolute Error: ${mae:,.0f}")
+print(f" Training samples: {train_df.count():,}")
+print(f" Test samples: {test_df.count():,}")
 
 # Show feature importance
 print(f"\n[INFO] Model trained with {len(feature_cols)} feature groups:")
 for feat in feature_cols:
-    print(f"   - {feat}")
+    print(f" - {feat}")
 
 # Stop Spark
 spark.stop()
@@ -217,7 +217,7 @@ Based on the analysis above, here are actionable recommendations:
 - Consider **cost of living** alongside salary when evaluating offers
 - **Remote opportunities** may offer flexibility while maintaining competitive salaries
 
-### 💼 Career Planning
+### Career Planning
 - **Experience matters**: Salary generally increases with career progression
 - **Specialization pays**: Certain skills and titles command premium compensation
 - **Market awareness**: Understanding salary ranges helps in negotiations

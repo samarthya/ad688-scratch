@@ -56,7 +56,7 @@ class JobMarketReportGenerator:
         self.doc = Document()
         self._setup_document_styles()
 
-        print("📄 DOCX Report Generator initialized")
+        print(" DOCX Report Generator initialized")
 
     def _setup_document_styles(self):
         """Set up document styles for professional formatting."""
@@ -127,8 +127,8 @@ class JobMarketReportGenerator:
         self.doc.save(output_path)
 
         print(f"[OK] Report generated successfully: {output_path}")
-        print(f"   📄 Document contains {len(self.doc.paragraphs)} paragraphs")
-        print(f"   [DATA] File size: {output_path.stat().st_size / 1024:.1f} KB")
+        print(f" Document contains {len(self.doc.paragraphs)} paragraphs")
+        print(f" [DATA] File size: {output_path.stat().st_size / 1024:.1f} KB")
 
         return str(output_path)
 

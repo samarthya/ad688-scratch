@@ -99,6 +99,32 @@ This ensures:
 
 ---
 
+## Visualization
+
+For Plotly visualizations, use the **centralized `display_figure()` utility**:
+
+```python
+from src.visualization.charts import display_figure
+import plotly.graph_objects as go
+
+# Create a figure
+fig = go.Figure(...)
+
+# Display and save automatically
+display_figure(fig, "my_chart")  # Saves to figures/my_chart.png
+```
+
+**Benefits**:
+
+- Automatic PNG export for reports (high-quality, 1200x800, scale=2)
+- Consistent file naming and organization
+- Centralized error handling
+- Works in both notebooks and Quarto QMD files
+
+**Note**: For matplotlib plots, continue using `plt.show()` as usual.
+
+---
+
 ## Standardized Column Names
 
 After PySpark ETL, all columns use **snake_case** naming:

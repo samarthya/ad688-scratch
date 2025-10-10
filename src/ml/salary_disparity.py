@@ -215,10 +215,10 @@ class SalaryDisparityAnalyzer:
             # Salary disparity insights
             disparity = clustering['disparity_patterns']
             report += f"Key Insights:\n"
-            report += f"  • Highest salary cluster: {disparity['highest_salary_cluster']}\n"
-            report += f"  • Lowest salary cluster: {disparity['lowest_salary_cluster']}\n"
-            report += f"  • Salary range ratio: {disparity['salary_range_ratio']:.2f}\n"
-            report += f"  • Average salary ratio: {disparity['avg_salary_ratio']:.2f}\n\n"
+            report += f" • Highest salary cluster: {disparity['highest_salary_cluster']}\n"
+            report += f" • Lowest salary cluster: {disparity['lowest_salary_cluster']}\n"
+            report += f" • Salary range ratio: {disparity['salary_range_ratio']:.2f}\n"
+            report += f" • Average salary ratio: {disparity['avg_salary_ratio']:.2f}\n\n"
 
         # Regression analysis summary
         if 'regression' in self.analysis_results:
@@ -229,16 +229,16 @@ class SalaryDisparityAnalyzer:
             # Linear regression results
             lr_metrics = regression['linear_regression']['test_metrics']
             report += f"Multiple Linear Regression:\n"
-            report += f"  • R²: {lr_metrics['r2']:.4f}\n"
-            report += f"  • RMSE: ${lr_metrics['rmse']:,.0f}\n"
-            report += f"  • MAPE: {lr_metrics['mape_percent']:.2f}%\n\n"
+            report += f" • R²: {lr_metrics['r2']:.4f}\n"
+            report += f" • RMSE: ${lr_metrics['rmse']:,.0f}\n"
+            report += f" • MAPE: {lr_metrics['mape_percent']:.2f}%\n\n"
 
             # Random forest results
             rf_metrics = regression['random_forest_regression']['test_metrics']
             report += f"Random Forest Regression:\n"
-            report += f"  • R²: {rf_metrics['r2']:.4f}\n"
-            report += f"  • RMSE: ${rf_metrics['rmse']:,.0f}\n"
-            report += f"  • MAPE: {rf_metrics['mape_percent']:.2f}%\n\n"
+            report += f" • R²: {rf_metrics['r2']:.4f}\n"
+            report += f" • RMSE: ${rf_metrics['rmse']:,.0f}\n"
+            report += f" • MAPE: {rf_metrics['mape_percent']:.2f}%\n\n"
 
         # Classification analysis summary
         if 'classification' in self.analysis_results:
@@ -249,33 +249,33 @@ class SalaryDisparityAnalyzer:
             # Logistic regression results
             lr_metrics = classification['logistic_regression']['test_metrics']
             report += f"Logistic Regression (Above-Average Salary):\n"
-            report += f"  • Accuracy: {lr_metrics['accuracy']:.4f}\n"
-            report += f"  • F1 Score: {lr_metrics['f1_score']:.4f}\n"
-            report += f"  • Precision: {lr_metrics['precision']:.4f}\n\n"
+            report += f" • Accuracy: {lr_metrics['accuracy']:.4f}\n"
+            report += f" • F1 Score: {lr_metrics['f1_score']:.4f}\n"
+            report += f" • Precision: {lr_metrics['precision']:.4f}\n\n"
 
             # Random forest results
             rf_metrics = classification['random_forest_classification']['test_metrics']
             report += f"Random Forest Classification (Above-Average Salary):\n"
-            report += f"  • Accuracy: {rf_metrics['accuracy']:.4f}\n"
-            report += f"  • F1 Score: {rf_metrics['f1_score']:.4f}\n"
-            report += f"  • Precision: {rf_metrics['precision']:.4f}\n\n"
+            report += f" • Accuracy: {rf_metrics['accuracy']:.4f}\n"
+            report += f" • F1 Score: {rf_metrics['f1_score']:.4f}\n"
+            report += f" • Precision: {rf_metrics['precision']:.4f}\n\n"
 
         # Recommendations
         report += "4. RECOMMENDATIONS FOR JOB SEEKERS\n"
         report += "-" * 40 + "\n"
         report += "Based on the analysis:\n"
-        report += "  • Focus on developing AI and technical skills\n"
-        report += "  • Consider location impact on salary potential\n"
-        report += "  • Target industries with higher growth rates\n"
-        report += "  • Leverage education and experience for salary negotiation\n"
-        report += "  • Consider remote work opportunities for flexibility\n\n"
+        report += " • Focus on developing AI and technical skills\n"
+        report += " • Consider location impact on salary potential\n"
+        report += " • Target industries with higher growth rates\n"
+        report += " • Leverage education and experience for salary negotiation\n"
+        report += " • Consider remote work opportunities for flexibility\n\n"
 
         report += "5. KEY INSIGHTS\n"
         report += "-" * 15 + "\n"
-        report += "  • Salary disparities exist across job market segments\n"
-        report += "  • Skills and location significantly impact salary potential\n"
-        report += "  • Machine learning models can predict salary with reasonable accuracy\n"
-        report += "  • Job classification helps identify high-paying opportunities\n"
+        report += " • Salary disparities exist across job market segments\n"
+        report += " • Skills and location significantly impact salary potential\n"
+        report += " • Machine learning models can predict salary with reasonable accuracy\n"
+        report += " • Job classification helps identify high-paying opportunities\n"
 
         return report
 
@@ -339,7 +339,7 @@ class SalaryDisparityAnalyzer:
 
         summary += f"Analysis Components Completed:\n"
         for component in self.analysis_results.keys():
-            summary += f"  ✓ {component.replace('_', ' ').title()}\n"
+            summary += f" {component.replace('_', ' ').title()}\n"
 
         summary += f"\nTotal Features Used: {len(self.feature_columns)}\n"
         summary += f"Feature Categories: {len(self.feature_engineer.feature_categories)}\n"

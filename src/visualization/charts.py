@@ -8,6 +8,7 @@ combining functionality from multiple visualization modules.
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Any
+from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -20,6 +21,36 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 from .theme import JobMarketTheme, apply_salary_theme, apply_industry_theme, apply_experience_theme, apply_geographic_theme
+
+
+def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures/'):
+    """
+    Display and optionally save a Plotly figure.
+
+    This is a standalone utility function for use in Quarto documents and notebooks.
+
+    Args:
+        fig: Plotly figure object
+        filename: Optional filename (without extension) to save the figure as PNG
+        save_dir: Directory to save figures (default: 'figures/')
+
+    Example:
+        >>> fig = go.Figure(...)
+        >>> display_figure(fig, "my_chart")  # Saves to figures/my_chart.png and displays
+    """
+    if filename:
+        png_path = Path(save_dir) / f"{filename}.png"
+        png_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Save as high-quality PNG
+            fig.write_image(str(png_path), width=1200, height=800, scale=2)
+        except Exception as e:
+            print(f"Warning: Could not save figure as PNG: {e}")
+            print("Install kaleido for static image export: pip install kaleido")
+
+    # Display the figure
+    fig.show()
 
 
 class SalaryVisualizer:

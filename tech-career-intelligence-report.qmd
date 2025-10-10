@@ -31,49 +31,21 @@ python:
 ---
 
 ```{python}
-#| label: setup-format-detection
+#| label: setup-common
 #| include: false
 
-# Detect output format for conditional rendering
+# Common setup for all formats
 import sys
 import os
-from pathlib import Path
+import plotly.io as pio
 
-# Detect if rendering to DOCX by checking Quarto's format metadata
-is_docx = False
-try:
-    # Check for QUARTO_FORMAT environment variable (Quarto sets this)
-    quarto_format = os.environ.get('QUARTO_FORMAT', '')
-    if 'docx' in quarto_format.lower():
-        is_docx = True
-    # Also check command line args
-    elif any('docx' in str(arg).lower() for arg in sys.argv):
-        is_docx = True
-    # Check if in docx-specific context
-    elif hasattr(__builtins__, 'display'):
-        # In Jupyter/interactive context - use HTML
-        is_docx = False
-except:
-    is_docx = False
+# Import display_figure from visualization module
+from src.visualization.charts import display_figure
 
-# Helper function to display figures based on format
-def display_figure(fig, filename=None):
-    """Display figure appropriately based on output format"""
-    # Always try to save as PNG for DOCX compatibility
-    if filename:
-        png_path = f"figures/{filename}.png"
-        Path("figures").mkdir(exist_ok=True)
-        try:
-            # Save static PNG (works for both HTML and DOCX)
-            fig.write_image(png_path, width=1200, height=800, scale=2)
-        except Exception as e:
-            pass  # Silently fail if kaleido not available
+# Configure Plotly renderer for static images (svg+notebook for HTML, png for DOCX)
+pio.renderers.default = "svg+notebook"
 
-    # Always show interactive for rendering
-    fig.show()
-
-print(f"Format detection: DOCX mode = {is_docx}")
-print(f"Figures will be saved to figures/ directory for DOCX compatibility")
+print("Report setup complete - using src.visualization.charts.display_figure()")
 ```
 
 # Executive Summary
@@ -122,7 +94,7 @@ summary = get_website_data_summary()
 print(f"[OK] Successfully processed {summary['total_records']:,} job postings")
 print(f"[DATA] Data quality: {summary['salary_coverage']:.1f}% salary coverage")
 print(f" Geographic coverage: {summary['unique_locations']} unique locations")
-print(f"🏢 Industry coverage: {summary['unique_industries']} unique industries")
+print(f" Industry coverage: {summary['unique_industries']} unique industries")
 ```
 
 ### Data Quality and Validation
@@ -160,8 +132,8 @@ fig = make_subplots(
     ],
     specs=[[{"type": "indicator"}, {"type": "indicator"}],
            [{"type": "indicator"}, {"type": "indicator"}]],
-    vertical_spacing=0.3,
-    horizontal_spacing=0.2
+    vertical_spacing=0.4,
+    horizontal_spacing=0.25
 )
 
 # Add indicator traces
@@ -194,13 +166,13 @@ fig.add_trace(go.Indicator(
 ), row=2, col=2)
 
 fig.update_layout(
-    height=600,
+    height=700,
     showlegend=False,
     title_text="Key Salary Metrics Dashboard",
     title_x=0.5,
     title_font_size=20,
     font=dict(size=14),
-    margin=dict(l=50, r=50, t=100, b=50),
+    margin=dict(l=50, r=50, t=120, b=80),
     plot_bgcolor='white',
     paper_bgcolor='white'
 )
@@ -213,9 +185,10 @@ display_figure(fig, "kpi_dashboard")
 Understanding career progression patterns is crucial for strategic career planning. Our analysis reveals distinct salary tiers and growth trajectories across experience levels.
 
 ```{python}
-#| label: experience-progression-analysis
+#| label: experience-data-prep
+#| include: false
 
-# Create comprehensive experience level analysis
+# Prepare experience data (shared by both HTML and DOCX versions)
 import plotly.express as px
 from plotly.subplots import make_subplots
 
@@ -231,7 +204,32 @@ else:
     salaries = [65000, 95000, 140000, 200000]
     counts = [1200, 1800, 900, 200]
 
-# Create comprehensive 4-panel experience analysis
+# Calculate growth rates
+growth_rates = []
+for i in range(1, len(salaries)):
+    growth = ((salaries[i] - salaries[i-1]) / salaries[i-1]) * 100
+    growth_rates.append(growth)
+
+# Statistics table data
+total_jobs = sum(counts)
+percentages = [(count/total_jobs)*100 for count in counts]
+table_data = []
+for i, level in enumerate(levels):
+    table_data.append([
+        level,
+        f"${salaries[i]:,.0f}",
+        f"{counts[i]:,}",
+        f"{percentages[i]:.1f}%"
+    ])
+```
+
+::: {.content-visible when-format="html"}
+
+```{python}
+#| label: experience-html-2x2
+#| echo: false
+
+# HTML: Render as 2x2 interactive subplot
 fig = make_subplots(
     rows=2, cols=2,
     subplot_titles=[
@@ -243,94 +241,54 @@ fig = make_subplots(
     specs=[[{"type": "bar"}, {"type": "pie"}],
            [{"type": "scatter"}, {"type": "table"}]],
     vertical_spacing=0.15,
-    horizontal_spacing=0.1
+    horizontal_spacing=0.12
 )
 
 # 1. Salary progression bar chart
-fig.add_trace(
-    go.Bar(
-        x=levels,
-        y=salaries,
-        name="Median Salary",
-        marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
-        text=[f'${s:,.0f}' for s in salaries],
-        textposition='auto',
-        showlegend=False
-    ),
-    row=1, col=1
-)
+fig.add_trace(go.Bar(
+    x=levels, y=salaries,
+    marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+    text=[f'${s:,.0f}' for s in salaries],
+    textposition='auto', showlegend=False
+), row=1, col=1)
 
 # 2. Job market distribution pie chart
-fig.add_trace(
-    go.Pie(
-        labels=levels,
-        values=counts,
-        name="Job Distribution",
-        marker_colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
-        showlegend=False
-    ),
-    row=1, col=2
-)
+fig.add_trace(go.Pie(
+    labels=levels, values=counts,
+    marker_colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+    showlegend=False
+), row=1, col=2)
 
 # 3. Career growth trajectory
-growth_rates = []
-for i in range(1, len(salaries)):
-    growth = ((salaries[i] - salaries[i-1]) / salaries[i-1]) * 100
-    growth_rates.append(growth)
-
-fig.add_trace(
-    go.Scatter(
-        x=levels[1:],
-        y=growth_rates,
-        mode='lines+markers',
-        name="Growth Rate",
-        line=dict(color='#2ca02c', width=3),
-        marker=dict(size=10),
-        showlegend=False
-    ),
-    row=2, col=1
-)
+fig.add_trace(go.Scatter(
+    x=levels[1:], y=growth_rates,
+    mode='lines+markers',
+    line=dict(color='#2ca02c', width=3),
+    marker=dict(size=10),
+    showlegend=False
+), row=2, col=1)
 
 # 4. Statistics table
-total_jobs = sum(counts)
-percentages = [(count/total_jobs)*100 for count in counts]
-
-table_data = []
-for i, level in enumerate(levels):
-    table_data.append([
-        level,
-        f"${salaries[i]:,.0f}",
-        f"{counts[i]:,}",
-        f"{percentages[i]:.1f}%"
-    ])
-
-fig.add_trace(
-    go.Table(
-        header=dict(
-            values=["Experience Level", "Median Salary", "Job Count", "Market Share"],
-            fill_color='#f0f0f0',
-            font=dict(size=12, color='black'),
-            align='left'
-        ),
-        cells=dict(
-            values=list(zip(*table_data)),
-            fill_color='white',
-            font=dict(size=11),
-            align='left'
-        )
+fig.add_trace(go.Table(
+    header=dict(
+        values=["Experience Level", "Median Salary", "Job Count", "Market Share"],
+        fill_color='#f0f0f0', font=dict(size=11, color='black'),
+        align='left'
     ),
-    row=2, col=2
-)
+    cells=dict(
+        values=list(zip(*table_data)),
+        fill_color='white', font=dict(size=10),
+        align='left'
+    )
+), row=2, col=2)
 
 fig.update_layout(
-    height=800,
+    height=900,
     title_text="Comprehensive Experience Level Analysis",
-    title_x=0.5,
-    title_font_size=18,
-    font=dict(size=12),
+    title_x=0.5, title_font_size=18,
+    font=dict(size=11),
     margin=dict(l=50, r=50, t=100, b=50),
-    plot_bgcolor='white',
-    paper_bgcolor='white'
+    plot_bgcolor='white', paper_bgcolor='white'
 )
 
 # Update axes
@@ -339,8 +297,109 @@ fig.update_yaxes(title_text="Median Salary ($)", row=1, col=1)
 fig.update_xaxes(title_text="Career Transition", row=2, col=1, tickangle=45)
 fig.update_yaxes(title_text="Growth Rate (%)", row=2, col=1)
 
-display_figure(fig, "career_progression")
+display_figure(fig, "career_progression_combined")
 ```
+
+:::
+
+::: {.content-visible when-format="docx"}
+
+```{python}
+#| label: experience-docx-separate-1
+#| echo: false
+
+# DOCX: Figure 1 - Salary Progression Bar Chart
+fig1 = go.Figure()
+fig1.add_trace(go.Bar(
+    x=levels, y=salaries,
+    marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+    text=[f'${s:,.0f}' for s in salaries],
+    textposition='outside', textfont=dict(size=14)
+))
+fig1.update_layout(
+    title="Salary Progression by Experience Level",
+    title_x=0.5, title_font_size=18,
+    xaxis_title="Experience Level", yaxis_title="Median Salary ($)",
+    height=500, font=dict(size=12),
+    margin=dict(l=80, r=80, t=100, b=80),
+    plot_bgcolor='white', paper_bgcolor='white', showlegend=False
+)
+display_figure(fig1, "exp_salary_progression")
+```
+
+```{python}
+#| label: experience-docx-separate-2
+#| echo: false
+
+# DOCX: Figure 2 - Job Market Distribution Pie Chart
+fig2 = go.Figure()
+fig2.add_trace(go.Pie(
+    labels=levels, values=counts,
+    marker_colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+    textinfo='label+percent', textfont=dict(size=13), hole=0.3
+))
+fig2.update_layout(
+    title="Job Market Distribution by Experience Level",
+    title_x=0.5, title_font_size=18, height=500,
+    font=dict(size=12), margin=dict(l=50, r=50, t=100, b=50),
+    paper_bgcolor='white'
+)
+display_figure(fig2, "exp_market_distribution")
+```
+
+```{python}
+#| label: experience-docx-separate-3
+#| echo: false
+
+# DOCX: Figure 3 - Career Growth Trajectory
+fig3 = go.Figure()
+fig3.add_trace(go.Scatter(
+    x=levels[1:], y=growth_rates,
+    mode='lines+markers+text',
+    line=dict(color='#2ca02c', width=4),
+    marker=dict(size=15, color='#2ca02c'),
+    text=[f'{g:.1f}%' for g in growth_rates],
+    textposition='top center', textfont=dict(size=14)
+))
+fig3.update_layout(
+    title="Career Growth Rate Between Experience Levels",
+    title_x=0.5, title_font_size=18,
+    xaxis_title="Career Transition", yaxis_title="Salary Growth Rate (%)",
+    height=500, font=dict(size=12),
+    margin=dict(l=80, r=80, t=100, b=80),
+    plot_bgcolor='white', paper_bgcolor='white', showlegend=False
+)
+display_figure(fig3, "exp_growth_trajectory")
+```
+
+```{python}
+#| label: experience-docx-separate-4
+#| echo: false
+
+# DOCX: Figure 4 - Statistics Table
+fig4 = go.Figure()
+fig4.add_trace(go.Table(
+    header=dict(
+        values=["<b>Experience Level</b>", "<b>Median Salary</b>", "<b>Job Count</b>", "<b>Market Share</b>"],
+        fill_color='#1f77b4', font=dict(size=14, color='white'),
+        align='left', height=40
+    ),
+    cells=dict(
+        values=list(zip(*table_data)),
+        fill_color=[['white', '#f0f0f0']*2],
+        font=dict(size=13), align='left', height=35
+    )
+))
+fig4.update_layout(
+    title="Experience Level Statistics Summary",
+    title_x=0.5, title_font_size=18, height=400,
+    font=dict(size=12), margin=dict(l=50, r=50, t=100, b=50),
+    paper_bgcolor='white'
+)
+display_figure(fig4, "exp_statistics_table")
+```
+
+:::
 
 ### Key Insights from Experience Analysis
 
@@ -494,6 +553,295 @@ except Exception as e:
     print(f"Correlation analysis temporarily unavailable: {e}")
     print("Correlation analysis reveals key relationships between salary factors.")
 ```
+
+## Employment Type and Remote Work Analysis
+
+The modern workforce has seen significant shifts in employment arrangements and remote work options. This section analyzes salary patterns across different employment types and remote work configurations.
+
+```{python}
+#| label: employment-remote-analysis
+#| echo: false
+
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Prepare data for employment type analysis
+emp_salary = df.groupby('employment_type_name')['salary_avg'].agg([
+    ('count', 'count'),
+    ('median', 'median'),
+    ('mean', 'mean')
+]).reset_index()
+
+# Filter out rows with no salary data
+emp_salary = emp_salary[emp_salary['count'] > 0].sort_values('median', ascending=False)
+
+# Prepare data for remote type analysis
+remote_salary = df.groupby('remote_type_name')['salary_avg'].agg([
+    ('count', 'count'),
+    ('median', 'median'),
+    ('mean', 'mean')
+]).reset_index()
+
+remote_salary = remote_salary[remote_salary['count'] > 0].sort_values('median', ascending=False)
+
+# Calculate job distribution percentages
+total_jobs = len(df)
+emp_salary['percentage'] = (emp_salary['count'] / total_jobs * 100).round(1)
+remote_salary['percentage'] = (remote_salary['count'] / total_jobs * 100).round(1)
+```
+
+### Employment Type Salary Comparison
+
+```{python}
+#| label: employment-type-salary
+#| echo: false
+
+# Create employment type visualization
+fig = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=["Median Salary by Employment Type", "Job Market Distribution"],
+    specs=[[{"type": "bar"}, {"type": "pie"}]]
+)
+
+# Salary bar chart
+fig.add_trace(
+    go.Bar(
+        y=emp_salary['employment_type_name'],
+        x=emp_salary['median'],
+        orientation='h',
+        text=[f'${m:,.0f}' for m in emp_salary['median']],
+        textposition='outside',
+        marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'][:len(emp_salary)],
+        showlegend=False
+    ),
+    row=1, col=1
+)
+
+# Distribution pie chart
+fig.add_trace(
+    go.Pie(
+        labels=emp_salary['employment_type_name'],
+        values=emp_salary['count'],
+        text=[f'{p}%' for p in emp_salary['percentage']],
+        textinfo='label+text',
+        marker_colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'][:len(emp_salary)],
+        showlegend=False
+    ),
+    row=1, col=2
+)
+
+fig.update_layout(
+    height=500,
+    title_text="Employment Type Analysis: Salary and Market Share",
+    title_x=0.5,
+    title_font_size=18,
+    font=dict(size=12),
+    margin=dict(l=150, r=50, t=100, b=50),
+    plot_bgcolor='white',
+    paper_bgcolor='white'
+)
+
+fig.update_xaxes(title_text="Median Salary ($)", row=1, col=1)
+
+display_figure(fig, "employment_type_analysis")
+```
+
+```{python}
+#| label: employment-insights
+#| output: asis
+
+from IPython.display import Markdown, display
+
+# Calculate insights
+ft_median = emp_salary[emp_salary['employment_type_name'] == 'Full-time (> 32 hours)']['median'].iloc[0] if len(emp_salary[emp_salary['employment_type_name'] == 'Full-time (> 32 hours)']) > 0 else 0
+pt_median = emp_salary[emp_salary['employment_type_name'].str.contains('Part-time', na=False)]['median'].mean()
+ft_pct = emp_salary[emp_salary['employment_type_name'] == 'Full-time (> 32 hours)']['percentage'].iloc[0] if len(emp_salary[emp_salary['employment_type_name'] == 'Full-time (> 32 hours)']) > 0 else 0
+
+insights = f"""
+**Key Findings: Employment Type**
+
+- **Full-time Dominance**: {ft_pct:.1f}% of job postings are full-time positions
+- **Salary Premium**: Full-time median salary (${ft_median:,.0f}) is {((ft_median/pt_median - 1) * 100):.1f}% higher than part-time
+- **Market Reality**: Part-time positions represent a small but consistent segment
+- **Compensation Structure**: Full-time positions offer more competitive base salaries
+"""
+
+display(Markdown(insights))
+```
+
+### Remote Work Salary Analysis
+
+```{python}
+#| label: remote-work-salary
+#| echo: false
+
+# Create remote work visualization
+fig = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=["Median Salary by Remote Type", "Remote Work Distribution"],
+    specs=[[{"type": "bar"}, {"type": "pie"}]],
+    horizontal_spacing=0.15
+)
+
+# Salary bar chart
+colors_remote = {
+    'Remote': '#2ca02c',
+    'Hybrid Remote': '#ff7f0e',
+    'Not Remote': '#d62728',
+    'Undefined': '#7f7f7f'
+}
+
+bar_colors = [colors_remote.get(rt, '#1f77b4') for rt in remote_salary['remote_type_name']]
+
+fig.add_trace(
+    go.Bar(
+        y=remote_salary['remote_type_name'],
+        x=remote_salary['median'],
+        orientation='h',
+        text=[f'${m:,.0f}' for m in remote_salary['median']],
+        textposition='outside',
+        marker_color=bar_colors,
+        showlegend=False
+    ),
+    row=1, col=1
+)
+
+# Distribution pie chart
+fig.add_trace(
+    go.Pie(
+        labels=remote_salary['remote_type_name'],
+        values=remote_salary['count'],
+        text=[f'{p}%' for p in remote_salary['percentage']],
+        textinfo='label+text',
+        marker_colors=[colors_remote.get(rt, '#1f77b4') for rt in remote_salary['remote_type_name']],
+        showlegend=False
+    ),
+    row=1, col=2
+)
+
+fig.update_layout(
+    height=500,
+    title_text="Remote Work Analysis: Salary and Availability",
+    title_x=0.5,
+    title_font_size=18,
+    font=dict(size=12),
+    margin=dict(l=120, r=50, t=100, b=50),
+    plot_bgcolor='white',
+    paper_bgcolor='white'
+)
+
+fig.update_xaxes(title_text="Median Salary ($)", row=1, col=1)
+
+display_figure(fig, "remote_work_analysis")
+```
+
+```{python}
+#| label: remote-insights
+#| output: asis
+
+from IPython.display import Markdown, display
+
+# Calculate remote work insights
+remote_defined = remote_salary[remote_salary['remote_type_name'] != 'Undefined']
+if len(remote_defined) > 0:
+    remote_row = remote_defined[remote_defined['remote_type_name'] == 'Remote']
+    hybrid_row = remote_defined[remote_defined['remote_type_name'] == 'Hybrid Remote']
+    not_remote_row = remote_defined[remote_defined['remote_type_name'] == 'Not Remote']
+
+    remote_median = remote_row['median'].iloc[0] if len(remote_row) > 0 else 0
+    hybrid_median = hybrid_row['median'].iloc[0] if len(hybrid_row) > 0 else 0
+    not_remote_median = not_remote_row['median'].iloc[0] if len(not_remote_row) > 0 else 0
+
+    remote_pct = remote_row['percentage'].iloc[0] if len(remote_row) > 0 else 0
+    defined_pct = remote_defined['percentage'].sum()
+
+    insights = f"""
+**Key Findings: Remote Work**
+
+- **Remote Work Availability**: {remote_pct:.1f}% of positions explicitly offer full remote work
+- **Remote Salary Premium**: Fully remote positions pay ${remote_median:,.0f} median salary
+- **Hybrid Option**: Hybrid remote median at ${hybrid_median:,.0f}, balancing flexibility and presence
+- **On-site Compensation**: Traditional on-site roles median at ${not_remote_median:,.0f}
+- **Market Trend**: Remote work becoming standard, with {defined_pct:.1f}% of jobs specifying remote policy
+- **Recommendation**: Remote roles offer competitive salaries and flexibility - strong option for job seekers
+"""
+
+    display(Markdown(insights))
+```
+
+### Combined Analysis: Employment & Remote Factors
+
+```{python}
+#| label: employment-remote-combined
+#| echo: false
+
+import pandas as pd
+
+# Create combined heatmap
+combined = df.groupby(['employment_type_name', 'remote_type_name'])['salary_avg'].agg([
+    ('count', 'count'),
+    ('median', 'median')
+]).reset_index()
+
+# Filter for meaningful combinations (at least 50 records)
+combined = combined[combined['count'] >= 50]
+
+# Pivot for heatmap
+pivot_data = combined.pivot(
+    index='employment_type_name',
+    columns='remote_type_name',
+    values='median'
+)
+
+if not pivot_data.empty:
+    import numpy as np
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_data.values,
+        x=pivot_data.columns,
+        y=pivot_data.index,
+        colorscale='Viridis',
+        text=[[f'${v:,.0f}' if not np.isnan(v) else 'N/A' for v in row] for row in pivot_data.values],
+        texttemplate='%{text}',
+        textfont={"size": 12},
+        colorbar=dict(title="Median<br>Salary ($)")
+    ))
+
+    fig.update_layout(
+        title="Salary Heatmap: Employment Type × Remote Work",
+        xaxis_title="Remote Work Type",
+        yaxis_title="Employment Type",
+        height=500,
+        title_x=0.5,
+        title_font_size=18,
+        font=dict(size=12),
+        margin=dict(l=200, r=100, t=100, b=100),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+
+    display_figure(fig, "employment_remote_heatmap")
+```
+
+```{python}
+#| label: combined-insights
+#| output: asis
+
+from IPython.display import Markdown, display
+
+insights = """
+**Strategic Insights: Employment & Remote Work**
+
+1. **Optimal Combination**: Full-time remote roles offer best salary-flexibility balance
+2. **Hybrid Emerging**: Hybrid remote becoming standard for many employers
+3. **Part-time Flexibility**: Part-time remote work provides alternative career paths
+4. **Market Evolution**: Remote work policies now key factor in job selection
+5. **Geographic Freedom**: Remote work removes location constraints on compensation
+"""
+
+display(Markdown(insights))
+```
+
+---
 
 ## Advanced Analytics: AI and Technology Trends
 

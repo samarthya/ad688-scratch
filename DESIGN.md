@@ -359,10 +359,27 @@ All ML models use PySpark MLlib for distributed machine learning:
 
 **Purpose**: Plotly-based interactive and static charts
 
+#### `src/visualization/charts.py` - display_figure (Utility Function)
+
+```python
+from src.visualization.charts import display_figure
+
+# Simplified figure display and saving for Quarto/notebooks
+fig = go.Figure(...)
+display_figure(fig, "my_chart")  # Saves to figures/my_chart.png and displays
+
+# Benefits:
+# - Centralized figure saving logic
+# - Automatic directory creation
+# - High-quality PNG export (1200x800, scale=2)
+# - Consistent across QMD files and notebooks
+# - Proper error handling
+```
+
 #### `src/visualization/charts.py` - SalaryVisualizer
 
 ```python
-from src.visualization import SalaryVisualizer
+from src.visualization import SalaryVisualizer, display_figure
 import pandas as pd
 
 df = pd.read_parquet('data/processed/job_market_processed.parquet')
@@ -374,10 +391,10 @@ experience_prog = viz.plot_experience_salary_trend()
 geo_analysis = viz.plot_salary_by_category('city_name')
 correlation = viz.create_correlation_matrix()
 
-# All return Plotly Figure objects
-salary_dist.show()  # Interactive display
-salary_dist.write_html('figure.html')  # Save for Quarto
-salary_dist.write_image('figure.png')  # Save for Word
+# Display using centralized utility
+display_figure(salary_dist, "salary_distribution")  # Recommended for Quarto
+salary_dist.show()  # Direct display (notebook)
+salary_dist.write_html('figure.html')  # Manual save
 ```
 
 #### `src/visualization/key_findings_dashboard.py` - KeyFindingsDashboard
@@ -420,6 +437,7 @@ from src.data.website_processor import (
     get_processed_dataframe,
     get_website_data_summary
 )
+from src.visualization.charts import display_figure
 
 # Load processed data (Pandas)
 df = get_processed_dataframe()
@@ -431,7 +449,9 @@ summary = get_website_data_summary()
 from src.visualization import SalaryVisualizer
 viz = SalaryVisualizer(df)
 fig = viz.plot_salary_distribution()
-fig.show()
+
+# Display and save figure (recommended for Quarto)
+display_figure(fig, "salary_distribution")
 ```
 
 ---
@@ -524,6 +544,7 @@ results = models.run_complete_analysis()
 # salary-insights.qmd
 from src.data.website_processor import get_processed_dataframe
 from src.visualization import SalaryVisualizer
+from src.visualization.charts import display_figure
 
 # Load data
 df = get_processed_dataframe()
@@ -532,8 +553,33 @@ df = get_processed_dataframe()
 viz = SalaryVisualizer(df)
 fig = viz.plot_salary_distribution()
 
-# Display in Quarto
-fig.show()
+# Display and save in Quarto (recommended approach)
+display_figure(fig, "salary_distribution")
+
+# Conditional rendering for HTML vs DOCX:
+# Use Quarto fencing for format-specific content
+```
+
+**Quarto Conditional Rendering**:
+
+```markdown
+::: {.content-visible when-format="html"}
+```{python}
+# HTML-specific code (e.g., interactive 2x2 subplot)
+fig = create_interactive_subplot()
+display_figure(fig, "interactive_chart")
+```
+:::
+
+::: {.content-visible when-format="docx"}
+```{python}
+# DOCX-specific code (e.g., separate full-size figures)
+fig1 = create_chart_1()
+display_figure(fig1, "chart_1")
+fig2 = create_chart_2()
+display_figure(fig2, "chart_2")
+```
+:::
 ```
 
 **Run**: `quarto render` or `quarto preview`

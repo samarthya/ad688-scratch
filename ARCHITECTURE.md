@@ -66,11 +66,13 @@ graph LR
    - Generate executive dashboards
    - Export multi-format outputs (HTML/PNG/SVG)
    - Consistent theming and styling
+   - Centralized `display_figure()` utility for Quarto/notebooks
 
 4. **Presentation Layer** (Quarto)
 
    - Static website generation
    - Dynamic report rendering
+   - Conditional format-specific rendering (HTML vs DOCX)
    - Embed interactive visualizations
    - Professional documentation
 
@@ -115,16 +117,16 @@ graph TB
     style PRESENTATION fill:#c62828,stroke:#fff,color:#fff,stroke-width:3px
 ```
 
-### Technology Decision Matrix
+### Technology Stack Summary
 
-| Layer | Technology | Why? | Alternatives Considered |
-|-------|-----------|------|------------------------|
-| **ETL** | PySpark | 13M rows, distributed processing, lazy evaluation | Pandas (too slow), Dask (less mature) |
-| **Storage** | Parquet | Columnar, compressed, fast reads | CSV (slow), HDF5 (not distributed) |
-| **Analysis** | Pandas | Rich API, ecosystem, fast for <100K rows | Polars (new), Spark (overkill) |
-| **ML** | PySpark MLlib | Scalable, consistent with PySpark architecture | Scikit-learn (not scalable), TensorFlow (overkill) |
-| **Charts** | Plotly | Interactive, web-native, rich features | Altair (limited), D3 (complex) |
-| **Website** | Quarto | Reproducible, supports Python, professional | R Markdown (R-focused), Sphinx (docs-only) |
+| Layer | Technology | Purpose | Capabilities |
+|-------|-----------|---------|--------------|
+| **ETL** | PySpark 4.0 | Distributed data processing | Handles 13M rows, lazy evaluation, distributed transforms |
+| **Storage** | Apache Parquet | Columnar data storage | Compressed, fast columnar reads, type preservation |
+| **Analysis** | Pandas 2.3 | Data analysis and manipulation | Rich API, fast operations on processed datasets (<100K rows) |
+| **ML** | PySpark MLlib | Machine learning at scale | Linear regression, random forests, clustering, NLP |
+| **Visualization** | Plotly 6.3 | Interactive charts | Web-native, HTML export, static image generation |
+| **Presentation** | Quarto | Reproducible reporting | Multi-format output (HTML/DOCX/PDF), Python integration |
 
 ---
 
@@ -350,7 +352,7 @@ graph TB
 | **src/data/** | Data loading & utilities | PySpark + Pandas | DataFrames |
 | **src/analytics/** | ML models & analysis | PySpark MLlib | Models, insights |
 | **src/ml/** | Advanced ML | PySpark MLlib | Trained models |
-| **src/visualization/** | Charts & dashboards | Plotly | Figures |
+| **src/visualization/** | Charts, dashboards, `display_figure()` | Plotly + Kaleido | Figures (HTML/PNG) |
 | **src/utils/** | Helper functions | Python | Utilities |
 
 ---
@@ -685,28 +687,34 @@ logger.info("Processing started...")
 
 ---
 
-## Future Enhancements
+## Scalability Considerations
 
-### Scalability
+### Current Architecture Scaling Capabilities
 
-1. **Distributed Spark**: Move to multi-node cluster for larger datasets
-2. **Incremental updates**: Process only new/changed data
-3. **Data partitioning**: Partition Parquet by date/region
-4. **Caching layer**: Redis for frequently accessed aggregations
+**Single-Node Processing**:
+- Current implementation runs on single machine
+- PySpark configured for local mode (`local[*]`)
+- Suitable for datasets up to 50M rows on 16GB RAM
 
-### Features
+**Horizontal Scaling Readiness**:
+- PySpark code is cluster-ready (no code changes needed)
+- Can deploy to Spark cluster (Databricks, EMR, etc.)
+- Parquet partitioning supports distributed reads
 
-1. **Real-time updates**: Stream processing with Spark Streaming
-2. **Interactive dashboards**: Add Streamlit/Dash for live exploration
-3. **API layer**: REST API for programmatic access
-4. **Automated reports**: Scheduled report generation and delivery
+**Vertical Scaling**:
+- Memory-efficient lazy evaluation in PySpark
+- Configurable driver memory (`spark.driver.memory`)
+- Adjustable executor resources
 
-### MLOps
+### Extension Points
 
-1. **Model versioning**: MLflow for experiment tracking
-2. **Model registry**: Centralized model storage
-3. **A/B testing**: Compare model versions
-4. **Monitoring**: Track model performance over time
+The architecture provides extension points for:
+
+1. **Data Layer**: Swap Parquet for Delta Lake, Iceberg, or Hudi
+2. **ML Layer**: Add deep learning with Spark-TensorFlow integration
+3. **API Layer**: Expose analytics via REST endpoints
+4. **Streaming**: Replace batch processing with Spark Structured Streaming
+5. **Orchestration**: Add workflow management (Airflow, Prefect)
 
 ---
 

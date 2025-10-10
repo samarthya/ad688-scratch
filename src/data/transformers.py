@@ -3,7 +3,7 @@ Data transformation utilities for the job market analytics system.
 """
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, when, isnan, isnull, trim, upper, lower
+from pyspark.sql.functions import col, when, isnan, isnull, trim, upper, lower, regexp_replace, lit
 import re
 
 
@@ -20,7 +20,67 @@ class DataTransformer:
             if df_clean.schema[col_name].dataType.typeName() == 'string':
                 df_clean = df_clean.withColumn(col_name, trim(col(col_name)))
 
+        # Step 3: Clean employment type data
+        df_clean = self._clean_employment_type(df_clean)
+
+        # Step 4: Clean remote type data
+        df_clean = self._clean_remote_type(df_clean)
+
         return df_clean
+
+    def _clean_employment_type(self, df: DataFrame) -> DataFrame:
+        """Clean employment_type_name column - remove special characters and handle missing values"""
+        if 'employment_type_name' not in df.columns:
+            return df
+
+        # Remove non-ASCII characters (special characters)
+        df = df.withColumn(
+            'employment_type_name',
+            regexp_replace(col('employment_type_name'), '([^\x00-\x7f])', '')
+        )
+
+        # Handle missing values: NULL, empty string, [NONE], etc.
+        df = df.withColumn(
+            'employment_type_name',
+            when(
+                (col('employment_type_name').isNull()) |
+                (trim(col('employment_type_name')) == '') |
+                (upper(trim(col('employment_type_name'))) == '[NONE]') |
+                (upper(trim(col('employment_type_name'))) == 'NONE') |
+                (upper(trim(col('employment_type_name'))) == 'N/A') |
+                (upper(trim(col('employment_type_name'))) == 'NA'),
+                lit('Undefined')
+            ).otherwise(col('employment_type_name'))
+        )
+
+        return df
+
+    def _clean_remote_type(self, df: DataFrame) -> DataFrame:
+        """Clean remote_type_name column - handle missing values"""
+        if 'remote_type_name' not in df.columns:
+            return df
+
+        # Remove non-ASCII characters
+        df = df.withColumn(
+            'remote_type_name',
+            regexp_replace(col('remote_type_name'), '([^\x00-\x7f])', '')
+        )
+
+        # Handle missing values
+        df = df.withColumn(
+            'remote_type_name',
+            when(
+                (col('remote_type_name').isNull()) |
+                (trim(col('remote_type_name')) == '') |
+                (upper(trim(col('remote_type_name'))) == '[NONE]') |
+                (upper(trim(col('remote_type_name'))) == 'NONE') |
+                (upper(trim(col('remote_type_name'))) == 'N/A') |
+                (upper(trim(col('remote_type_name'))) == 'NA'),
+                lit('Undefined')
+            ).otherwise(col('remote_type_name'))
+        )
+
+        return df
 
     def _standardize_column_names(self, df: DataFrame) -> DataFrame:
         """Convert all column names to snake_case."""
