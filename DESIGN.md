@@ -355,6 +355,183 @@ All ML models use PySpark MLlib for distributed machine learning:
 
 **Note**: These provide advanced PySpark MLlib capabilities for large-scale ML workloads.
 
+#### `src/ml/regression.py` - SalaryRegressionModel
+
+```python
+from src.ml import SalaryRegressionModel
+
+# Train salary prediction model with PySpark MLlib
+model = SalaryRegressionModel(df)
+results = model.train_model(
+    features=['min_years_experience', 'naics2_name', 'city_name'],
+    target='salary_avg'
+)
+
+# Results include:
+# - Trained LinearRegression or RandomForestRegressor
+# - R² score, RMSE, MAE metrics
+# - Feature importance (for tree-based models)
+# - Predictions on test set
+```
+
+**Key Features**:
+- PySpark MLlib regression (LinearRegression, RandomForestRegressor)
+- Automatic feature vectorization
+- Train/test split with validation
+- Model performance evaluation
+
+#### `src/ml/classification.py` - JobClassificationModel
+
+```python
+from src.ml import JobClassificationModel
+
+# Classify jobs by seniority level
+classifier = JobClassificationModel(df)
+results = classifier.classify_seniority_level(
+    features=['salary_avg', 'min_years_experience', 'title'],
+    target='seniority_level'
+)
+
+# Results include:
+# - Trained RandomForestClassifier or LogisticRegression
+# - Accuracy, F1-score, precision, recall
+# - Confusion matrix
+# - Class predictions
+```
+
+**Use Cases**:
+- Job level classification (Entry/Mid/Senior/Executive)
+- Remote vs On-site classification
+- Industry categorization
+
+#### `src/ml/clustering.py` - JobMarketClusterer
+
+```python
+from src.ml import JobMarketClusterer
+
+# Cluster jobs by characteristics
+clusterer = JobMarketClusterer(df)
+clusters = clusterer.cluster_jobs(
+    features=['salary_avg', 'min_years_experience', 'naics2_name'],
+    n_clusters=5
+)
+
+# Results include:
+# - Cluster assignments for each job
+# - Cluster centers (centroids)
+# - Silhouette score (cluster quality)
+# - Cluster profiles (statistics per cluster)
+```
+
+**Applications**:
+- Market segmentation
+- Job similarity analysis
+- Identifying job archetypes
+
+#### `src/ml/feature_engineering.py` - SalaryDisparityFeatureEngineer
+
+```python
+from src.ml import SalaryDisparityFeatureEngineer
+
+# Engineer features for ML models
+engineer = SalaryDisparityFeatureEngineer(df)
+feature_df = engineer.create_features()
+
+# Created features:
+# - Salary percentiles by city/industry
+# - Experience-to-salary ratios
+# - Industry salary rankings
+# - Geographic salary indices
+# - Education premium calculations
+```
+
+**Purpose**: Transform raw data into ML-ready features using PySpark transformers.
+
+#### `src/ml/evaluation.py` - ModelEvaluator
+
+```python
+from src.ml import ModelEvaluator
+
+# Evaluate model performance
+evaluator = ModelEvaluator()
+
+# For regression models
+reg_metrics = evaluator.evaluate_regression(y_true, y_pred)
+# Returns: R², RMSE, MAE, MAPE
+
+# For classification models
+clf_metrics = evaluator.evaluate_classification(y_true, y_pred)
+# Returns: Accuracy, F1, Precision, Recall, Confusion Matrix
+
+# For clustering models
+cluster_metrics = evaluator.evaluate_clustering(X, cluster_labels)
+# Returns: Silhouette score, Davies-Bouldin index
+```
+
+**Purpose**: Standardized model evaluation using PySpark MLlib evaluators.
+
+#### `src/ml/salary_disparity.py` - SalaryDisparityAnalyzer
+
+```python
+from src.ml import SalaryDisparityAnalyzer
+
+# Comprehensive salary disparity analysis
+analyzer = SalaryDisparityAnalyzer(df)
+
+# Run full analysis pipeline
+results = analyzer.run_complete_analysis()
+
+# Includes:
+# - Gender pay gap analysis
+# - Geographic salary disparities
+# - Industry salary comparisons
+# - Experience-based pay progression
+# - Education ROI analysis
+```
+
+**Purpose**: Orchestrates multiple ML models for comprehensive salary analysis.
+
+#### `src/analytics/predictive_dashboard.py` - PredictiveAnalyticsDashboard
+
+```python
+from src.analytics import PredictiveAnalyticsDashboard
+
+# Create predictive analytics dashboard
+dashboard = PredictiveAnalyticsDashboard(df)
+
+# Generate comprehensive dashboard
+complete_dashboard = dashboard.create_complete_dashboard()
+
+# Individual components
+salary_predictions = dashboard.create_salary_prediction_panel()
+market_trends = dashboard.create_market_trends_panel()
+skill_demand = dashboard.create_skill_demand_forecast()
+career_paths = dashboard.create_career_path_recommendations()
+```
+
+**Purpose**: Combine ML predictions with interactive visualizations for decision support.
+
+#### `src/analytics/docx_report_generator.py` - JobMarketReportGenerator
+
+```python
+from src.analytics import generate_comprehensive_docx_report
+
+# Generate programmatic DOCX report (alternative to Quarto)
+report_path = generate_comprehensive_docx_report(
+    df=df,
+    output_path="job_market_report.docx"
+)
+
+# Report includes:
+# - Executive summary
+# - Model results and explanations
+# - Skills analysis and insights
+# - Strategic recommendations
+# - Technical appendices
+```
+
+**Note**: Provides programmatic DOCX generation with full styling control. Currently, Quarto DOCX export is preferred for most use cases.
+
 ### 4. Visualization (`src/visualization/`)
 
 **Purpose**: Plotly-based interactive and static charts
@@ -425,6 +602,34 @@ layout = JobMarketTheme.get_plotly_layout(
 
 fig.update_layout(**layout)
 ```
+
+#### `src/visualization/charts.py` - QuartoChartExporter
+
+```python
+from src.visualization import QuartoChartExporter
+
+# Export charts optimized for Quarto
+exporter = QuartoChartExporter(df)
+
+# Batch export multiple charts
+figures = exporter.export_all_charts(
+    output_dir='figures/',
+    formats=['html', 'png', 'svg']
+)
+
+# Individual chart export
+salary_chart = exporter.export_salary_analysis()
+geographic_chart = exporter.export_geographic_analysis()
+industry_chart = exporter.export_industry_comparison()
+
+# Benefits:
+# - Optimized dimensions for Quarto (1200x800)
+# - Multi-format export (HTML/PNG/SVG/PDF)
+# - Consistent styling across all exports
+# - Automatic file naming and organization
+```
+
+**Purpose**: Batch export and optimize charts specifically for Quarto integration.
 
 ### 5. Website Interface (`src/data/website_processor.py`)
 

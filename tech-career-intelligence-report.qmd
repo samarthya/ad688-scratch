@@ -45,7 +45,6 @@ from src.visualization.charts import display_figure
 # Configure Plotly renderer for static images (svg+notebook for HTML, png for DOCX)
 pio.renderers.default = "svg+notebook"
 
-print("Report setup complete - using src.visualization.charts.display_figure()")
 ```
 
 # Executive Summary
@@ -916,20 +915,17 @@ Our analysis provides several key insights for career planning:
 #| label: final-dashboard
 
 # Create comprehensive final dashboard
-try:
-    dashboard_fig = dashboard.create_complete_intelligence_dashboard()
-    dashboard_fig.update_layout(
-        title="Complete Career Intelligence Dashboard",
-        height=800,
-        margin=dict(l=50, r=50, t=100, b=50),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(size=12),
-        title_font_size=18
-    )
-    display_figure(dashboard_fig, "complete_dashboard")
-except Exception as e:
-    print(f"Complete dashboard temporarily unavailable: {e}")
+dashboard_fig = dashboard.create_complete_intelligence_dashboard()
+dashboard_fig.update_layout(
+    title="Complete Career Intelligence Dashboard",
+    height=800,
+    margin=dict(l=50, r=50, t=100, b=50),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=12),
+    title_font_size=18
+)
+display_figure(dashboard_fig, "complete_dashboard")
 ```
 
 # Conclusions and Future Research

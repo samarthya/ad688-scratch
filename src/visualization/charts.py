@@ -12,6 +12,7 @@ from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.io as pio
 
 # Optional dependencies
 try:
@@ -38,16 +39,17 @@ def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures
         >>> fig = go.Figure(...)
         >>> display_figure(fig, "my_chart")  # Saves to figures/my_chart.png and displays
     """
+    pio.renderers.default = "png+svg+notebook"
+
     if filename:
         png_path = Path(save_dir) / f"{filename}.png"
+        svg_path = Path(save_dir) / f"{filename}.svg"
+        html_path = Path(save_dir) / f"{filename}.html"
         png_path.parent.mkdir(parents=True, exist_ok=True)
 
-        try:
-            # Save as high-quality PNG
-            fig.write_image(str(png_path), width=1200, height=800, scale=2)
-        except Exception as e:
-            print(f"Warning: Could not save figure as PNG: {e}")
-            print("Install kaleido for static image export: pip install kaleido")
+        fig.write_image(str(png_path), width=1200, height=800, scale=2)
+        fig.write_image(str(svg_path), width=1200, height=800)
+        fig.write_html(str(html_path))
 
     # Display the figure
     fig.show()
