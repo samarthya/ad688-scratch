@@ -398,7 +398,7 @@ Meet Alex: Bachelor's degree, earning $114K/year
 - Cost: $50K tuition + $228K foregone = $278K
 - New salary: $137K (+20%)
 - Extra per year: $23K
-- **Breakeven: 12 years** 
+- **Breakeven: 12 years**
 
 **The Real Math:** Master's isn't about immediate ROI - it's about:
 
@@ -657,7 +657,7 @@ graph TB
 |----------|------|-------------|
 | **PySpark for ETL** | 13M rows, distributed processing | Pandas (too slow) |
 | **Pandas for Analysis** | Fast for <100K rows, rich API | PySpark (overkill) |
-| **PySpark MLlib for ML** | Scalable, consistent architecture | scikit-learn (not scalable) |
+| **PySpark MLlib for ML** | Scalable, consistent architecture | Single-machine ML libraries |
 | **Parquet Storage** | Columnar, compressed, fast reads | CSV (slow), HDF5 (not distributed) |
 | **Plotly Visualization** | Interactive, web-native | Matplotlib (static only) |
 | **Quarto Framework** | Reproducible, Python + Markdown | Jupyter (not for websites) |
@@ -705,13 +705,13 @@ graph TB
 
 ### Challenge 4: ML Consistency
 
-**Problem:** Mixed scikit-learn & PySpark
+**Problem:** Need scalable ML for large datasets
 
 **Solution:**
 
 - 100% PySpark MLlib for all ML
-- Removed scikit-learn dependency
-- Unified architecture
+- Distributed machine learning
+- Unified architecture across ETL and ML
 :::
 
 ::::
