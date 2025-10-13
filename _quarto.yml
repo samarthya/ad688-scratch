@@ -12,6 +12,20 @@ project:
     watch-inputs: true
     navigate: true
 
+author:
+  - name: Saurabh Sharma
+    affiliations:
+      - id: bu
+        name: Boston Uninversity
+        city: Boston
+        state: MA
+  - name: Haocun Wang
+    affiliations:
+      - id: ha
+        name: Boston University
+        city: Boston
+        state: MA
+# Haocun Wang
 website:
   title: Tech Career Intelligence
   navbar:
@@ -27,6 +41,8 @@ website:
         text: Predictive Analytics
       - href: market-dashboard.qmd
         text: Market Dashboard
+      - href: methodology.qmd
+        text: Methodology
       - href: tech-career-intelligence-report.qmd
         text: Full Report
     right:
@@ -60,7 +76,7 @@ cite-method: citeproc
 execute:
   cache: true
   warning: True
-  message: false
+  message: False
 
 python:
   type: venv

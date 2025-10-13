@@ -23,7 +23,7 @@ Scalable data processing with PySpark + Interactive analysis with Pandas/Plotly
 
 ### Design Philosophy
 
-**Separation of Concerns**: Use the right tool for the right job
+#### Separation of Concerns: Use the right tool for the right job :point_left:
 
 - **PySpark**: Heavy data processing (ETL, cleaning, feature engineering) on large datasets
 - **Pandas**: Interactive analysis and visualization on processed datasets
@@ -32,7 +32,7 @@ Scalable data processing with PySpark + Interactive analysis with Pandas/Plotly
 
 ### Core Principles
 
-1. **Process Once, Use Many Times**: PySpark processes raw data → Parquet → Pandas analytics
+1. **Process Once, Use Many Times**: `PySpark processes raw data → Parquet → Pandas analytics`
 2. **Layered Architecture**: Clear separation between data processing, analysis, and presentation
 3. **Consistent Column Standards**: All processed data uses `snake_case` columns
 4. **Configuration-Driven**: Centralized mappings in `src/config/`
@@ -898,60 +898,60 @@ All processed data uses consistent `snake_case` column names:
 
 ```bash
 ad688-scratch/
-├── data/
-│   ├── raw/
-│   │   └── lightcast_job_postings.csv     # Source data (~13M rows)
-│   └── processed/
-│       └── job_market_processed.parquet   # Clean data (~30-50K rows)
-│
-├── src/
-│   ├── config/
-│   │   ├── column_mapping.py              # Column standardization
-│   │   └── settings.py                    # Application config
-│   │
-│   ├── core/                              # PySpark processing
-│   │   ├── processor.py                   # JobMarketDataProcessor
-│   │   └── analyzer.py                    # SparkJobAnalyzer
-│   │
-│   ├── data/                              # Data utilities
-│   │   ├── loaders.py                     # DataLoader (Spark)
-│   │   ├── transformers.py                # DataTransformer (Spark)
-│   │   ├── validators.py                  # DataValidator (Spark)
-│   │   ├── auto_processor.py              # Helper functions
-│   │   └── website_processor.py           # Quarto interface
-│   │
-│   ├── analytics/                         # Pandas analysis
-│   │   ├── salary_models.py               # ML models
-│   │   ├── nlp_analysis.py                # NLP analysis
-│   │   ├── predictive_dashboard.py        # ML dashboards
-│   │   └── docx_report_generator.py       # Word reports
-│   │
-│   ├── ml/                                # ML models (can use Pandas)
-│   │   ├── regression.py
-│   │   ├── classification.py
-│   │   ├── clustering.py
-│   │   ├── feature_engineering.py
-│   │   └── evaluation.py
-│   │
-│   ├── visualization/                     # Plotly charts
-│   │   ├── charts.py                      # SalaryVisualizer
-│   │   ├── key_findings_dashboard.py      # Dashboards
-│   │   └── theme.py                       # Styling
-│   │
-│   └── utils/
-│       └── spark_utils.py                 # Spark helpers
-│
-├── scripts/
-│   └── generate_processed_data.py         # Data processing script
-│
-├── notebooks/                             # Jupyter notebooks (Pandas)
-│   ├── data_processing_pipeline_demo.ipynb
-│   ├── ml_feature_engineering_lab.ipynb
-│   └── job_market_skill_analysis.ipynb
-│
-├── *.qmd                                  # Quarto website pages
-├── figures/                               # Generated charts
-└── _salary/                               # Rendered website
+ data/
+    raw/
+       lightcast_job_postings.csv     # Source data (~13M rows)
+    processed/
+        job_market_processed.parquet   # Clean data (~30-50K rows)
+
+ src/
+    config/
+       column_mapping.py              # Column standardization
+       settings.py                    # Application config
+   
+    core/                              # PySpark processing
+       processor.py                   # JobMarketDataProcessor
+       analyzer.py                    # SparkJobAnalyzer
+   
+    data/                              # Data utilities
+       loaders.py                     # DataLoader (Spark)
+       transformers.py                # DataTransformer (Spark)
+       validators.py                  # DataValidator (Spark)
+       auto_processor.py              # Helper functions
+       website_processor.py           # Quarto interface
+   
+    analytics/                         # Pandas analysis
+       salary_models.py               # ML models
+       nlp_analysis.py                # NLP analysis
+       predictive_dashboard.py        # ML dashboards
+       docx_report_generator.py       # Word reports
+   
+    ml/                                # ML models (can use Pandas)
+       regression.py
+       classification.py
+       clustering.py
+       feature_engineering.py
+       evaluation.py
+   
+    visualization/                     # Plotly charts
+       charts.py                      # SalaryVisualizer
+       key_findings_dashboard.py      # Dashboards
+       theme.py                       # Styling
+   
+    utils/
+        spark_utils.py                 # Spark helpers
+
+ scripts/
+    generate_processed_data.py         # Data processing script
+
+ notebooks/                             # Jupyter notebooks (Pandas)
+    data_processing_pipeline_demo.ipynb
+    ml_feature_engineering_lab.ipynb
+    job_market_skill_analysis.ipynb
+
+ *.qmd                                  # Quarto website pages
+ figures/                               # Generated charts
+ _salary/                               # Rendered website
 ```
 
 ---

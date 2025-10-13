@@ -11,6 +11,10 @@ from plotly.colors import qualitative, sequential
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 class JobMarketTheme:
     """
     Unified theme configuration for job market visualizations.
@@ -246,4 +250,4 @@ def setup_plotting_environment():
     """Setup the complete plotting environment with consistent styling."""
     JobMarketTheme.setup_matplotlib()
     JobMarketTheme.setup_seaborn()
-    print("[OK] Plotting environment configured with JobMarketTheme")
+    logger.info("[OK] Plotting environment configured with JobMarketTheme")

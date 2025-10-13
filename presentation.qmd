@@ -8,7 +8,12 @@ author:
         name: Boston University
         city: Boston
         state: MA
-institute: "Boston University"
+  - name: Haocun Wang
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
 date: today
 format:
   revealjs:
@@ -43,28 +48,25 @@ from src.visualization.charts import display_figure
 
 # Alias for presentation (keep existing code working)
 render_figure = display_figure
-
-print("Presentation setup complete - using src.visualization.charts.display_figure()")
 ```
 
 ## Introduction: The Problem {.center}
 
-> **"I'm graduating soon. Should I get my Master's or start working? Where should I apply? How much should I ask for?"**
+> I'm graduating soon. Should I get my Master's or start working?
+> Where should I apply?
+> How much should I ask for?
 
-::: {.fragment}
-### The Reality
+---
+
+## The Reality {.center}
 
 Most career decisions are based on:
 
 - Anecdotes from friends
 - Outdated salary surveys
-- Gut feelings
-- Hopeful guessing
-:::
+- Gut feeling
 
-::: {.fragment}
-### **What if we had DATA instead?**
-:::
+### What if we had DATA instead?
 
 ---
 
@@ -72,17 +74,26 @@ Most career decisions are based on:
 
 ### **Data-driven career intelligence can transform how students and professionals navigate the tech job market**
 
-::: {.fragment}
+---
+
+## Research Questions {.center}
+
 By analyzing **72,000+ real job postings** with modern data science tools, we can answer:
 
 1. **Experience Premium:** How much more will I earn as I gain experience?
 2. **Education ROI:** Is graduate school financially worth it?
 3. **Location Strategy:** Where should I work to maximize earning potential?
-:::
 
-::: {.fragment}
-**The Approach:** Combine scalable data processing (PySpark), machine learning (MLlib), and interactive visualization (Plotly/Quarto) to provide evidence-based career guidance.
-:::
+---
+
+## Our Approach {.center}
+
+**Combine scalable data processing (PySpark), machine learning (MLlib), and interactive visualization (Plotly/Quarto) to provide evidence-based career guidance.**
+
+- 13M rows → 72K clean records
+- Multiple ML models (regression, classification)
+- Interactive dashboards
+- Reproducible analysis
 
 ---
 
@@ -170,7 +181,7 @@ Students face critical career decisions without data. This project provides evid
 %%| fig-width: 10
 graph LR
     A[Raw CSV<br/>13M rows<br/>131 columns] -->|PySpark ETL<br/>5-10 min| B[Parquet<br/>72K rows<br/>132 columns]
-    B -->|Pandas Load<br/>1-2 sec| C[Analysis<br/>Statistics<br/>Aggregations]
+    B -->|PySpark Load<br/>1-2 sec| C[Analysis<br/>Statistics<br/>Aggregations]
     B -->|PySpark MLlib<br/>30 sec| D[ML Models<br/>Regression<br/>Classification]
     C --> E[Plotly Charts]
     D --> E
@@ -184,7 +195,7 @@ graph LR
     style F fill:#d1c4e9
 ```
 
-**Key Design Decision:** Process once (PySpark), analyze many times (Pandas)
+**Key Design Decision:** End-to-end PySpark for ETL, analysis, and ML
 
 ---
 
@@ -248,9 +259,7 @@ fig.update_layout(
 render_figure(fig, "experience_progression")
 ```
 
-::: {.fragment}
 **Key Insight:** 3.0x growth from Entry ($65K) to Executive ($150K+)
-:::
 
 ::: {.notes}
 Story: Imagine you're Sarah, graduating with a CS degree. She starts at $65K. Fast forward 15 years - she's now making $150K+. That's not luck - that's the power of experience in tech. But here's the question: How do we get there?
@@ -467,8 +476,11 @@ Geography matters! Someone in San Francisco making $140K might have the same lif
 ### **2019:** "You need to move to Silicon Valley"
 ### **2025:** "Work from anywhere"
 
-::: {.fragment}
-**What Changed:**
+---
+
+## What Changed? {.center}
+
+**Remote Work Statistics:**
 
 - 45% of tech jobs now fully remote
 - 30% offer hybrid options
@@ -477,11 +489,8 @@ Geography matters! Someone in San Francisco making $140K might have the same lif
 **The New Strategy:** Find high-paying remote job, live in lower cost area
 
 **Example:** $130K remote job in Austin = lifestyle of $180K+ in San Francisco
-:::
 
-::: {.fragment}
 **Data-Driven Tip:** Look for "Remote - US" roles from SF/NY companies. Get coastal salaries, keep your cost-of-living low.
-:::
 
 ---
 
@@ -496,7 +505,7 @@ Geography matters! Someone in San Francisco making $140K might have the same lif
 
 - 13M rows, 683 MB CSV
 - 131 columns (mixed types)
-- Pandas: 5-10 min load time
+- Single-machine tools too slow
 - Memory: 4-8 GB required
 
 **The Solution:**
@@ -510,13 +519,13 @@ Geography matters! Someone in San Francisco making $140K might have the same lif
 ::: {.column width="50%"}
 **Performance Impact:**
 
-| Operation | Pandas | PySpark |
-|-----------|--------|---------|
-| Load raw CSV | 5-10 min | 2-3 min |
-| Clean & filter | N/A | 5-10 min |
-| Save Parquet | N/A | 30 sec |
-| **Load Parquet** | **1-2 sec** | N/A |
-| Analysis | <1 sec | N/A |
+| Operation | Time | Benefit |
+|-----------|------|---------|
+| Load raw CSV | 2-3 min | Distributed reading |
+| Clean & filter | 5-10 min | Lazy evaluation |
+| Save Parquet | 30 sec | Compressed format |
+| **Load Parquet** | **1-2 sec** | **Fast reads** |
+| Analysis | 1-3 sec | Optimized queries |
 
 **Result:** Process once, analyze infinitely!
 :::
@@ -525,57 +534,246 @@ Geography matters! Someone in San Francisco making $140K might have the same lif
 
 ---
 
-## Machine Learning: Salary Prediction {.smaller}
+## Multivariate Analysis: Variables & Rationale {.smaller}
 
-### PySpark MLlib Pipeline
+### What Features Drive Salary?
 
-```python
-from pyspark.ml import Pipeline
-from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
-from pyspark.ml.regression import LinearRegression
+:::: {.columns}
 
-# Feature engineering pipeline
-stages = [
-    StringIndexer(inputCol='city_name', outputCol='city_index'),
-    OneHotEncoder(inputCol='city_index', outputCol='city_vec'),
-    StringIndexer(inputCol='naics2_name', outputCol='industry_index'),
-    OneHotEncoder(inputCol='industry_index', outputCol='industry_vec'),
-    VectorAssembler(inputCols=['city_vec', 'industry_vec'],
-                    outputCol='features')
-]
+::: {.column width="50%"}
+**Categorical Variables**
 
-# Train model
-pipeline = Pipeline(stages=stages)
-lr = LinearRegression(featuresCol='features', labelCol='salary_avg')
-```
+1. **Location** (`city_name`)
+   - Top 10 cities (SF, NYC, Seattle...)
+   - **Encoding**: StringIndexer → OneHot
+   - **Why**: Cost of living + demand
 
-::: {.fragment}
-**Model Performance:** R² = 0.83 | RMSE = $17K | Features: 50+ encoded
+2. **Industry** (`naics2_name`)
+   - Technology, Finance, Healthcare...
+   - **Encoding**: StringIndexer → OneHot
+   - **Why**: Sector pay standards
+
+3. **Job Title** (`title`)
+   - Top 10 titles (high cardinality)
+   - **Encoding**: StringIndexer → OneHot
+   - **Why**: Role complexity proxy
+:::
+
+::: {.column width="50%"}
+**Numerical Variables**
+
+4. **Experience** (`experience_years`)
+   - Continuous: 0-30+ years
+   - **No transformation**
+   - **Why**: Linear relationship expected
+
+5. **Skills** (`skills_count`)
+   - Discrete count: 0-20 skills
+   - **Derivation**: Text analysis
+   - **Why**: Technical breadth premium
+
+**Why One-Hot Encoding?**
+- Nominal categories (no order)
+- Avoids false ordinal assumptions
+- Each city gets independent coefficient
+:::
+
+::::
+
+::: {.notes}
+This is the multivariate specification - we're predicting salary using multiple predictors simultaneously. One-hot encoding is critical because "San Francisco" isn't "3× Boston" - they're different categories.
 :::
 
 ---
 
-## NLP: Skills Analysis {.smaller}
+## Machine Learning: Salary Prediction {.smaller}
 
-### PySpark MLlib for Text Processing
+### How We Built the Model
 
-```python
-from pyspark.ml.feature import Tokenizer, HashingTF, IDF, Word2Vec
+:::: {.columns}
 
-# NLP pipeline
-tokenizer = Tokenizer(inputCol="job_description", outputCol="words")
-hashingTF = HashingTF(inputCol="words", outputCol="raw_features")
-idf = IDF(inputCol="raw_features", outputCol="features")
+::: {.column width="50%"}
+**Step 1: Prepare the Data**
+- Convert categories to numbers
+  - Cities → numeric codes
+  - Industries → numeric codes
+  - Job titles → numeric codes
 
-# TF-IDF for skill extraction
-pipeline = Pipeline(stages=[tokenizer, hashingTF, idf])
-```
+**Step 2: Combine Features**
+- Location + Industry + Title + Experience
+- Creates 50+ features automatically
 
-**Key Skills Identified:**
+**Step 3: Train the Model**
+- Uses PySpark MLlib (handles big data)
+- Learns patterns from 72,000 jobs
+:::
 
-- Python, SQL, AWS (top 3 mentions)
-- Machine Learning (+$15K premium)
-- Cloud certifications (+$12K premium)
+::: {.column width="50%"}
+**📊 Model Performance**
+
+✅ **Accuracy**: 83% of salary variance explained (R² = 0.83)
+
+✅ **Typical Error**: $17,000 (RMSE)
+- On a $114K median salary
+- That's 15% error - acceptable!
+
+✅ **Speed**: Predicts instantly
+- Processes 72K jobs in seconds
+
+**🎯 What This Means**:
+Model can predict your expected salary with ~$17K accuracy based on location, title, industry, and experience.
+:::
+
+::::
+
+::: {.notes}
+We use machine learning to find patterns in 72,000 real job postings. The model learns what combinations of factors lead to higher or lower salaries.
+:::
+
+---
+
+## How the Model Predicts Salary {.smaller}
+
+### What Factors Matter Most?
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**The Model Combines Multiple Factors**:
+
+📍 **Location Premium**
+- San Francisco: +$25,000
+- New York: +$20,000
+- Austin: +$10,000
+
+💼 **Job Title Impact**
+- Senior Engineer: +$35,000
+- Data Scientist: +$30,000
+- Product Manager: +$28,000
+
+🏢 **Industry Bonus**
+- Technology: +$15,000
+- Finance: +$12,000
+- Healthcare: +$8,000
+:::
+
+::: {.column width="50%"}
+⏱️ **Experience Pays**
+- Each year: +$3,500
+- 7 years = +$24,500
+
+**🎯 Example Prediction**:
+
+Senior Engineer
+- Location: San Francisco
+- Industry: Technology
+- Experience: 7 years
+
+**Predicted Salary**: **$159,500**
+
+*= Baseline $60K + Location $25K + Title $35K + Industry $15K + Experience $24.5K*
+:::
+
+::::
+
+::: {.notes}
+The model assigns dollar values to each factor and adds them up. This makes it easy to understand what drives higher salaries.
+:::
+
+---
+
+## Missing Data Strategy {.smaller}
+
+### The 55% Challenge: No Salary Listed
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**The Problem**:
+- 55% of job postings don't list salary
+- This is market reality (not data error)
+- Cannot ignore (biases toward transparent companies)
+
+**Three Approaches**:
+
+1. **Delete Missing** ❌
+   - Lose 55% of data
+   - Selection bias
+
+2. **Simple Average** ❌
+   - Use overall median ($114K) for all missing
+   - Problem: Technology pays more than Healthcare
+   - Ignores industry differences
+:::
+
+::: {.column width="50%"}
+3. **Industry-Specific Median** ✅ (Our Choice)
+
+**How It Works**:
+- Group jobs by industry first
+- Use each industry's median:
+  - Technology → $125K
+  - Healthcare → $95K
+  - Finance → $115K
+  - Education → $85K
+
+**Why This Works**:
+- Respects that industries pay differently
+- More accurate than one-size-fits-all
+- Fast and interpretable
+- Based on domain knowledge
+
+**Result**:
+- 100% of jobs have salary estimates
+- 55% original + 45% estimated
+- Clear documentation in all results
+:::
+
+::::
+
+::: {.notes}
+This is critical methodological transparency. PySpark's Imputer is limited - it can't do grouped imputation. Future work: multivariate imputation using regression.
+:::
+
+---
+
+## Skills That Pay More {.smaller}
+
+### What Skills Should You Learn?
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**🔥 Most In-Demand Skills:**
+
+1. **Python** - #1 mention
+2. **SQL** - #2 mention
+3. **AWS** - #3 mention
+4. **Machine Learning**
+5. **Cloud Platforms**
+
+**📊 How We Found These:**
+- Analyzed 72,000 job descriptions
+- Used NLP to extract skills
+- Counted frequency and salary correlation
+:::
+
+::: {.column width="50%"}
+**💰 Skills with Highest Salary Premium:**
+
+| Skill | Salary Boost |
+|-------|-------------|
+| Machine Learning | +$15,000 |
+| Cloud Certifications | +$12,000 |
+| Data Engineering | +$10,000 |
+| DevOps | +$9,000 |
+| System Design | +$8,000 |
+
+**🎯 Insight**:
+Skills in emerging tech (ML, Cloud) command the highest premiums. Traditional skills (Java, SQL) are expected but don't boost salary as much.
+:::
+
+::::
 
 ---
 
@@ -655,9 +853,9 @@ graph TB
 
 | Decision | Why? | Alternative |
 |----------|------|-------------|
-| **PySpark for ETL** | 13M rows, distributed processing | Pandas (too slow) |
-| **Pandas for Analysis** | Fast for <100K rows, rich API | PySpark (overkill) |
-| **PySpark MLlib for ML** | Scalable, consistent architecture | Single-machine ML libraries |
+| **PySpark for ETL** | 13M rows, distributed processing | Single-machine tools (too slow) |
+| **PySpark for Analysis** | Consistent architecture, scalable | Mixed stack (complexity) |
+| **PySpark MLlib for ML** | Unified distributed platform | Scikit-learn (not distributed) |
 | **Parquet Storage** | Columnar, compressed, fast reads | CSV (slow), HDF5 (not distributed) |
 | **Plotly Visualization** | Interactive, web-native | Matplotlib (static only) |
 | **Quarto Framework** | Reproducible, Python + Markdown | Jupyter (not for websites) |
@@ -673,13 +871,13 @@ graph TB
 ::: {.column width="50%"}
 ### Challenge 1: Memory Issues
 
-**Problem:** 13M rows crashed Pandas
+**Problem:** 13M rows too large for memory
 
 **Solution:**
 
-- PySpark for initial processing
+- PySpark distributed processing
 - Filter to 72K relevant records
-- Load small Parquet with Pandas
+- Efficient Parquet storage
 
 ### Challenge 2: Slow Renders
 
@@ -748,31 +946,31 @@ ad688-scratch/
 
 ### From Data to Decisions
 
-::: {.fragment}
-**If you're graduating this year:**
+---
+
+## If You're Graduating This Year {.center}
 
 1. **Starting salary:** Target $65K-$75K (realistic baseline)
 2. **Geographic strategy:** Remote-first roles = maximum flexibility
 3. **Master's decision:** Only if career requires it OR you're passionate
 4. **First 3 years:** Focus on learning, not salary optimization
-:::
 
-::: {.fragment}
-**If you're mid-career (3-7 years):**
+---
+
+## If You're Mid-Career (3-7 years) {.center}
 
 1. **You're in the growth zone:** Biggest ROI on skill development
 2. **Job changes:** Strategic moves can accelerate to senior level
 3. **Specialization:** Data shows specialists earn 15-25% more
 4. **Network:** This is when mentorship matters most
-:::
 
-::: {.fragment}
-**If you're changing careers:**
+---
+
+## If You're Changing Careers {.center}
 
 1. **Entry data jobs:** $65K starting is normal, even with prior experience
 2. **Bootcamps vs. degrees:** Our data shows skills > credentials
 3. **Remote opportunities:** Level playing field for career changers
-:::
 
 ---
 
@@ -780,21 +978,21 @@ ad688-scratch/
 
 ### What This Research Reveals
 
-::: {.fragment}
-**Traditional Advice vs. Data:**
+---
+
+## Traditional Advice vs. Data {.center}
 
 - "Go to grad school!" → **Data says:** Only 20% premium, 12-year breakeven
 - "Move to Silicon Valley!" → **Data says:** Remote work = geographic arbitrage
 - "Get experience first!" → **Data says:** True, but strategic job changes accelerate growth
-:::
 
-::: {.fragment}
-**The Real Insight:**
+---
+
+## The Real Insight {.center}
 
 Career success isn't about following one path - it's about **understanding the tradeoffs** and making **informed decisions** based on YOUR priorities.
 
 **This platform gives you the data.** You make the decision.
-:::
 
 ---
 
@@ -802,10 +1000,10 @@ Career success isn't about following one path - it's about **understanding the t
 
 ### Technical Insights
 
-1. **Right Tool for the Job**
-   - PySpark excels at ETL, not everything
-   - Pandas perfect for <100K row analysis
-   - Don't force one tool everywhere
+1. **Unified Architecture**
+   - PySpark for entire pipeline (ETL + Analysis + ML)
+   - Consistent API across all stages
+   - No context switching between tools
 
 2. **Process Once, Use Many Times**
    - 5-10 min preprocessing → instant renders
@@ -893,8 +1091,8 @@ quarto preview --port 4200
 
 **Tech Stack:**
 
-- Python 3.11+ | PySpark 4.0.1 | Pandas 2.3
-- PySpark MLlib | Plotly 6.3 | Quarto
+- Python 3.11+ | PySpark 4.0.1 | PySpark MLlib
+- Plotly 6.3 | Quarto | Parquet
 
 ---
 
@@ -926,7 +1124,7 @@ quarto preview --port 4200
 
 - [PySpark Documentation](https://spark.apache.org/docs/latest/api/python/)
 - [PySpark MLlib Guide](https://spark.apache.org/docs/latest/ml-guide.html)
-- [Pandas Documentation](https://pandas.pydata.org/docs/)
+- [Apache Parquet](https://parquet.apache.org/)
 - [Plotly Python](https://plotly.com/python/)
 - [Quarto](https://quarto.org/)
 
@@ -958,54 +1156,4 @@ Boston University | AD688 Final Project
 **Key Takeaway:** Data-driven career decisions are now accessible to everyone!
 
 ---
-
-## Backup Slides {.smaller}
-
-### Additional Technical Details
-
-**PySpark Configuration:**
-
-```python
-spark = SparkSession.builder \
-    .appName("JobMarketAnalysis") \
-    .master("local[*]") \
-    .config("spark.driver.memory", "4g") \
-    .config("spark.sql.shuffle.partitions", "200") \
-    .getOrCreate()
-```
-
-**Data Schema:**
-
-- 131 raw columns (UPPERCASE)
-- 132 processed columns (snake_case)
-- Key columns: `salary_avg`, `min_years_experience`, `city_name`, `naics2_name`
-
-**Performance Benchmarks:**
-
-- Raw CSV load: 2-3 minutes (PySpark)
-- ETL processing: 5-10 minutes (PySpark)
-- Parquet load: 1-2 seconds (Pandas)
-- Figure generation: 10 seconds (cached)
-- Quarto render: 15 seconds per page
-
----
-
-## Backup: Column Mapping {.smaller}
-
-### Standardization Process
-
-| Raw Column (UPPERCASE) | Processed Column (snake_case) | Type |
-|------------------------|------------------------------|------|
-| `SALARY_FROM` | `salary_from` | float64 |
-| `SALARY_TO` | `salary_to` | float64 |
-| `SALARY_AVG` | `salary_avg` | float64 (computed) |
-| `MIN_YEARS_EXPERIENCE` | `min_years_experience` | float64 |
-| `MAX_YEARS_EXPERIENCE` | `max_years_experience` | float64 |
-| `CITY_NAME` | `city_name` | string |
-| `NAICS2_NAME` | `naics2_name` | string |
-| `TITLE_NAME` | `title` | string |
-| `REMOTE_TYPE_NAME` | `remote_type_name` | string |
-
-**Total:** 132 standardized columns after ETL
-
 

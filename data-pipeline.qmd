@@ -41,10 +41,6 @@ df = get_processed_dataframe()
 analysis = get_analysis_results()
 figures = get_figure_paths()
 summary = get_website_data_summary()
-
-print(f"Data processing pipeline completed")
-print(f"Loaded {len(df):,} records")
-print(f"Generated {len(figures)} base figures")
 ```
 
 ## Key Metrics
@@ -147,11 +143,10 @@ dashboard.create_complete_intelligence_dashboard().show()
 ```{python}
 #| label: data-processing-stats
 #| echo: false
+#| output: markdown
 
 # Display processing statistics using summary data
-print("=" * 60)
-print("DATA PROCESSING PIPELINE STATISTICS")
-print("=" * 60)
+print("### DATA PROCESSING PIPELINE STATISTICS")
 
 print(f"\nPROCESSED DATA:")
 print(f"  Total Records: {summary['total_records']:,}")

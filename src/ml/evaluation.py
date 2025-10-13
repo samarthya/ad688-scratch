@@ -13,6 +13,10 @@ from pyspark.ml.classification import LogisticRegression, RandomForestClassifier
 from pyspark.sql.functions import col, abs as spark_abs, sqrt, mean, stddev
 import numpy as np
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class ModelEvaluator:
     """
@@ -69,7 +73,7 @@ class ModelEvaluator:
                                 model_name: str = "Regression Model") -> Dict[str, float]:
         """Evaluate regression model performance."""
 
-        print(f"Evaluating {model_name}...")
+        logger.info(f"Evaluating {model_name}...")
 
         # Calculate standard metrics
         rmse = self.rmse_evaluator.evaluate(predictions)
@@ -93,10 +97,10 @@ class ModelEvaluator:
             'mape_percent': mape_percent
         }
 
-        print(f"RMSE: {rmse:.2f}")
-        print(f"R²: {r2:.4f}")
-        print(f"MAE: {mae:.2f}")
-        print(f"MAPE: {mape_percent:.2f}%")
+        logger.info(f"RMSE: {rmse:.2f}")
+        logger.info(f"R²: {r2:.4f}")
+        logger.info(f"MAE: {mae:.2f}")
+        logger.info(f"MAPE: {mape_percent:.2f}%")
 
         return evaluation_results
 
@@ -104,7 +108,7 @@ class ModelEvaluator:
                                     model_name: str = "Classification Model") -> Dict[str, float]:
         """Evaluate classification model performance."""
 
-        print(f"Evaluating {model_name}...")
+        logger.info(f"Evaluating {model_name}...")
 
         # Calculate standard metrics
         accuracy = self.accuracy_evaluator.evaluate(predictions)
@@ -124,10 +128,10 @@ class ModelEvaluator:
             'confusion_matrix': confusion_matrix
         }
 
-        print(f"Accuracy: {accuracy:.4f}")
-        print(f"F1 Score: {f1:.4f}")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
+        logger.info(f"Accuracy: {accuracy:.4f}")
+        logger.info(f"F1 Score: {f1:.4f}")
+        logger.info(f"Precision: {precision:.4f}")
+        logger.info(f"Recall: {recall:.4f}")
 
         return evaluation_results
 

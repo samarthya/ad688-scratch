@@ -55,6 +55,26 @@ Starting with a **13 million row** raw CSV dataset of job postings from Lightcas
 1. **Distributed Processing**
 
    - Spark's lazy evaluation optimizes query plans
+
+   ```python
+   # Example from terriergpt
+
+   from pyspark.sql import SparkSession
+
+   spark = SparkSession.builder.appName("LazyLoadingExample").getOrCreate()
+
+   # Read a DataFrame (does not trigger computation yet)
+   df = spark.read.csv("path/to/file.csv", header=True, inferSchema=True)
+
+   # Transformation chain - these are lazy and don't execute anything yet
+   filtered_df = df.filter(df['age'] > 21).select('name', 'age')
+
+   # No computation has happened until this point
+
+   # Action triggers computation
+   result = filtered_df.show()  # Now Spark will read the data and apply the transformations
+   ```
+
    - Can scale from laptop to cluster without code changes
    - Columnar operations are highly optimized
 
@@ -89,40 +109,83 @@ df = spark.read.csv(
 
 ---
 
-#### Why Pandas for Analysis?
+#### Pandas for Visualization Layer (Pragmatic Exception)
 
-**Decision**: Use Pandas after PySpark ETL for final analysis
+> **Decision**: PySpark for ETL + ML, Pandas for final visualization
 
-**Rationale**:
+##### Architecture: Hybrid approach optimized for each stage
 
-1. **Right Tool, Right Job**
-   - After PySpark filters and aggregates: 30-50K rows
-   - Fits comfortably in memory
-   - Pandas operations are faster for small data
+**Why This Hybrid Approach**:
 
-2. **Ecosystem Integration**
-   - Seamless integration with Plotly for visualization
-   - Better support for Jupyter notebooks
-   - Familiar DataFrame API for data scientists
+1. **PySpark for Heavy Lifting (ETL + ML)**
 
-3. **Development Speed**
-   - Faster iteration for exploratory analysis
-   - Rich DataFrame operations and indexing
-   - Better debugging experience
+   - Raw data (13M rows) too large for Pandas
+   - PySpark handles distributed processing efficiently
+   - ML models use PySpark MLlib for scalability
+   - Parquet format for efficient storage
 
-**Learning**: "Use Spark for ETL, Pandas for analysis - get best of both worlds"
+2. **Pandas for Visualization (Pragmatic Choice)**
+
+   - Processed data is small (30-50K rows - fits in memory)
+   - Plotly has better Pandas integration (native support)
+   - Faster iteration for visualization code
+   - Rich ecosystem (seaborn, matplotlib backup)
+   - Development speed for exploratory analysis
+
+3. **Where the Boundary Is**
+
+   - **PySpark**: ETL (13M → 50K rows), ML training, feature engineering
+   - **Transition**: Save to Parquet (efficient columnar format)
+   - **Pandas**: Load small Parquet, visualization, dashboard generation
+
+**Why This Works**:
+
+1. **Right Tool for Each Job**
+   - PySpark excels at scale (millions of rows)
+   - Pandas excels at interactivity (thousands of rows)
+   - Don't force one tool everywhere
+
+2. **Performance Profile**
+   - PySpark ETL: 5-10 minutes (one-time cost)
+   - Load Parquet with Pandas: 1-2 seconds (repeated operation)
+   - Visualization: Instant (30K rows is trivial for Pandas)
+
+3. **Deployment Considerations**
+   - ETL runs once (can be scheduled batch job)
+   - Website loads small Parquet (no Spark cluster needed)
+   - Static site generation (Quarto + Pandas + Plotly)
 
 **Architecture Pattern**:
 
 ```bash
 Raw CSV (13M rows)
   → PySpark ETL (filter, clean, aggregate)
-    → Parquet (50K rows)
-      → Pandas (load in memory)
-        → Analysis & Visualization
+    → PySpark MLlib (train models on full data)
+      → Parquet (30-50K rows) ← BOUNDARY
+        → Pandas (load small data)
+          → Plotly Visualization (rich integration)
+            → Quarto Website (static HTML)
 ```
 
-**Reference**: [Pandas: A Foundation for Data Science](https://pandas.pydata.org/about/citing.html)
+**Trade-offs**:
+
+**What We Give Up**:
+
+- Framework purity (not 100% PySpark)
+- Some consistency (Spark DataFrame → Pandas DataFrame conversion)
+
+**What We Gain**:
+
+- Better visualization libraries (Plotly + Pandas synergy)
+- Faster development (Pandas is more familiar)
+- No Spark cluster for website (Pandas runs anywhere)
+- Simpler deployment (static website, no JVM)
+
+**Learning**: "Pragmatic architecture > religious adherence to one framework - optimize each layer independently"
+
+**Key Insight**: The Parquet boundary is the key architectural decision - PySpark processes big data once, Pandas consumes small results many times.
+
+**Reference**: [Lambda Architecture: Batch + Speed Layer Pattern](https://databricks.com/glossary/lambda-architecture)
 
 ---
 
@@ -172,6 +235,8 @@ Raw CSV (13M rows)
 
 **Example**: Feature Engineering Pipeline
 
+A Feature Engineering Pipeline in PySpark is like a step-by-step recipe or assembly line where raw data goes through a series of processing stages, each making the data cleaner, more structured.
+
 ```python
 # PySpark MLlib approach - scales to billions of rows
 from pyspark.ml import Pipeline
@@ -211,12 +276,6 @@ model = pipeline.fit(spark_df) # Distributed training
    - Publication-ready out of the box
    - Customizable themes and layouts
    - Responsive design for mobile
-
-**Alternative Considered**: Matplotlib
-
-- **Pros**: Extensive customization, familiar to data scientists
-- **Cons**: Static by default, less web-friendly
-- **Decision**: Use Plotly for web, matplotlib acceptable in notebooks
 
 **Example**: Interactive Salary Distribution
 
@@ -348,28 +407,32 @@ df = spark.read.csv(
 
 ### Challenge 3: Memory Management
 
-**Problem**: Converting large Spark DataFrames to Pandas caused `OutOfMemoryError`
+**Problem**: Need to manage memory efficiently with large datasets
+
+**Why Pandas Would Have Failed**:
 
 ```python
-# This crashes on 16GB RAM
-pandas_df = spark_df.toPandas() # Loads entire 13M rows into memory
+# This would crash on 16GB RAM with Pandas
+pandas_df = pd.read_csv('data/raw/lightcast_job_postings.csv') # MemoryError!
+# Problem: Pandas loads entire 13M rows into memory at once
 ```
 
-**Solution**: Process then Load Pattern
+**Solution**: PySpark Lazy Evaluation + Parquet Storage
 
 ```python
-# Step 1: Process and save with Spark (handles large data)
-spark_df.write.parquet('data/processed/job_market_processed.parquet')
-spark.stop() # Free Spark memory
+# Step 1: Process with Spark (lazy evaluation - memory efficient)
+spark_df = spark.read.csv('data/raw/lightcast_job_postings.csv')
+processed_df = spark_df.filter(...).select(...)
+processed_df.write.parquet('data/processed/job_market_processed.parquet')
 
-# Step 2: Load processed data with Pandas (now small enough)
-pandas_df = pd.read_parquet('data/processed/job_market_processed.parquet')
-# Now only 50K rows - fits in memory
+# Step 2: Load processed data with Spark (still lazy)
+df = spark.read.parquet('data/processed/job_market_processed.parquet')
+# Only materializes data when action is called (e.g., .show(), .count())
 ```
 
-**Learning**: "Separate ETL from analysis - save intermediate results, manage memory lifecycle"
+**Learning**: "Lazy evaluation + Parquet storage = efficient memory management at scale"
 
-**Architecture Principle**: "Process once with Spark, use many times with Pandas"
+**Architecture Principle**: "Process once with Spark, reuse many times with Spark (still lazy)"
 
 ---
 
@@ -1282,8 +1345,8 @@ SALARY_COLORS = {
 Tier 1: Data Storage (Parquet)
   └── Columnar format for fast queries
 
-Tier 2: Python Processing (Pandas + PySpark)
-  └── Load from Parquet, compute on demand
+Tier 2: Python Processing (PySpark)
+  └── Load from Parquet, compute lazily on demand
 
 Tier 3: Presentation (Quarto)
   └── Generate HTML/DOCX on render
@@ -1407,9 +1470,9 @@ def create_correlation_matrix(self):
 
 ### Technical Lessons
 
-1. **Right Tool for the Job**
-   - PySpark for ETL at scale
-   - Pandas for analysis
+1. **Unified Framework Architecture**
+   - PySpark for ETL, analysis, and ML (end-to-end)
+   - Consistency over mixed stack
    - Plotly for interactive visualization
    - Quarto for reproducible reports
 
@@ -1896,7 +1959,7 @@ Exec 5    20 82 893
 ### What Worked
 
 1. **Three-Tier Architecture** (Raw → Processed → Presentation)
-2. **Single Framework** (PySpark for all big data operations)
+2. **Unified Framework** (PySpark for entire pipeline: ETL + Analysis + ML)
 3. **Honest Data** (No fake imputation)
 4. **Iterative Approach** (Start simple, add complexity)
 5. **Documentation** (Explain decisions as you go)
@@ -2066,10 +2129,10 @@ This project demonstrated the complete data science lifecycle:
 
 **Key Success Factors**:
 
-- Used the right tool for each task (Spark vs Pandas)
+- Used unified PySpark framework for entire pipeline (consistency)
 - Prioritized interpretability alongside accuracy
 - Applied domain knowledge throughout
-- Built for production from the start
+- Built for production scalability from the start
 - Documented decisions and rationale
 
 **Final Learning**: "Data science is 20% models, 80% engineering - but the 20% drives business value"

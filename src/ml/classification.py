@@ -13,6 +13,10 @@ from pyspark.ml import Pipeline
 from pyspark.sql.functions import col, when, isnan, isnull, mean, stddev
 import numpy as np
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class JobClassificationModel:
     """
@@ -150,7 +154,7 @@ class JobClassificationModel:
                                 target_column: str) -> Dict[str, Any]:
         """Train Logistic Regression model."""
 
-        print(f"Training Logistic Regression model for {target_column}...")
+        logger.info(f"Training Logistic Regression model for {target_column}...")
 
         # Prepare data
         classification_data = self.prepare_classification_data(df, feature_columns, target_column)
@@ -203,7 +207,7 @@ class JobClassificationModel:
                                          target_column: str) -> Dict[str, Any]:
         """Train Random Forest Classification model."""
 
-        print(f"Training Random Forest Classification model for {target_column}...")
+        logger.info(f"Training Random Forest Classification model for {target_column}...")
 
         # Prepare data
         classification_data = self.prepare_classification_data(df, feature_columns, target_column)
@@ -286,11 +290,11 @@ class JobClassificationModel:
             'per_class_metrics': class_metrics
         }
 
-        print(f"{dataset_type} Metrics:")
-        print(f"  Accuracy: {accuracy:.4f}")
-        print(f"  Precision: {weighted_precision:.4f}")
-        print(f"  Recall: {weighted_recall:.4f}")
-        print(f"  F1 Score: {weighted_f1:.4f}")
+        logger.info(f"{dataset_type} Metrics:")
+        logger.info(f"  Accuracy: {accuracy:.4f}")
+        logger.info(f"  Precision: {weighted_precision:.4f}")
+        logger.info(f"  Recall: {weighted_recall:.4f}")
+        logger.info(f"  F1 Score: {weighted_f1:.4f}")
 
         return metrics
 
@@ -357,7 +361,7 @@ class JobClassificationModel:
             return sorted_importance
 
         except Exception as e:
-            print(f"Error getting logistic regression coefficients: {e}")
+            logger.error(f"Error getting logistic regression coefficients: {e}")
             return {}
 
     def _get_random_forest_importance(self, model,
@@ -385,7 +389,7 @@ class JobClassificationModel:
             return sorted_importance
 
         except Exception as e:
-            print(f"Error getting random forest importance: {e}")
+            logger.error(f"Error getting random forest importance: {e}")
             return {}
 
     def predict_classification(self, df: DataFrame,

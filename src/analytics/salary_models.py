@@ -23,6 +23,10 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class SalaryAnalyticsModels:
     """
@@ -63,9 +67,9 @@ class SalaryAnalyticsModels:
         self.salary_col = get_analysis_column('salary')  # 'salary_avg'
         self.location_col = get_analysis_column('city')  # 'city_name'
 
-        print(f"Initialized with {self.spark_df.count():,} records")
-        print(f"Using salary column: {self.salary_col}")
-        print(f"Using location column: {self.location_col}")
+        logger.info(f"Initialized with {self.spark_df.count():,} records")
+        logger.info(f"Using salary column: {self.salary_col}")
+        logger.info(f"Using location column: {self.location_col}")
 
     def prepare_features(self) -> SparkDataFrame:
         """
@@ -78,7 +82,7 @@ class SalaryAnalyticsModels:
         - Experience (experience_years): Career progression impact
         - Skills (required_skills): Technical skill premiums
         """
-        print("\n=== FEATURE PREPARATION (PySpark) ===")
+        logger.info("\n=== FEATURE PREPARATION (PySpark) ===")
 
         # Start with Spark DataFrame
         feature_df = self.spark_df
@@ -89,7 +93,7 @@ class SalaryAnalyticsModels:
 
         for col in required_cols:
             if col not in existing_cols:
-                print(f"Warning: Missing column {col}, creating placeholder")
+                logger.warning(f"Warning: Missing column {col}, creating placeholder")
                 if col == self.salary_col:
                     feature_df = feature_df.withColumn(col, F.lit(75000.0))
                 else:
@@ -137,12 +141,12 @@ class SalaryAnalyticsModels:
                 )
 
         record_count = feature_df.count()
-        print(f"\n[OK] Prepared features for {record_count:,} records")
+        logger.info(f"\n[OK] Prepared features for {record_count:,} records")
 
         # Get summary stats using Pandas for display
         salary_stats = feature_df.select(self.salary_col).toPandas()[self.salary_col]
-        print(f"   Salary range: ${salary_stats.min():,.0f} - ${salary_stats.max():,.0f}")
-        print(f"   Median salary: ${salary_stats.median():,.0f}")
+        logger.info(f"   Salary range: ${salary_stats.min():,.0f} - ${salary_stats.max():,.0f}")
+        logger.info(f"   Median salary: ${salary_stats.median():,.0f}")
 
         return feature_df
 
@@ -167,8 +171,8 @@ class SalaryAnalyticsModels:
         - Quantify the value of experience and specialization
         - Compare compensation across industries and roles
         """
-        print("\n=== MODEL 1: MULTIPLE LINEAR REGRESSION (PySpark MLlib) ===")
-        print("Predicting salary using distributed linear regression")
+        logger.info("\n=== MODEL 1: MULTIPLE LINEAR REGRESSION (PySpark MLlib) ===")
+        logger.info("Predicting salary using distributed linear regression")
 
         if feature_df is None:
             feature_df = self.prepare_features()
@@ -229,7 +233,7 @@ class SalaryAnalyticsModels:
         # Split data
         train_df, test_df = feature_df.randomSplit([0.8, 0.2], seed=42)
 
-        print(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
+        logger.info(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
 
         # Train model
         model = pipeline.fit(train_df)
@@ -274,10 +278,10 @@ class SalaryAnalyticsModels:
 
         self.model_results['regression'] = results
 
-        print(f"[OK] Model trained successfully!")
-        print(f"   R² Score: {test_r2:.3f} (explains {test_r2*100:.1f}% of salary variance)")
-        print(f"   RMSE: ${test_rmse:,.0f} (average prediction error)")
-        print(f"   Features: {len(coefficients)} encoded features")
+        logger.info(f"[OK] Model trained successfully!")
+        logger.info(f"   R² Score: {test_r2:.3f} (explains {test_r2*100:.1f}% of salary variance)")
+        logger.error(f"   RMSE: ${test_rmse:,.0f} (average prediction error)")
+        logger.info(f"   Features: {len(coefficients)} encoded features")
 
         return results
 
@@ -302,8 +306,8 @@ class SalaryAnalyticsModels:
         - Understand which skills unlock premium compensation
         - Focus job search on above-average paying role types
         """
-        print("\n=== MODEL 2: ABOVE-AVERAGE SALARY CLASSIFICATION (PySpark MLlib) ===")
-        print("Classifying jobs using Random Forest")
+        logger.info("\n=== MODEL 2: ABOVE-AVERAGE SALARY CLASSIFICATION (PySpark MLlib) ===")
+        logger.info("Classifying jobs using Random Forest")
 
         if feature_df is None:
             feature_df = self.prepare_features()
@@ -315,10 +319,10 @@ class SalaryAnalyticsModels:
             F.when(F.col(self.salary_col) > median_salary, 1.0).otherwise(0.0)
         )
 
-        print(f"Median salary threshold: ${median_salary:,.0f}")
+        logger.info(f"Median salary threshold: ${median_salary:,.0f}")
         above_avg_count = feature_df.filter(F.col('label') == 1.0).count()
         total_count = feature_df.count()
-        print(f"Above-average jobs: {above_avg_count:,} ({above_avg_count/total_count*100:.1f}%)")
+        logger.info(f"Above-average jobs: {above_avg_count:,} ({above_avg_count/total_count*100:.1f}%)")
 
         # Select top categories
         top_locations = feature_df.groupBy(self.location_col).count().orderBy(F.desc('count')).limit(10)
@@ -366,7 +370,7 @@ class SalaryAnalyticsModels:
         # Split data
         train_df, test_df = feature_df.randomSplit([0.8, 0.2], seed=42)
 
-        print(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
+        logger.info(f"Training on {train_df.count():,} records, testing on {test_df.count():,} records")
 
         # Train model
         model = pipeline.fit(train_df)
@@ -411,10 +415,10 @@ class SalaryAnalyticsModels:
 
         self.model_results['classification'] = results
 
-        print(f"[OK] Model trained successfully!")
-        print(f"   Accuracy: {test_accuracy:.3f} ({test_accuracy*100:.1f}%)")
-        print(f"   F1 Score: {test_f1:.3f}")
-        print(f"   Random Forest: 50 trees, max depth 10")
+        logger.info(f"[OK] Model trained successfully!")
+        logger.info(f"   Accuracy: {test_accuracy:.3f} ({test_accuracy*100:.1f}%)")
+        logger.info(f"   F1 Score: {test_f1:.3f}")
+        logger.info(f"   Random Forest: 50 trees, max depth 10")
 
         return results
 
@@ -424,9 +428,9 @@ class SalaryAnalyticsModels:
 
         Returns complete analysis with both regression and classification results.
         """
-        print("\n" + "="*70)
-        print("[START] RUNNING COMPLETE SALARY ANALYTICS (PySpark MLlib)")
-        print("="*70)
+        logger.info("\n" + "="*70)
+        logger.info("[START] RUNNING COMPLETE SALARY ANALYTICS (PySpark MLlib)")
+        logger.info("="*70)
 
         # Prepare features once
         feature_df = self.prepare_features()
@@ -442,11 +446,11 @@ class SalaryAnalyticsModels:
             'models_trained': 2
         }
 
-        print("\n" + "="*70)
-        print("[OK] COMPLETE ANALYSIS FINISHED")
-        print("="*70)
-        print(f"Model 1 (Regression): R² = {regression_results['test_r2']:.3f}")
-        print(f"Model 2 (Classification): Accuracy = {classification_results['test_accuracy']:.3f}")
+        logger.info("\n" + "="*70)
+        logger.info("[OK] COMPLETE ANALYSIS FINISHED")
+        logger.info("="*70)
+        logger.info(f"Model 1 (Regression): R² = {regression_results['test_r2']:.3f}")
+        logger.info(f"Model 2 (Classification): Accuracy = {classification_results['test_accuracy']:.3f}")
 
         return comprehensive_results
 
@@ -456,7 +460,7 @@ class SalaryAnalyticsModels:
 
         Returns list of Plotly figures for regression and classification results.
         """
-        print("\n=== CREATING VISUALIZATIONS ===")
+        logger.info("\n=== CREATING VISUALIZATIONS ===")
 
         figures = []
 
@@ -498,7 +502,7 @@ class SalaryAnalyticsModels:
 
         figures.append(fig2)
 
-        print(f"[OK] Created {len(figures)} visualizations")
+        logger.info(f"[OK] Created {len(figures)} visualizations")
 
         return figures
 

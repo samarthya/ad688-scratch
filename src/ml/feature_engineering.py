@@ -13,14 +13,20 @@ from pyspark.sql.functions import (
     sum as spark_sum, count, avg, max as spark_max, min as spark_min,
     row_number, rank, dense_rank, percent_rank, cume_dist
 )
+
+# Import logger for controlled output
+from src.utils.logger import get_logger
+
 from pyspark.sql.window import Window
 from pyspark.ml.feature import (
     StringIndexer, OneHotEncoder, VectorAssembler,
     StandardScaler, MinMaxScaler, PCA
 )
+
 from pyspark.ml import Pipeline
 import re
 
+logger = get_logger(level="WARNING")
 
 class SalaryDisparityFeatureEngineer:
     """
@@ -260,22 +266,22 @@ class SalaryDisparityFeatureEngineer:
     def prepare_ml_features(self, df: DataFrame) -> DataFrame:
         """Prepare all features for machine learning models."""
 
-        print("Creating demographic features...")
+        logger.info("Creating demographic features...")
         df = self.create_demographic_features(df)
 
-        print("Creating job characteristics features...")
+        logger.info("Creating job characteristics features...")
         df = self.create_job_characteristics_features(df)
 
-        print("Creating skills features...")
+        logger.info("Creating skills features...")
         df = self.create_skills_features(df)
 
-        print("Creating work arrangement features...")
+        logger.info("Creating work arrangement features...")
         df = self.create_work_arrangement_features(df)
 
-        print("Creating market factors features...")
+        logger.info("Creating market factors features...")
         df = self.create_market_factors_features(df)
 
-        print("Creating salary disparity features...")
+        logger.info("Creating salary disparity features...")
         df = self.create_salary_disparity_features(df)
 
         return df

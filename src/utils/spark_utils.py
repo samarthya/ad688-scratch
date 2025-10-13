@@ -10,6 +10,10 @@ from pyspark.sql import SparkSession
 from pyspark.conf import SparkConf
 import os
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 def create_spark_session(app_name: str = "Job Market Analytics",
                         master: str = "local[*]",
@@ -167,7 +171,7 @@ def stop_spark_session(spark: SparkSession) -> None:
     """
     if spark:
         spark.stop()
-        print("Spark session stopped successfully")
+        logger.info("Spark session stopped successfully")
 
 
 def get_spark_info(spark: SparkSession) -> Dict[str, Any]:

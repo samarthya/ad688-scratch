@@ -11,6 +11,10 @@ from pathlib import Path
 import base64
 from io import BytesIO
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 # Handle optional dependency gracefully
 try:
     from docx import Document
@@ -20,7 +24,7 @@ try:
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
-    print("Warning: python-docx not available. DOCX report generation will be skipped.")
+    logger.info("Warning: python-docx not available. DOCX report generation will be skipped.")
 
 from .salary_models import SalaryAnalyticsModels
 from .nlp_analysis import JobMarketNLPAnalyzer
@@ -56,7 +60,7 @@ class JobMarketReportGenerator:
         self.doc = Document()
         self._setup_document_styles()
 
-        print(" DOCX Report Generator initialized")
+        logger.info(" DOCX Report Generator initialized")
 
     def _setup_document_styles(self):
         """Set up document styles for professional formatting."""
@@ -104,11 +108,11 @@ class JobMarketReportGenerator:
         Returns:
             Path to generated report
         """
-        print("[DATA] GENERATING COMPREHENSIVE DOCX REPORT")
-        print("=" * 50)
+        logger.info("[DATA] GENERATING COMPREHENSIVE DOCX REPORT")
+        logger.info("=" * 50)
 
         # Run all analyses
-        print("[CHECK] Running analytics...")
+        logger.info("[CHECK] Running analytics...")
         analytics_results = self.salary_models.run_complete_analysis()
         nlp_results = self.nlp_analyzer.run_complete_nlp_analysis()
         comprehensive_report = self.dashboard.generate_comprehensive_report()
@@ -126,9 +130,9 @@ class JobMarketReportGenerator:
         output_path = Path(output_path)
         self.doc.save(output_path)
 
-        print(f"[OK] Report generated successfully: {output_path}")
-        print(f" Document contains {len(self.doc.paragraphs)} paragraphs")
-        print(f" [DATA] File size: {output_path.stat().st_size / 1024:.1f} KB")
+        logger.info(f"[OK] Report generated successfully: {output_path}")
+        logger.info(f" Document contains {len(self.doc.paragraphs)} paragraphs")
+        logger.info(f" [DATA] File size: {output_path.stat().st_size / 1024:.1f} KB")
 
         return str(output_path)
 
@@ -470,8 +474,8 @@ def generate_comprehensive_docx_report(df: pd.DataFrame = None, output_path: str
         Path to generated report
     """
     if not DOCX_AVAILABLE:
-        print("[ERROR] python-docx not available. Cannot generate DOCX report.")
-        print("Install with: pip install python-docx")
+        logger.info("[ERROR] python-docx not available. Cannot generate DOCX report.")
+        logger.info("Install with: pip install python-docx")
         return ""
 
     generator = JobMarketReportGenerator(df)

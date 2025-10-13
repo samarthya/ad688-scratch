@@ -50,6 +50,7 @@ All notebooks use **PySpark MLlib** for machine learning and NLP tasks, aligned 
 - Demonstrate `VectorAssembler`, `StandardScaler`, `StringIndexer`
 
 **Key Features**:
+
 - 100% PySpark MLlib (no scikit-learn)
 - Uses standardized column names: `salary_avg`, `salary_from`, `salary_to`, `min_years_experience`, `naics2_name`
 - Automatic data loading from Parquet

@@ -40,18 +40,19 @@ print(f"Generated {len(figures)} figures")
 # Ensure figures are saved to disk
 import os
 figures_dir = "figures"
+
 if not os.path.exists(figures_dir):
     os.makedirs(figures_dir)
     print(f"Created {figures_dir} directory")
 
 # List generated figures
 if figures:
-    print("Figure files generated:")
+    # print("Figure files generated:")
     for name, path in figures.items():
         exists = os.path.exists(path)
-        print(f"  {name}: {path} - {'[OK]' if exists else '[ERROR]'}")
-else:
-    print("[WARNING] No figures were generated")
+        # print(f"  {name}: {path} - {'[OK]' if exists else '[ERROR]'}")
+# else:
+    # print("[WARNING] No figures were generated")
 ```
 
 ## Key Metrics Overview

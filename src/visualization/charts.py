@@ -14,6 +14,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 # Optional dependencies
 try:
     import matplotlib.pyplot as plt
@@ -93,7 +97,7 @@ class SalaryVisualizer:
             import os
             filepath = os.path.join(self.save_dir, f"{name}.html")
             fig.write_html(filepath)
-            print(f"  [AUTO-SAVE] {filepath}")
+            logger.info(f"  [AUTO-SAVE] {filepath}")
 
     def save_figure(self, fig, name: str, output_dir: Optional[str] = None, formats: list = ['html']) -> Dict[str, str]:
         """
@@ -131,8 +135,8 @@ class SalaryVisualizer:
                         fig.write_image(filepath, width=1200, height=800)
                     saved_files[fmt] = filepath
                 except Exception as e:
-                    print(f"  [WARNING] Could not save {fmt} format: {e}")
-                    print(f"  [INFO] Install kaleido for static image export: pip install kaleido")
+                    logger.info(f"Could not save {fmt} format: {e}")
+                    logger.info(f"Install kaleido for static image export: pip install kaleido")
 
         return saved_files
 
@@ -239,7 +243,7 @@ class SalaryVisualizer:
                         industry_col = col
                         break
                 else:
-                    print("No industry column found for analysis")
+                    logger.info("No industry column found for analysis")
                     return pd.DataFrame()
 
             # Get salary column (returns 'salary_avg' after processing)
@@ -275,7 +279,7 @@ class SalaryVisualizer:
             return industry_analysis
 
         except Exception as e:
-            print(f"Industry analysis error: {e}")
+            logger.error(f"Industry analysis error: {e}")
             return pd.DataFrame()
 
     def get_overall_statistics(self) -> Dict[str, Any]:
@@ -875,7 +879,7 @@ class SalaryVisualizer:
         # Check for any remaining invalid salary data (should be rare after pipeline processing)
         invalid_salary_count = clean_df[salary_col].isna().sum()
         if invalid_salary_count > 0:
-            print(f"Warning: Found {invalid_salary_count:,} records with missing salary data after pipeline processing")
+            logger.info(f"Found {invalid_salary_count:,} records with missing salary data after pipeline processing")
             clean_df = clean_df.dropna(subset=[salary_col])
 
         if len(clean_df) == 0:
@@ -1092,7 +1096,7 @@ class SalaryVisualizer:
             fig.write_html(os.path.join(output_dir, 'key_finding_salary_distribution.html'))
             graphics['salary_distribution'] = 'key_finding_salary_distribution.html'
         except Exception as e:
-            print(f"Failed to create salary distribution: {e}")
+            logger.info(f"Failed to create salary distribution: {e}")
 
         try:
             # Create industry analysis using actual column name
@@ -1102,9 +1106,9 @@ class SalaryVisualizer:
                 fig.write_html(os.path.join(output_dir, 'key_finding_industry_analysis.html'))
                 graphics['industry_analysis'] = 'key_finding_industry_analysis.html'
             else:
-                print(f"Skipped industry analysis: no industry column found")
+                logger.info(f"Skipped industry analysis: no industry column found")
         except Exception as e:
-            print(f"Failed to create industry analysis: {e}")
+            logger.info(f"Failed to create industry analysis: {e}")
 
         try:
             # Create geographic analysis
@@ -1114,9 +1118,9 @@ class SalaryVisualizer:
                 fig.write_html(os.path.join(output_dir, 'key_finding_geographic_analysis.html'))
                 graphics['geographic_analysis'] = 'key_finding_geographic_analysis.html'
             else:
-                print(f"Skipped geographic analysis: no city column found")
+                logger.info(f"Skipped geographic analysis: no city column found")
         except Exception as e:
-            print(f"Failed to create geographic analysis: {e}")
+            logger.info(f"Failed to create geographic analysis: {e}")
 
         try:
             # Create correlation matrix
@@ -1124,7 +1128,7 @@ class SalaryVisualizer:
             fig.write_html(os.path.join(output_dir, 'key_finding_correlation_matrix.html'))
             graphics['correlation_matrix'] = 'key_finding_correlation_matrix.html'
         except Exception as e:
-            print(f"Failed to create correlation matrix: {e}")
+            logger.info(f"Failed to create correlation matrix: {e}")
 
         return graphics
 
@@ -1141,7 +1145,7 @@ class SalaryVisualizer:
             fig.write_html(os.path.join(output_dir, 'executive_dashboard_overview.html'))
             dashboard['overview'] = 'executive_dashboard_overview.html'
         except Exception as e:
-            print(f"Failed to create overview: {e}")
+            logger.info(f"Failed to create overview: {e}")
 
         try:
             # Create industry comparison using actual column name
@@ -1151,9 +1155,9 @@ class SalaryVisualizer:
                 fig.write_html(os.path.join(output_dir, 'executive_dashboard_industry.html'))
                 dashboard['industry'] = 'executive_dashboard_industry.html'
             else:
-                print(f"Skipped industry dashboard: no industry column found")
+                logger.info(f"Skipped industry dashboard: no industry column found")
         except Exception as e:
-            print(f"Failed to create industry comparison: {e}")
+            logger.info(f"Failed to create industry comparison: {e}")
 
         return dashboard
 
@@ -1172,7 +1176,7 @@ class SalaryVisualizer:
                         city_col = col
                         break
                 else:
-                    print("No location column found for geographic analysis")
+                    logger.info("No location column found for geographic analysis")
                     return pd.DataFrame()
 
             # Get salary column (returns 'salary_avg' after processing)
@@ -1212,7 +1216,7 @@ class SalaryVisualizer:
             return geo_analysis
 
         except Exception as e:
-            print(f"Geographic analysis error: {e}")
+            logger.error(f"Geographic analysis error: {e}")
             return pd.DataFrame()
 
 

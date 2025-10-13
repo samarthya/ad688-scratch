@@ -1,6 +1,6 @@
 # System Architecture
 
-**Tech Career Intelligence Platform** - Scalable data processing with PySpark, interactive analysis with Pandas + Plotly
+**Tech Career Intelligence Platform** - PySpark for ETL & ML at scale, Pandas for visualization layer
 
 > See [DESIGN.md](DESIGN.md) for implementation guide and usage patterns
 
@@ -26,21 +26,24 @@ The Tech Career Intelligence Platform is a **multi-layered data analytics system
 
 ```mermaid
 graph LR
-    subgraph PRINCIPLE["SEPARATION OF CONCERNS"]
-        PYSPARK["PySpark<br/>Heavy ETL<br/>13M rows"]
-        PANDAS["Pandas<br/>Analysis<br/>30-50K rows"]
-        PLOTLY["Plotly<br/>Interactive<br/>Visualizations"]
-        QUARTO["Quarto<br/>Professional<br/>Presentations"]
+    subgraph PRINCIPLE["LAYERED ARCHITECTURE"]
+        PYSPARK["PySpark<br/>ETL + ML<br/>13M rows"]
+        PARQUET["Parquet<br/>Boundary<br/>30-50K rows"]
+        PANDAS["Pandas<br/>Visualization<br/>Load small data"]
+        PLOTLY["Plotly<br/>Interactive<br/>Charts"]
+        QUARTO["Quarto<br/>Website<br/>Static HTML"]
     end
 
-    PYSPARK -->|"Process & Filter"| PANDAS
-    PANDAS -->|"Analyze & Model"| PLOTLY
-    PLOTLY -->|"Embed & Display"| QUARTO
+    PYSPARK -->|"Process & Train"| PARQUET
+    PARQUET -->|"Load Fast"| PANDAS
+    PANDAS -->|"Visualize"| PLOTLY
+    PLOTLY -->|"Embed"| QUARTO
 
     style PRINCIPLE fill:#f5f5f5,stroke:#333,stroke-width:2px
     style PYSPARK fill:#1565c0,stroke:#fff,color:#fff,stroke-width:2px
+    style PARQUET fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:2px
     style PANDAS fill:#2e7d32,stroke:#fff,color:#fff,stroke-width:2px
-    style PLOTLY fill:#6a1b9a,stroke:#fff,color:#fff,stroke-width:2px
+    style PLOTLY fill:#d84315,stroke:#fff,color:#fff,stroke-width:2px
     style QUARTO fill:#c62828,stroke:#fff,color:#fff,stroke-width:2px
 ```
 
@@ -53,20 +56,22 @@ graph LR
    - Engineer features at scale
    - Save to efficient Parquet format
 
-2. **Analysis Layer** (Pandas + PySpark MLlib)
+2. **Machine Learning Layer** (PySpark MLlib)
 
-   - Load processed Parquet datasets
-   - Statistical analysis and ML models
-   - Feature engineering for ML
-   - Generate insights and metrics
+   - Train models on full dataset (PySpark DataFrames)
+   - Feature engineering at scale
+   - Linear regression, random forests, clustering
+   - NLP text processing and analysis
+   - Save trained models for prediction
 
-3. **Visualization Layer** (Plotly)
+3. **Visualization Layer** (Pandas + Plotly)
 
-   - Create interactive charts
+   - **Boundary**: Load small Parquet with Pandas (30-50K rows)
+   - Statistical analysis on processed data
+   - Create interactive charts with Plotly
    - Generate executive dashboards
    - Export multi-format outputs (HTML/PNG/SVG)
-   - Consistent theming and styling
-   - Centralized `display_figure()` utility for Quarto/notebooks
+   - Centralized `display_figure()` utility
 
 4. **Presentation Layer** (Quarto)
 
@@ -89,10 +94,10 @@ graph TB
         PARQUET[Apache Parquet<br/>Columnar Storage]
     end
 
-    subgraph ANALYSIS["[DATA] ANALYSIS & ML"]
-        PANDAS[Pandas 2.3<br/>Data Analysis]
+    subgraph ANALYSIS["[DATA] ML & VISUALIZATION"]
         MLLIB[PySpark MLlib<br/>Machine Learning]
-        NUMPY[NumPy 2.3<br/>Numerical Computing]
+        PANDAS[Pandas 2.3<br/>Visualization Prep]
+        PARQUET_STORE[Parquet Boundary<br/>30-50K rows]
     end
 
     subgraph VISUALIZATION["[CHART] VISUALIZATION"]
@@ -122,10 +127,10 @@ graph TB
 | Layer | Technology | Purpose | Capabilities |
 |-------|-----------|---------|--------------|
 | **ETL** | PySpark 4.0 | Distributed data processing | Handles 13M rows, lazy evaluation, distributed transforms |
-| **Storage** | Apache Parquet | Columnar data storage | Compressed, fast columnar reads, type preservation |
-| **Analysis** | Pandas 2.3 | Data analysis and manipulation | Rich API, fast operations on processed datasets (<100K rows) |
-| **ML** | PySpark MLlib | Machine learning at scale | Linear regression, random forests, clustering, NLP |
-| **Visualization** | Plotly 6.3 | Interactive charts | Web-native, HTML export, static image generation |
+| **Storage** | Apache Parquet | Columnar data storage | Compressed, fast columnar reads, type preservation, **BOUNDARY** |
+| **ML** | PySpark MLlib | Machine learning at scale | Linear regression, random forests, clustering, NLP, pipelines |
+| **Analysis** | Pandas 2.3 | Small data analysis | Load processed Parquet (30-50K rows), fast operations |
+| **Visualization** | Plotly 6.3 | Interactive charts | Web-native, HTML export, excellent Pandas integration |
 | **Presentation** | Quarto | Reproducible reporting | Multi-format output (HTML/DOCX/PDF), Python integration |
 
 ---
@@ -155,11 +160,11 @@ graph TB
         PARQUET[(Processed Parquet<br/>30-50K rows<br/>job_market_processed.parquet)]
     end
 
-    subgraph ANALYTICS["ANALYTICS LAYER - Pandas"]
+    subgraph ANALYTICS["ANALYTICS LAYER - PySpark"]
         ANALYZER[SparkJobAnalyzer<br/>src/core/analyzer.py]
         MODELS[SalaryAnalyticsModels<br/>src/analytics/salary_models.py]
         NLP[JobMarketNLPAnalyzer<br/>src/analytics/nlp_analysis.py]
-        ML[ML Models<br/>src/ml/*.py]
+        ML[ML Models<br/>src/ml/*.py<br/>PySpark MLlib]
     end
 
     subgraph VIZ["VISUALIZATION LAYER - Plotly"]
@@ -266,8 +271,8 @@ graph LR
         PARQ[Parquet File<br/>snake_case columns<br/>Clean, validated<br/>30-50K rows]
     end
 
-    subgraph PANDAS_LAYER ["Pandas Layer"]
-        PANDAS_DF[Pandas DataFrame<br/>snake_case columns<br/>Ready for analysis]
+    subgraph PANDAS_LAYER ["Pandas Visualization Layer"]
+        PANDAS_DF[Pandas DataFrame<br/>snake_case columns<br/>Small data (30-50K)]
     end
 
     subgraph OUTPUT_LAYER ["Output Contract"]
@@ -299,7 +304,7 @@ graph TB
     ROOT --> CONFIG[config/<br/>Configuration]
     ROOT --> CORE[core/<br/>PySpark ETL]
     ROOT --> DATA[data/<br/>Data Utilities]
-    ROOT --> ANALYTICS[analytics/<br/>Pandas ML]
+    ROOT --> ANALYTICS[analytics/<br/>PySpark MLlib]
     ROOT --> ML[ml/<br/>ML Models]
     ROOT --> VIZ[visualization/<br/>Plotly Charts]
     ROOT --> UTILS[utils/<br/>Helpers]
@@ -348,11 +353,11 @@ graph TB
 | Module | Responsibility | Primary Technology | Output |
 |--------|---------------|-------------------|--------|
 | **src/config/** | Configuration management | Python | Settings, mappings |
-| **src/core/** | Heavy ETL processing | PySpark | Processed DataFrame |
-| **src/data/** | Data loading & utilities | PySpark + Pandas | DataFrames |
+| **src/core/** | Heavy ETL processing | PySpark | Spark DataFrames |
+| **src/data/** | Data loading & utilities | PySpark + Pandas | Spark/Pandas DataFrames |
 | **src/analytics/** | ML models & analysis | PySpark MLlib | Models, insights |
 | **src/ml/** | Advanced ML | PySpark MLlib | Trained models |
-| **src/visualization/** | Charts, dashboards, `display_figure()` | Plotly + Kaleido | Figures (HTML/PNG) |
+| **src/visualization/** | Charts, dashboards, `display_figure()` | Pandas + Plotly | Figures (HTML/PNG) |
 | **src/utils/** | Helper functions | Python | Utilities |
 
 ---
@@ -419,35 +424,35 @@ classDiagram
     SparkJobAnalyzer --> DataValidator
 ```
 
-### 2. Analytics Classes (Pandas + ML)
+### 2. Analytics Classes (PySpark + MLlib)
 
 ```mermaid
 classDiagram
     class SalaryAnalyticsModels {
-        -df: DataFrame
+        -df: Spark DataFrame
         -models: Dict
-        -scalers: Dict
-        -encoders: Dict
-        +prepare_features() DataFrame
-        +model_1_salary_regression(X, y) Dict
-        +model_2_above_average_classification(X, y) Dict
+        -pipelines: Dict
+        -feature_assemblers: Dict
+        +prepare_features() Spark DataFrame
+        +model_1_salary_regression() Dict
+        +model_2_above_average_classification() Dict
         +run_complete_analysis() Dict
         +create_analysis_visualizations(results) List~Figure~
     }
 
     class JobMarketNLPAnalyzer {
-        -df: DataFrame
-        -vectorizer: TfidfVectorizer
+        -df: Spark DataFrame
+        -tokenizer: PySpark Tokenizer
         -skills_corpus: List
         +extract_skills(text) List~str~
         +create_word_cloud() Figure
         +topic_clustering(n_topics) Dict
-        +analyze_skill_trends() DataFrame
+        +analyze_skill_trends() Spark DataFrame
         +run_complete_nlp_analysis() Dict
     }
 
     class PredictiveAnalyticsDashboard {
-        -df: DataFrame
+        -df: Spark DataFrame
         -salary_models: SalaryAnalyticsModels
         -nlp_analyzer: JobMarketNLPAnalyzer
         +create_executive_summary_dashboard() Figure
@@ -459,18 +464,18 @@ classDiagram
     class SalaryRegressionModel {
         -spark: SparkSession
         -models: Dict
-        +prepare_regression_data(df) DataFrame
-        +train_linear_regression(df) Model
-        +train_random_forest(df) Model
+        +prepare_regression_data(df) Spark DataFrame
+        +train_linear_regression(df) LinearRegressionModel
+        +train_random_forest(df) RandomForestModel
         +evaluate_model(model, test_df) Dict
     }
 
     class JobClassificationModel {
         -spark: SparkSession
         -pipelines: Dict
-        +prepare_classification_data(df) DataFrame
-        +train_logistic_regression(df) Model
-        +train_random_forest_classifier(df) Model
+        +prepare_classification_data(df) Spark DataFrame
+        +train_logistic_regression(df) LogisticRegressionModel
+        +train_random_forest_classifier(df) RandomForestClassifier
         +evaluate_classification(model, test_df) Dict
     }
 
@@ -485,13 +490,13 @@ classDiagram
 ```mermaid
 classDiagram
     class SalaryVisualizer {
-        -df: DataFrame
+        -df: Spark DataFrame
         -theme: JobMarketTheme
         +get_overall_statistics() Dict
         +get_experience_progression_analysis() Dict
         +get_education_roi_analysis() Dict
-        +get_industry_salary_analysis(top_n) DataFrame
-        +get_geographic_salary_analysis(top_n) DataFrame
+        +get_industry_salary_analysis(top_n) Spark DataFrame
+        +get_geographic_salary_analysis(top_n) Spark DataFrame
         +plot_salary_distribution() Figure
         +plot_experience_salary_trend() Figure
         +plot_salary_by_category(column) Figure
@@ -501,7 +506,7 @@ classDiagram
     }
 
     class KeyFindingsDashboard {
-        -df: DataFrame
+        -df: Spark DataFrame
         -theme: JobMarketTheme
         -key_metrics: Dict
         +create_key_metrics_cards() Figure
@@ -610,11 +615,11 @@ graph TB
 | Load raw CSV | PySpark | 13M rows | ~2-3 min | 4-8 GB |
 | Clean & transform | PySpark | 13M rows | ~5-10 min | 4-8 GB |
 | Save to Parquet | PySpark | 30-50K rows | ~10-30 sec | 2-4 GB |
-| Load Parquet | Pandas | 30-50K rows | ~1-2 sec | 500 MB |
-| Statistical analysis | Pandas | 30-50K rows | <1 sec | 500 MB |
-| ML training | PySpark MLlib | 30-50K rows | 5-30 sec | 1-2 GB |
-| Generate chart | Plotly | 30-50K points | 1-5 sec | 200 MB |
-| Render Quarto page | Quarto | N/A | 5-15 sec | 500 MB |
+| Load Parquet | PySpark | 30-50K rows | ~1-2 sec | 1-2 GB |
+| Statistical analysis | PySpark SQL | 30-50K rows | 1-3 sec | 1-2 GB |
+| ML training | PySpark MLlib | 30-50K rows | 5-30 sec | 2-4 GB |
+| Generate chart | Plotly | 30-50K points | 1-5 sec | 500 MB |
+| Render Quarto page | Quarto | N/A | 5-15 sec | 1 GB |
 
 ### Storage Efficiency
 

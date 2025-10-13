@@ -8,6 +8,12 @@ author:
         name: Boston University
         city: Boston
         state: MA
+  - name: Haocun Wang
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
 date: today
 format:
   html:
@@ -23,18 +29,19 @@ Welcome to your comprehensive guide for navigating the technology job market. Th
 
 ## Interactive Key Findings Dashboard
 
-**[→ View Interactive Dashboard](market-dashboard.qmd)** - Critical salary disparities and career insights
+**[View Interactive Dashboard](market-dashboard.qmd)** - Critical salary disparities and career insights
 
 Get instant answers to your most pressing career questions with our interactive dashboard featuring:
 
-- **90% Experience Gap** analysis
-- **9% Education Premium** calculations
-- **32% Company Size Gap** insights
+- **85% Experience Gap** - Senior roles earn 85% more than entry-level
+- **Career Progression** analysis across experience levels
+- **Education ROI** calculations and salary premiums
+- **Geographic Intelligence** - salary variations by location
 - **72K+ Jobs Analyzed** for reliable data
 
 ## Data Processing Pipeline
 
-**[→ View Data Pipeline](data-pipeline.qmd)** - How the website processes data automatically
+**[View Data Pipeline](data-pipeline.qmd)** - How the website processes data automatically
 
 See how our intelligent auto-processing pipeline works:
 
@@ -93,15 +100,15 @@ See how our intelligent auto-processing pipeline works:
 
 ### Career Progression: "How much will I earn as I grow?"
 
-**[→ View Experience Analysis](salary-insights.qmd)** - Complete career progression analysis with interactive charts
+**[View Experience Analysis](salary-insights.qmd)** - Complete career progression analysis with interactive charts
 
 ### Education ROI: "Is graduate school worth it?"
 
-**[→ View Education & Skills Analysis](salary-insights.qmd)** - Education ROI and skills premium analysis
+**[View Education & Skills Analysis](salary-insights.qmd)** - Education ROI and skills premium analysis
 
 ### Company Strategy: "Startup or Enterprise?"
 
-**[→ View Industry Analysis](salary-insights.qmd)** - Company size effects and industry comparisons
+**[View Industry Analysis](salary-insights.qmd)** - Company size effects and industry comparisons
 
 **Key Insight:** Large companies pay 32% more on average, but startups offer equity upside. Consider total compensation packages.
 
@@ -124,6 +131,17 @@ This analysis is organized to answer your questions in the order you'd naturally
   - Classification for above-average paying jobs
   - NLP analysis with skills clustering and word clouds
   - Strategic recommendations for job seekers
+
+### Statistical Methodology
+
+- **[Methodology & Multivariate Analysis](methodology.qmd)** How do the models work?
+
+  - Feature selection and engineering rationale
+  - Missing data handling and imputation strategy
+  - Complete model specifications (regression + classification)
+  - Evaluation metrics and cross-validation
+  - Categorical variable encoding decisions
+  - Reproducibility documentation
 
 ### Market Intelligence
 

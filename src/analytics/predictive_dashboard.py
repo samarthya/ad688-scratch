@@ -18,6 +18,10 @@ import streamlit as st
 from .salary_models import SalaryAnalyticsModels
 from .nlp_analysis import JobMarketNLPAnalyzer
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class PredictiveAnalyticsDashboard:
     """
@@ -436,8 +440,8 @@ class PredictiveAnalyticsDashboard:
         Returns:
             Dictionary with complete analysis results
         """
-        print("[DATA] GENERATING COMPREHENSIVE ANALYTICS REPORT")
-        print("=" * 50)
+        logger.info("[DATA] GENERATING COMPREHENSIVE ANALYTICS REPORT")
+        logger.info("=" * 50)
 
         # Run all analyses
         if self.analytics_results is None:
@@ -476,11 +480,11 @@ class PredictiveAnalyticsDashboard:
             'recommendations': self._generate_strategic_recommendations()
         }
 
-        print("[OK] Comprehensive report generated successfully!")
-        print(f"   [CHART] Regression Model R²: {self.analytics_results['regression']['test_r2']:.3f}")
-        print(f"   [TARGET] Classification Accuracy: {self.analytics_results['classification']['test_accuracy']:.3f}")
-        print(f"   [CHECK] Skills Analyzed: {nlp_results['insights']['total_unique_skills']:,}")
-        print(f"   [DATA] Dashboards Created: {len(comprehensive_report['dashboards'])}")
+        logger.info("[OK] Comprehensive report generated successfully!")
+        logger.info(f"   [CHART] Regression Model R²: {self.analytics_results['regression']['test_r2']:.3f}")
+        logger.info(f"   [TARGET] Classification Accuracy: {self.analytics_results['classification']['test_accuracy']:.3f}")
+        logger.info(f"   [CHECK] Skills Analyzed: {nlp_results['insights']['total_unique_skills']:,}")
+        logger.info(f"   [DATA] Dashboards Created: {len(comprehensive_report['dashboards'])}")
 
         return comprehensive_report
 

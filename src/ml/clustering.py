@@ -13,6 +13,10 @@ from pyspark.ml import Pipeline
 from pyspark.sql.functions import col, count, avg, max as spark_max, min as spark_min
 import numpy as np
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class JobMarketClusterer:
     """
@@ -83,7 +87,7 @@ class JobMarketClusterer:
     def fit_clustering_model(self, df: DataFrame) -> 'JobMarketClusterer':
         """Fit KMeans clustering model to the data."""
 
-        print(f"Fitting KMeans clustering model with k={self.k}...")
+        logger.info(f"Fitting KMeans clustering model with k={self.k}...")
 
         # Prepare features
         df_features = self.prepare_clustering_features(df)
@@ -103,7 +107,7 @@ class JobMarketClusterer:
         # Get cluster centers
         self.cluster_centers = self.kmeans_model.stages[-1].clusterCenters()
 
-        print(f"Clustering model fitted successfully with {len(self.cluster_centers)} clusters")
+        logger.info(f"Clustering model fitted successfully with {len(self.cluster_centers)} clusters")
 
         return self
 
@@ -219,7 +223,7 @@ class JobMarketClusterer:
     def recommend_optimal_k(self, df: DataFrame, max_k: int = 10) -> int:
         """Recommend optimal number of clusters using elbow method."""
 
-        print("Calculating optimal k using elbow method...")
+        logger.info("Calculating optimal k using elbow method...")
 
         # Prepare features
         df_features = self.prepare_clustering_features(df)
@@ -246,7 +250,7 @@ class JobMarketClusterer:
             wcss = temp_model.stages[-1].computeCost(predictions)
             wcss_values.append(wcss)
 
-            print(f"k={k}: WCSS={wcss:.2f}")
+            logger.info(f"k={k}: WCSS={wcss:.2f}")
 
         # Find elbow point (simplified)
         if len(wcss_values) > 1:
@@ -262,5 +266,5 @@ class JobMarketClusterer:
         else:
             optimal_k = 3  # Default fallback
 
-        print(f"Recommended optimal k: {optimal_k}")
+        logger.info(f"Recommended optimal k: {optimal_k}")
         return optimal_k

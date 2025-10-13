@@ -27,6 +27,10 @@ from plotly.subplots import make_subplots
 import base64
 from io import BytesIO
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 # Handle optional word cloud dependency
 try:
     from wordcloud import WordCloud
@@ -34,7 +38,7 @@ try:
     WORDCLOUD_AVAILABLE = True
 except ImportError:
     WORDCLOUD_AVAILABLE = False
-    print("Warning: wordcloud not available. Word cloud generation will be skipped.")
+    logger.info("Warning: wordcloud not available. Word cloud generation will be skipped.")
 
 
 class JobMarketNLPAnalyzer:
@@ -82,7 +86,7 @@ class JobMarketNLPAnalyzer:
             'tools': ['git', 'jira', 'confluence', 'tableau', 'power bi', 'excel', 'slack']
         }
 
-        print(f"Initialized NLP analyzer with {self.spark_df.count():,} job records (PySpark MLlib)")
+        logger.info(f"Initialized NLP analyzer with {self.spark_df.count():,} job records (PySpark MLlib)")
 
     def extract_skills_from_text(self, text_column: str = 'required_skills') -> Dict[str, Any]:
         """
@@ -94,18 +98,18 @@ class JobMarketNLPAnalyzer:
         Returns:
             Dictionary with skills data and summary
         """
-        print(f"\n=== SKILLS EXTRACTION (PySpark) FROM {text_column.upper()} ===")
+        logger.info(f"\n=== SKILLS EXTRACTION (PySpark) FROM {text_column.upper()} ===")
 
         # Check if column exists
         if text_column not in self.spark_df.columns:
-            print(f"Warning: {text_column} column not found.")
+            logger.warning(f"Warning: {text_column} column not found.")
             available_cols = [col for col in self.spark_df.columns
                             if 'skill' in col.lower() or 'requirement' in col.lower()]
             if available_cols:
                 text_column = available_cols[0]
-                print(f"Using column: {text_column}")
+                logger.info(f"Using column: {text_column}")
             else:
-                print("No suitable text column found. Creating synthetic data.")
+                logger.info("No suitable text column found. Creating synthetic data.")
                 return self._create_synthetic_skills_data()
 
         # Filter non-null values
@@ -138,8 +142,8 @@ class JobMarketNLPAnalyzer:
         # Convert to Pandas for analysis
         skill_summary_pd = skill_counts.toPandas().rename(columns={'count': 'frequency'})
 
-        print(f"[OK] Extracted {len(skill_summary_pd):,} unique skills")
-        print(f"   Most common: {skill_summary_pd.iloc[0]['skill']} ({skill_summary_pd.iloc[0]['frequency']:,} occurrences)")
+        logger.info(f"[OK] Extracted {len(skill_summary_pd):,} unique skills")
+        logger.info(f"   Most common: {skill_summary_pd.iloc[0]['skill']} ({skill_summary_pd.iloc[0]['frequency']:,} occurrences)")
 
         self.skills_data = {
             'skill_summary': skill_summary_pd,
@@ -160,7 +164,7 @@ class JobMarketNLPAnalyzer:
         Returns:
             Dictionary with clustering results
         """
-        print(f"\n=== SKILLS CLUSTERING (PySpark KMeans) INTO {n_clusters} TOPICS ===")
+        logger.info(f"\n=== SKILLS CLUSTERING (PySpark KMeans) INTO {n_clusters} TOPICS ===")
 
         if self.skills_data is None:
             self.extract_skills_from_text()
@@ -176,7 +180,7 @@ class JobMarketNLPAnalyzer:
 
         if use_tfidf:
             # Use TF-IDF vectorization
-            print("Using TF-IDF vectorization...")
+            logger.info("Using TF-IDF vectorization...")
 
             # Convert skill to array of words (tokenize)
             tokenizer = Tokenizer(inputCol='skill', outputCol='words_tokenized')
@@ -199,7 +203,7 @@ class JobMarketNLPAnalyzer:
 
         else:
             # Use Word2Vec
-            print("Using Word2Vec embeddings...")
+            logger.info("Using Word2Vec embeddings...")
 
             # Word2Vec requires tokenized text
             word2vec = Word2Vec(
@@ -215,7 +219,7 @@ class JobMarketNLPAnalyzer:
         # KMeans clustering
         kmeans = SparkKMeans(k=n_clusters, seed=42, featuresCol='features', predictionCol='cluster')
 
-        print(f"Training KMeans with {n_clusters} clusters...")
+        logger.info(f"Training KMeans with {n_clusters} clusters...")
         kmeans_model = kmeans.fit(vectorized_df)
 
         # Get predictions
@@ -242,9 +246,9 @@ class JobMarketNLPAnalyzer:
 
         self.clusters = cluster_summaries
 
-        print(f"[OK] Created {len(cluster_summaries)} skill clusters")
+        logger.info(f"[OK] Created {len(cluster_summaries)} skill clusters")
         for i, cluster in enumerate(cluster_summaries[:3]):
-            print(f"   Cluster {i}: {', '.join(cluster['top_skills'][:3])}...")
+            logger.info(f"   Cluster {i}: {', '.join(cluster['top_skills'][:3])}...")
 
         return {
             'clusters': cluster_summaries,
@@ -262,7 +266,7 @@ class JobMarketNLPAnalyzer:
         Returns:
             DataFrame with skill-salary correlations
         """
-        print(f"\n=== SKILL-SALARY CORRELATION ANALYSIS (PySpark) ===")
+        logger.info(f"\n=== SKILL-SALARY CORRELATION ANALYSIS (PySpark) ===")
 
         if self.skills_data is None:
             self.extract_skills_from_text()
@@ -273,7 +277,7 @@ class JobMarketNLPAnalyzer:
 
         # Check if salary column exists
         if salary_col not in self.spark_df.columns:
-            print(f"Warning: Salary column {salary_col} not found")
+            logger.warning(f"Warning: Salary column {salary_col} not found")
             return pd.DataFrame()
 
         # Filter valid salaries and skills
@@ -309,10 +313,10 @@ class JobMarketNLPAnalyzer:
         # Convert to Pandas
         correlation_df = skill_salary.toPandas()
 
-        print(f"[OK] Analyzed salary correlation for {len(correlation_df)} skills")
+        logger.info(f"[OK] Analyzed salary correlation for {len(correlation_df)} skills")
         if len(correlation_df) > 0:
             top_skill = correlation_df.iloc[0]
-            print(f"   Highest paying skill: {top_skill['skill']} (${top_skill['avg_salary']:,.0f})")
+            logger.info(f"   Highest paying skill: {top_skill['skill']} (${top_skill['avg_salary']:,.0f})")
 
         return correlation_df
 
@@ -323,10 +327,10 @@ class JobMarketNLPAnalyzer:
         Note: Still uses wordcloud library (not PySpark) for visualization only.
         """
         if not WORDCLOUD_AVAILABLE:
-            print("WordCloud library not available")
+            logger.info("WordCloud library not available")
             return None
 
-        print(f"\n=== GENERATING WORD CLOUD ===")
+        logger.info(f"\n=== GENERATING WORD CLOUD ===")
 
         if self.skills_data is None:
             self.extract_skills_from_text()
@@ -383,7 +387,7 @@ class JobMarketNLPAnalyzer:
             margin=dict(l=0, r=0, t=40, b=0)
         )
 
-        print(f"[OK] Generated word cloud with {len(word_freq)} skills")
+        logger.info(f"[OK] Generated word cloud with {len(word_freq)} skills")
 
         return fig
 
@@ -393,9 +397,9 @@ class JobMarketNLPAnalyzer:
 
         Returns comprehensive analysis with all NLP results.
         """
-        print("\n" + "="*70)
-        print("[START] RUNNING COMPLETE NLP ANALYSIS (PySpark MLlib)")
-        print("="*70)
+        logger.info("\n" + "="*70)
+        logger.info("[START] RUNNING COMPLETE NLP ANALYSIS (PySpark MLlib)")
+        logger.info("="*70)
 
         # Extract skills
         skills_data = self.extract_skills_from_text()
@@ -418,18 +422,18 @@ class JobMarketNLPAnalyzer:
             'top_skills': skills_data['skill_summary'].head(10).to_dict('records')
         }
 
-        print("\n" + "="*70)
-        print("[OK] COMPLETE NLP ANALYSIS FINISHED")
-        print("="*70)
-        print(f"Extracted {results['skills_extracted']} unique skills")
-        print(f"Created {clusters['n_clusters']} skill clusters")
-        print(f"Analyzed top {len(salary_corr)} high-paying skills")
+        logger.info("\n" + "="*70)
+        logger.info("[OK] COMPLETE NLP ANALYSIS FINISHED")
+        logger.info("="*70)
+        logger.info(f"Extracted {results['skills_extracted']} unique skills")
+        logger.info(f"Created {clusters['n_clusters']} skill clusters")
+        logger.info(f"Analyzed top {len(salary_corr)} high-paying skills")
 
         return results
 
     def _create_synthetic_skills_data(self) -> Dict[str, Any]:
         """Create synthetic skills data for testing."""
-        print("Creating synthetic skills data...")
+        logger.info("Creating synthetic skills data...")
 
         all_skills = []
         for category_skills in self.tech_skills.values():
