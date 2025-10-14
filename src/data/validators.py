@@ -20,8 +20,8 @@ class DataValidator:
             errors.append("Dataset is empty")
             return {'is_valid': False, 'errors': errors, 'warnings': warnings}
 
-        # Check for required columns
-        required_columns = ['salary_avg', 'TITLE', 'COMPANY']
+        # Check for required columns (processed data - snake_case)
+        required_columns = ['salary_avg', 'title', 'company_name']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             errors.extend([f"Missing required column: {col}" for col in missing_columns])

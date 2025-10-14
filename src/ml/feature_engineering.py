@@ -118,31 +118,31 @@ class SalaryDisparityFeatureEngineer:
         # Job title categorization
         df = df.withColumn(
             'job_title_category',
-            when(col('TITLE').isNull(), 'Unknown')
-            .when(col('TITLE').rlike('(?i)(manager|director|vp|vice president|head|lead)'), 'Management')
-            .when(col('TITLE').rlike('(?i)(senior|sr|principal|staff)'), 'Senior')
-            .when(col('TITLE').rlike('(?i)(junior|jr|entry|associate)'), 'Junior')
-            .when(col('TITLE').rlike('(?i)(intern|trainee|apprentice)'), 'Entry')
+            when(col('title').isNull(), 'Unknown')
+            .when(col('title').rlike('(?i)(manager|director|vp|vice president|head|lead)'), 'Management')
+            .when(col('title').rlike('(?i)(senior|sr|principal|staff)'), 'Senior')
+            .when(col('title').rlike('(?i)(junior|jr|entry|associate)'), 'Junior')
+            .when(col('title').rlike('(?i)(intern|trainee|apprentice)'), 'Entry')
             .otherwise('Individual Contributor')
         )
 
         # Industry categorization
         df = df.withColumn(
             'industry_category',
-            when(col('INDUSTRY').isNull(), 'Unknown')
-            .when(col('INDUSTRY').rlike('(?i)(technology|software|tech|it)'), 'Technology')
-            .when(col('INDUSTRY').rlike('(?i)(finance|banking|financial)'), 'Finance')
-            .when(col('INDUSTRY').rlike('(?i)(healthcare|medical|pharma)'), 'Healthcare')
-            .when(col('INDUSTRY').rlike('(?i)(consulting|professional services)'), 'Consulting')
+            when(col('industry').isNull(), 'Unknown')
+            .when(col('industry').rlike('(?i)(technology|software|tech|it)'), 'Technology')
+            .when(col('industry').rlike('(?i)(finance|banking|financial)'), 'Finance')
+            .when(col('industry').rlike('(?i)(healthcare|medical|pharma)'), 'Healthcare')
+            .when(col('industry').rlike('(?i)(consulting|professional services)'), 'Consulting')
             .otherwise('Other')
         )
 
         # Company size estimation (based on job posting patterns)
         df = df.withColumn(
             'company_size_tier',
-            when(col('COMPANY').isNull(), 'Unknown')
-            .when(col('COMPANY').rlike('(?i)(inc|corp|corporation|llc)'), 'Large')
-            .when(col('COMPANY').rlike('(?i)(startup|start-up|small)'), 'Small')
+            when(col('company_name').isNull(), 'Unknown')
+            .when(col('company_name').rlike('(?i)(inc|corp|corporation|llc)'), 'Large')
+            .when(col('company_name').rlike('(?i)(startup|start-up|small)'), 'Small')
             .otherwise('Medium')
         )
 
@@ -158,7 +158,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'ai_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in ai_keywords
             ])
         )
@@ -170,7 +170,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'technical_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in tech_keywords
             ])
         )
@@ -182,7 +182,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'soft_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in soft_skills_keywords
             ])
         )
