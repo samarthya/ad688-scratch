@@ -146,9 +146,10 @@ dashboard.create_complete_intelligence_dashboard().show()
 #| output: markdown
 
 # Display processing statistics using summary data
-print("### DATA PROCESSING PIPELINE STATISTICS")
+print(" DATA PROCESSING PIPELINE STATISTICS")
 
 print(f"\nPROCESSED DATA:")
+
 print(f"  Total Records: {summary['total_records']:,}")
 print(f"  Total Columns: {len(df.columns)}")
 print(f"  Salary Coverage: {summary['salary_coverage']:.1f}%")

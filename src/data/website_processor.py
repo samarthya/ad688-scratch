@@ -110,10 +110,10 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
 
     # Check if processed data exists (FAST PATH)
     if parquet_path.exists():
-        # logger.info("Loading job market data...")
-        # logger.info(f" Loading processed Parquet (fast!)...")
+        logger.info("Loading job market data...")
+        logger.info(f" Loading processed Parquet (fast!)...")
         df = pd.read_parquet(parquet_path)
-        # logger.info(f" Loaded {len(df):,} records in 1-2 seconds")
+        logger.info(f" Loaded {len(df):,} records in 1-2 seconds")
 
         # Generate common figures if they don't exist (OPTIMIZATION)
         _generate_common_figures(df)
@@ -130,9 +130,9 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
             "Please ensure raw data file exists in the data/raw/ directory."
         )
 
-    # logger.info("Loading job market data...")
-    # logger.info(f" Processing raw data with PySpark (first time - may take 5-10 minutes)...")
-    # logger.info(f" Raw CSV: {raw_csv_path.name}")
+    logger.info("Loading job market data...")
+    logger.info(f" Processing raw data with PySpark (first time - may take 5-10 minutes)...")
+    logger.info(f" Raw CSV: {raw_csv_path.name}")
 
     # Import PySpark processor
     from src.core.processor import JobMarketDataProcessor
@@ -192,20 +192,146 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
         raise
 
 
+def decode_numeric_columns(df: Any) -> Any:
+    """
+    Decode numeric codes to text descriptions for remote_type and employment_type.
+
+    This is a workaround because the processed data has numeric codes but code expects text.
+
+    Args:
+        df: Pandas DataFrame with numeric remote_type and employment_type columns
+
+    Returns:
+        DataFrame with decoded text columns
+    """
+    import pandas as pd
+
+    df = df.copy()
+
+    # Decode remote_type (0, 1, 2, 3 → text)
+    if 'remote_type' in df.columns and df['remote_type'].dtype in ['float64', 'int64']:
+        remote_mapping = {
+            0.0: 'Not Specified',
+            1.0: 'Remote',
+            2.0: 'Not Remote',
+            3.0: 'Hybrid Remote'
+        }
+        df['remote_type'] = df['remote_type'].map(remote_mapping).fillna('Not Specified')
+
+    # Decode employment_type (1, 2, 3 → text)
+    if 'employment_type' in df.columns and df['employment_type'].dtype in ['float64', 'int64']:
+        employment_mapping = {
+            1.0: 'Full-time (> 32 hours)',
+            2.0: 'Part-time (< 32 hours)',
+            3.0: 'Contract'
+        }
+        df['employment_type'] = df['employment_type'].map(employment_mapping).fillna('Not Specified')
+
+    return df
+
+
+def add_experience_level(df: Any) -> Any:
+    """
+    Add experience_level categorical column from min_years_experience.
+
+    This is calculated on-the-fly from existing columns, not stored in ETL.
+
+    Categories based on industry standards and data distribution:
+    - Unknown: NULL values
+    - Entry Level: 0-2 years (9.9K records, median $96K)
+    - Mid Level: 3-5 years (20.8K records, median $115K)
+    - Senior Level: 6-10 years (15.2K records, median $128K)
+    - Leadership Level: 10+ years (3.5K records, median $126K)
+
+    Args:
+        df: Pandas DataFrame with min_years_experience column
+
+    Returns:
+        DataFrame with experience_level column added
+    """
+    import pandas as pd
+    import numpy as np
+
+    df = df.copy()
+
+    # Create experience_level from min_years_experience
+    # Bins: Entry (0-2), Mid (3-5), Senior (6-9), Executive (10+)
+    # Use the mapped column name from column_mapping.py
+    # MIN_YEARS_EXPERIENCE → experience_min
+    exp_col = 'experience_min' if 'experience_min' in df.columns else 'min_years_experience'
+
+    df['experience_level'] = pd.cut(
+        df[exp_col],
+        bins=[-np.inf, 2, 5, 9, np.inf],
+        labels=['Entry Level', 'Mid Level', 'Senior Level', 'Executive Level'],
+        include_lowest=True
+    )
+
+    # Handle NaN values
+    df['experience_level'] = df['experience_level'].cat.add_categories(['Unknown'])
+    df.loc[df[exp_col].isna(), 'experience_level'] = 'Unknown'
+
+    return df
+
+
+def compute_salary_avg(df: Any) -> Any:
+    """
+    Compute salary_avg from available salary columns.
+
+    Priority:
+    1. Use salary_single if available
+    2. Compute average of salary_min and salary_max
+    3. Use salary_min if only that's available
+
+    Args:
+        df: Pandas DataFrame with salary columns
+
+    Returns:
+        DataFrame with salary_avg column added/updated
+    """
+    import numpy as np
+
+    # Initialize salary_avg with NaN
+    df['salary_avg'] = np.nan
+
+    # Priority 1: Use salary_single
+    if 'salary_single' in df.columns:
+        mask = df['salary_single'].notna()
+        df.loc[mask, 'salary_avg'] = df.loc[mask, 'salary_single']
+
+    # Priority 2: Compute from min/max
+    if 'salary_min' in df.columns and 'salary_max' in df.columns:
+        mask = df['salary_avg'].isna() & df['salary_min'].notna() & df['salary_max'].notna()
+        df.loc[mask, 'salary_avg'] = (df.loc[mask, 'salary_min'] + df.loc[mask, 'salary_max']) / 2
+
+    # Priority 3: Use salary_min if nothing else
+    if 'salary_min' in df.columns:
+        mask = df['salary_avg'].isna() & df['salary_min'].notna()
+        df.loc[mask, 'salary_avg'] = df.loc[mask, 'salary_min']
+
+    return df
+
+
 def get_processed_dataframe() -> Any:
     """
     Get the processed dataframe for analysis.
 
     This is the main entry point for Quarto QMD files.
-    Returns Pandas DataFrame for visualization compatibility.
+    Returns Pandas DataFrame with all derived columns already created in PySpark ETL.
+    Note: All derived columns (salary_avg, experience_level, etc.) are created in PySpark ETL.
     """
     df, _ = load_and_process_data()
+    df = decode_numeric_columns(df)  # Decode remote_type and employment_type to text
+    # All derived columns (salary_avg, experience_level, experience_years, ai_related, remote_allowed)
+    # are already created in PySpark ETL - no need to recompute
     return df
 
 
 def get_website_data_summary() -> Dict[str, Any]:
     """Get summary statistics for the website."""
-    _, summary = load_and_process_data()
+    # Load fresh data to ensure summary reflects computed salary_avg
+    df = get_processed_dataframe()
+    summary = get_data_summary(df)
     return summary
 
 
@@ -229,31 +355,14 @@ def get_data_summary(df: Any = None) -> Dict[str, Any]:
     if hasattr(df, 'toPandas'):
         df = df.toPandas()
 
-    # Find salary column
-    salary_col = None
-    for col in ['salary_avg', 'salary', 'SALARY_AVG']:
-        if col in df.columns:
-            salary_col = col
-            break
+    # Use processed salary column (lowercase after ETL)
+    salary_col = 'salary_avg' if 'salary_avg' in df.columns else 'salary'
 
-    # Find other columns (handle both snake_case and UPPERCASE)
-    industry_col = None
-    for col in ['industry', 'INDUSTRY', 'NAICS2_NAME', 'naics2_name']:
-        if col in df.columns:
-            industry_col = col
-            break
+    # Use processed column names (lowercase after ETL)
+    industry_col = 'industry' if 'industry' in df.columns else None
+    location_col = 'city_name' if 'city_name' in df.columns else 'location'
 
-    location_col = None
-    for col in ['city_name', 'location', 'CITY_NAME', 'LOCATION']:
-        if col in df.columns:
-            location_col = col
-            break
-
-    company_col = None
-    for col in ['company', 'company_name', 'COMPANY', 'COMPANY_NAME']:
-        if col in df.columns:
-            company_col = col
-            break
+    company_col = 'company' if 'company' in df.columns else None
 
     # Calculate summary statistics
     total_records = len(df)

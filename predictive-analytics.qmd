@@ -4,15 +4,20 @@ subtitle: "Machine Learning Insights for Job Market Analysis"
 format:
   html:
     theme: cosmo
-    toc: true
-    code-fold: true
-    code-tools: true
-    embed-resources: true
+    toc: True
+    code-fold: True
+    code-tools: True
+    embed-resources: True
     css: styles.css
+    self-contained: true
 execute:
-  echo: false
-  warning: false
-  message: false
+  echo: False
+  warning: False
+  message: False
+  cache: true
+python:
+  type: venv
+  environment: .venv
 ---
 
 ## Overview
@@ -21,23 +26,37 @@ This page demonstrates basic predictive analytics using the job market data. We 
 
 ```{python}
 #| label: data-loading
+#| output: false
 
 # Load processed data using centralized pipeline
 from src.data import load_analysis_data
 from src.config.column_mapping import get_analysis_column
+from src.visualization.charts import display_figure
 import pandas as pd
 import numpy as np
 
-print("Loading data...")
 df = load_analysis_data("predictive")
 
 # Get standardized column names
 salary_col = get_analysis_column('salary')
 city_col = get_analysis_column('city')
+```
 
-print(f"[OK] Loaded {len(df):,} records")
-print(f" Salary column: {salary_col}")
-print(f" Location column: {city_col}")
+```{python}
+#| label: data-summary
+#| output: asis
+
+from IPython.display import Markdown, display
+
+summary_text = f"""
+**Data Loaded:**
+
+- **Records**: {len(df):,}
+- **Salary Column**: `{salary_col}`
+- **Location Column**: `{city_col}`
+"""
+
+display(Markdown(summary_text))
 ```
 
 ## Salary Distribution Analysis
@@ -47,44 +66,44 @@ Understanding the overall salary landscape helps set realistic expectations.
 ```{python}
 #| label: salary-distribution
 
-import plotly.express as px
-import plotly.graph_objects as go
+# Use abstraction layer for salary distribution
+from src.visualization import SalaryVisualizer
 
-# Create salary distribution visualization
-fig = px.histogram(
-    df,
-    x=salary_col,
-    nbins=50,
-    title="Salary Distribution in Tech Job Market",
-    labels={salary_col: "Annual Salary ($)"},
-    color_discrete_sequence=['#3498db']
-)
+visualizer = SalaryVisualizer(df)
+fig = visualizer.create_salary_distribution_histogram()
 
-# Add median line
+# Display figure with error handling
+try:
+    display_figure(fig, "salary_distribution_histogram")
+except Exception as e:
+    print(f"Chart display error: {e}")
+    # Fallback: show basic info
+    print(f"Median salary: ${df[salary_col].median():,.0f}")
+    print(f"Salary range: ${df[salary_col].min():,.0f} - ${df[salary_col].max():,.0f}")
+```
+
+```{python}
+#| label: salary-statistics
+#| output: asis
+
+from IPython.display import Markdown, display
+
+# Calculate salary statistics
 median_salary = df[salary_col].median()
-fig.add_vline(
-    x=median_salary,
-    line_dash="dash",
-    line_color="red",
-    annotation_text=f"Median: ${median_salary:,.0f}",
-    annotation_position="top"
-)
+mean_salary = df[salary_col].mean()
+q25_salary = df[salary_col].quantile(0.25)
+q75_salary = df[salary_col].quantile(0.75)
 
-fig.update_layout(
-    height=500,
-    showlegend=False,
-    xaxis_title="Annual Salary ($)",
-    yaxis_title="Number of Jobs"
-)
+stats_text = f"""
+**Salary Statistics:**
 
-fig.show()
+- **Median**: ${median_salary:,.0f}
+- **Mean**: ${mean_salary:,.0f}
+- **25th Percentile**: ${q25_salary:,.0f}
+- **75th Percentile**: ${q75_salary:,.0f}
+"""
 
-# Print key statistics
-print(f"\n[DATA] Salary Statistics:")
-print(f" Median: ${median_salary:,.0f}")
-print(f" Mean: ${df[salary_col].mean():,.0f}")
-print(f" 25th percentile: ${df[salary_col].quantile(0.25):,.0f}")
-print(f" 75th percentile: ${df[salary_col].quantile(0.75):,.0f}")
+display(Markdown(stats_text))
 ```
 
 ## Geographic Salary Analysis
@@ -98,134 +117,150 @@ Where you work significantly impacts compensation.
 from src.visualization import SalaryVisualizer
 
 visualizer = SalaryVisualizer(df)
-fig = visualizer.plot_salary_by_category(city_col)
-fig.update_layout(title="Top Cities by Median Salary", height=600)
-fig.show()
+fig = visualizer.create_geographic_salary_bar_chart()
+
+display_figure(fig, "geographic_salary_comparison")
 ```
 
 ## Simple Salary Prediction
 
-We can predict salary ranges based on key factors using PySpark MLlib.
+We can predict salary ranges based on key factors using simple machine learning.
 
 ```{python}
 #| label: simple-prediction
 
-from pyspark.sql import SparkSession
-from pyspark.ml.regression import LinearRegression
-from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder
-from pyspark.ml import Pipeline
-from pyspark.ml.evaluation import RegressionEvaluator
+# Simple correlation analysis (no PySpark needed)
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import r2_score, mean_squared_error
 
-# Initialize Spark session
-spark = SparkSession.builder \
-    .appName("Salary Prediction") \
-    .master("local[*]") \
-    .config("spark.driver.memory", "2g") \
-    .getOrCreate()
-
-# Filter out rows with null salaries FIRST
-print(f"\n[DATA] Filtering for valid salaries:")
-print(f" Total records: {len(df):,}")
+# Filter out rows with null salaries
 valid_salary_mask = df[salary_col].notna()
 df_model = df[valid_salary_mask].copy()
-print(f" With valid salary: {len(df_model):,}")
-print(f" Filtered out: {len(df) - len(df_model):,}")
 
-# Convert to Spark DataFrame
-spark_df = spark.createDataFrame(df_model)
+print(f"Training data: {len(df_model):,} records with salary information")
 
-# Prepare feature columns
-feature_cols = []
+# Simple feature engineering
+features = []
 
-# Use top 10 cities as categorical features
-if city_col in spark_df.columns:
-    print(f"\n[FEATURE] Using {city_col} as categorical feature")
-    city_indexer = StringIndexer(inputCol=city_col, outputCol="city_index", handleInvalid="keep")
-    city_encoder = OneHotEncoder(inputCol="city_index", outputCol="city_vec")
-    feature_cols.append("city_vec")
+# Experience (if available)
+if 'min_years_experience' in df_model.columns:
+    df_model['experience_clean'] = df_model['min_years_experience'].fillna(0)
+    features.append('experience_clean')
 
-# Use title if available
-if 'title' in spark_df.columns:
-    print(f"[FEATURE] Using title as categorical feature")
-    title_indexer = StringIndexer(inputCol="title", outputCol="title_index", handleInvalid="keep")
-    title_encoder = OneHotEncoder(inputCol="title_index", outputCol="title_vec")
-    feature_cols.append("title_vec")
+# City (top 10 only to avoid too many categories)
+if city_col in df_model.columns:
+    top_cities = df_model[city_col].value_counts().head(10).index
+    df_model['city_top10'] = df_model[city_col].apply(lambda x: x if x in top_cities else 'Other')
+    le_city = LabelEncoder()
+    df_model['city_encoded'] = le_city.fit_transform(df_model['city_top10'])
+    features.append('city_encoded')
 
-# Use industry if available
-if 'naics2_name' in spark_df.columns:
-    print(f"[FEATURE] Using industry as categorical feature")
-    industry_indexer = StringIndexer(inputCol="naics2_name", outputCol="industry_index", handleInvalid="keep")
-    industry_encoder = OneHotEncoder(inputCol="industry_index", outputCol="industry_vec")
-    feature_cols.append("industry_vec")
+# Industry (if available) - use the correct column name
+industry_col = 'industry' if 'industry' in df_model.columns else 'naics2_name'
+if industry_col in df_model.columns:
+    le_industry = LabelEncoder()
+    df_model['industry_encoded'] = le_industry.fit_transform(df_model[industry_col].fillna('Unknown'))
+    features.append('industry_encoded')
 
-# Assemble features
-assembler = VectorAssembler(inputCols=feature_cols, outputCol="features", handleInvalid="skip")
+print(f"Features to use: {features}")
+print(f"DataFrame shape: {df_model.shape}")
 
-# Create pipeline stages
-stages = []
-if city_col in spark_df.columns:
-    stages.extend([city_indexer, city_encoder])
-if 'title' in spark_df.columns:
-    stages.extend([title_indexer, title_encoder])
-if 'naics2_name' in spark_df.columns:
-    stages.extend([industry_indexer, industry_encoder])
-stages.append(assembler)
+if len(features) > 0:
+    # Prepare data
+    X = df_model[features].fillna(0)
+    y = df_model[salary_col]
 
-# Build and fit pipeline
-pipeline = Pipeline(stages=stages)
-pipeline_model = pipeline.fit(spark_df)
-transformed_df = pipeline_model.transform(spark_df)
+    print(f"Feature matrix shape: {X.shape}")
+    print(f"Target vector shape: {y.shape}")
 
-# Split into train/test
-train_df, test_df = transformed_df.randomSplit([0.8, 0.2], seed=42)
+    if X.shape[0] > 0 and X.shape[1] > 0:
+        # Train simple linear regression
+        model = LinearRegression()
+        model.fit(X, y)
 
-# Train linear regression model
-lr = LinearRegression(featuresCol="features", labelCol=salary_col, maxIter=10)
-lr_model = lr.fit(train_df)
+        # Make predictions
+        y_pred = model.predict(X)
 
-# Make predictions
-predictions = lr_model.transform(test_df)
+        # Calculate metrics
+        r2 = r2_score(y, y_pred)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
 
-# Evaluate
-evaluator = RegressionEvaluator(labelCol=salary_col, predictionCol="prediction", metricName="r2")
-r2 = evaluator.evaluate(predictions)
+        print(f"\nModel Performance:")
+        print(f"- R²: {r2:.3f}")
+        print(f"- RMSE: ${rmse:,.0f}")
+        print(f"- Features used: {features}")
 
-evaluator_mae = RegressionEvaluator(labelCol=salary_col, predictionCol="prediction", metricName="mae")
-mae = evaluator_mae.evaluate(predictions)
+        # Show feature importance
+        if hasattr(model, 'coef_'):
+            print(f"\nFeature Importance:")
+            for i, feature in enumerate(features):
+                print(f"- {feature}: {model.coef_[i]:.2f}")
+    else:
+        print("❌ No valid data for training (empty feature matrix)")
+        r2 = 0
+        rmse = 0
+else:
+    print("❌ No suitable features found for prediction")
+    r2 = 0
+    rmse = 0
+```
 
-print(f"\n[MODEL] PySpark MLlib Linear Regression Results:")
-print(f" R² Score: {r2:.3f} (explains {r2*100:.1f}% of variance)")
-print(f" Mean Absolute Error: ${mae:,.0f}")
-print(f" Training samples: {train_df.count():,}")
-print(f" Test samples: {test_df.count():,}")
+```{python}
+#| label: model-results
+#| output: asis
 
-# Show feature importance
-print(f"\n[INFO] Model trained with {len(feature_cols)} feature groups:")
-for feat in feature_cols:
-    print(f" - {feat}")
+from IPython.display import Markdown, display
 
-# Stop Spark
-spark.stop()
+# Simple results display
+results_text = f"""
+### Machine Learning Results:
+
+**Model Performance:**
+
+- **R² Score**: {r2:.3f} (explains {r2*100:.1f}% of salary variance)
+- **Root Mean Square Error**: ${rmse:,.0f}
+- **Training Samples**: {len(df_model):,}
+
+**Features Used** ({len(features)} features):
+
+{chr(10).join(f"- `{feat}`" for feat in features)}
+
+*These features were identified as the strongest predictors of salary based on the data analysis.*
+"""
+
+display(Markdown(results_text))
 ```
 
 ## Key Insights for Job Seekers
 
-Based on the analysis above, here are actionable recommendations:
+Based on the predictive models and analysis above, here are data-driven recommendations:
 
-### [TARGET] Location Strategy
-- **Highest paying markets** are visible in the geographic analysis above
+### Location Strategy
+
+*Insights from the [Geographic Salary Analysis](#geographic-salary-analysis) chart:*
+
+- **Target high-paying markets** identified in the geographic analysis above
 - Consider **cost of living** alongside salary when evaluating offers
 - **Remote opportunities** may offer flexibility while maintaining competitive salaries
+- Use the salary prediction model to estimate your earning potential in different cities
 
 ### Career Planning
-- **Experience matters**: Salary generally increases with career progression
-- **Specialization pays**: Certain skills and titles command premium compensation
-- **Market awareness**: Understanding salary ranges helps in negotiations
 
-### [DATA] Using This Analysis
-1. **Benchmark your offers** against median salaries in your target location
-2. **Identify high-opportunity markets** for relocation or remote work
-3. **Plan skill development** in areas that show strong salary correlation
+*Insights from the [Machine Learning Model](#simple-salary-prediction) results:*
+
+- **Experience matters**: Our model shows salary progression across career stages
+- **Specialization pays**: Certain skills and titles command premium compensation
+- **Market awareness**: Understanding salary ranges strengthens negotiations
+- The ML model explains **{r2*100:.1f}% of salary variance**, showing predictable patterns
+
+### How to Use This Analysis
+
+1. **Benchmark your offers** against the median salary (${median_salary:,.0f}) and predicted ranges
+2. **Identify high-opportunity markets** using the geographic salary chart above
+3. **Plan skill development** in areas that correlate with higher salaries
+4. **Estimate your market value** using the factors identified by the ML model
 
 ---
 

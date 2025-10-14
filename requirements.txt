@@ -88,6 +88,7 @@ pexpect==4.9.0
 pillow==11.3.0
 platformdirs==4.4.0
 plotly==6.3.0
+folium==0.18.0
 pluggy==1.6.0
 prometheus_client==0.23.1
 prompt_toolkit==3.0.52

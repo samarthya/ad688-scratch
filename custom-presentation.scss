@@ -101,6 +101,23 @@ $presentation-h3-font-size: 1.3em;
 
 .column {
   flex: 1;
+  overflow: visible; // Ensure content doesn't get clipped
+}
+
+// Chart containers
+.reveal .cell-output {
+  overflow: visible !important;
+}
+
+.reveal .cell-output-display {
+  overflow: visible !important;
+}
+
+// Ensure Plotly charts fit properly
+.reveal .plotly {
+  width: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 // Center content

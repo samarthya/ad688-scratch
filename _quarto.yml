@@ -33,18 +33,20 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: data-pipeline.qmd
-        text: Data Pipeline
-      - href: salary-insights.qmd
-        text: Salary Insights
-      - href: predictive-analytics.qmd
-        text: Predictive Analytics
-      - href: market-dashboard.qmd
-        text: Market Dashboard
-      - href: methodology.qmd
-        text: Methodology
       - href: tech-career-intelligence-report.qmd
         text: Full Report
+      - href: salary-insights.qmd
+        text: Salary Insights
+      - href: market-dashboard.qmd
+        text: Market Dashboard
+      - href: predictive-analytics.qmd
+        text: Predictive Analytics
+      - text: Technical Details
+        menu:
+          - href: methodology.qmd
+            text: Methodology
+          - href: data-pipeline.qmd
+            text: Data Pipeline
     right:
       - icon: github
         href: https://github.com/samarthya/ad688-scratch
@@ -58,8 +60,8 @@ format:
     code-tools: true
     embed-resources: true
     css: styles.css
-    html-math-method: katex
     mathjax: false
+    self-contained: true
   docx:
     toc: true
     toc-depth: 3
@@ -67,6 +69,10 @@ format:
     highlight-style: github
     fig-width: 8
     fig-height: 6
+    fig-dpi: 300
+  pptx:
+    fig-width: 10
+    fig-height: 7.5
     fig-dpi: 300
 
 bibliography: references.bib

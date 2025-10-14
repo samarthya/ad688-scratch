@@ -15,7 +15,7 @@ LIGHTCAST_COLUMN_MAPPING = {
     'TITLE_NAME': 'title',           # Clean title (prioritized)
     'TITLE_CLEAN': 'title_clean',
     'COMPANY_NAME': 'company',       # Prefer COMPANY_NAME if available
-    'COMPANY': 'company',
+    # 'COMPANY': 'company',          # Commented out - COMPANY_NAME takes priority
     'LOCATION': 'location',
     # 'CITY': 'city_name',           # Commented out - CITY_NAME takes priority
     'CITY_NAME': 'city_name',        # Plain text city data → snake_case (prioritized)
@@ -36,11 +36,14 @@ LIGHTCAST_COLUMN_MAPPING = {
 
     # Skills & Requirements
     'SKILLS_NAME': 'required_skills',
+    'SOFTWARE_SKILLS_NAME': 'technical_skills',  # Primary: Pure technical/software skills (most actionable)
     'EDUCATION_LEVELS_NAME': 'education_required',
 
     # Work Arrangements
-    'REMOTE_TYPE_NAME': 'remote_type',
-    'EMPLOYMENT_TYPE_NAME': 'employment_type'
+    'REMOTE_TYPE': 'remote_type_code',           # Numeric code (0, 1, 2, 3)
+    'REMOTE_TYPE_NAME': 'remote_type',           # Text description (Remote, Not Remote, Hybrid Remote)
+    'EMPLOYMENT_TYPE': 'employment_type_code',   # Numeric code
+    'EMPLOYMENT_TYPE_NAME': 'employment_type'    # Text description
 }
 
 # Derived columns created during processing (all snake_case after PySpark ETL)
@@ -58,17 +61,17 @@ DERIVED_COLUMNS = [
 # These map logical names to ACTUAL column names in processed data
 ANALYSIS_COLUMNS = {
     'salary': 'salary_avg',              # Average salary (computed from salary_from/salary_to)
-    'salary_min': 'salary_from',         # Minimum salary (actual column name)
-    'salary_max': 'salary_to',           # Maximum salary (actual column name)
-    'industry': 'naics2_name',           # Industry classification (NAICS level 2) (actual column name)
-    'experience': 'min_years_experience', # Years of experience (actual column name)
-    'experience_min': 'min_years_experience', # Min years of experience
-    'experience_max': 'max_years_experience', # Max years of experience
+    'salary_min': 'salary_min',          # Minimum salary (actual column name after mapping)
+    'salary_max': 'salary_max',          # Maximum salary (actual column name after mapping)
+    'industry': 'industry',              # Industry classification (NAICS level 2) (actual column name after mapping)
+    'experience': 'experience_min',      # Years of experience (actual column name after mapping)
+    'experience_min': 'experience_min',  # Min years of experience (actual column name after mapping)
+    'experience_max': 'experience_max',  # Max years of experience (actual column name after mapping)
     'title': 'title',                    # Job title
     'location': 'location',              # Job location
     'city': 'city_name',                 # City name
-    'remote': 'remote_type_name',        # Remote work type
-    'employment_type': 'employment_type_name'  # Employment type
+    'remote': 'remote_type',             # Remote work type (NOTE: numeric in current data - 0, 1, 2, 3)
+    'employment_type': 'employment_type' # Employment type (NOTE: numeric in current data)
 }
 
 # Experience level categorization mapping
@@ -95,12 +98,8 @@ def map_lightcast_columns(df):
             if old_col in df.columns:
                 df_mapped = df_mapped.withColumnRenamed(old_col, new_col)
 
-        # Create derived columns for Spark
-        if 'salary_min' in df_mapped.columns and 'salary_max' in df_mapped.columns:
-            df_mapped = df_mapped.withColumn(
-                'salary',
-                (col('salary_min') + col('salary_max')) / 2
-            )
+        # Note: salary_avg is computed in PySpark ETL with sophisticated imputation
+        # No need to create redundant salary columns here
 
         if 'experience_min' in df_mapped.columns:
             df_mapped = df_mapped.withColumn(
@@ -112,9 +111,8 @@ def map_lightcast_columns(df):
         # Pandas DataFrame - apply direct column mapping
         df_mapped = df.rename(columns=LIGHTCAST_COLUMN_MAPPING)
 
-        # Create derived columns for pandas
-        if 'salary_min' in df_mapped.columns and 'salary_max' in df_mapped.columns:
-            df_mapped['salary'] = (df_mapped['salary_min'] + df_mapped['salary_max']) / 2
+        # Note: salary_avg is computed in PySpark ETL with sophisticated imputation
+        # No need to create redundant salary columns here
 
         if 'experience_min' in df_mapped.columns:
             df_mapped['experience_years'] = df_mapped['experience_min'].fillna(2)

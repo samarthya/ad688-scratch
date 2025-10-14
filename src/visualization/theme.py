@@ -5,14 +5,16 @@ This module provides a unified theme and styling configuration for all
 visualizations in the job market analysis project.
 """
 
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.colors import qualitative, sequential
+# Third-party imports
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 import seaborn as sns
+from plotly.colors import qualitative, sequential
 
-# Import logger for controlled output
+# Local imports
 from src.utils.logger import get_logger
+
 logger = get_logger(level="WARNING")
 
 class JobMarketTheme:

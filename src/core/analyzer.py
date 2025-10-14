@@ -73,8 +73,8 @@ class SparkJobAnalyzer:
         if missing_essential:
             errors.extend([f"Missing essential column: {col}" for col in missing_essential])
 
-        # Check for optional but important columns
-        optional_columns = ['salary_avg', 'INDUSTRY', 'LOCATION']
+        # Check for optional but important columns (RAW data - uppercase)
+        optional_columns = ['SALARY_AVG', 'INDUSTRY', 'LOCATION']
         missing_optional = [col for col in optional_columns if col not in df.columns]
         if missing_optional:
             logger.warning(f"Missing optional columns: {missing_optional}")
