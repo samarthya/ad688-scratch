@@ -528,9 +528,9 @@ These recommendations are directly from our data analysis. Focus on what you can
 
 ### The Three Levers You Control
 
-🎯 **Location** → Choose strategically or go remote
-🎯 **Industry** → Tech pays 78% more
-🎯 **Skills** → Cloud + ML = 30% salary boost
+- 🎯 **Location** → Choose strategically or go remote
+- 🎯 **Industry** → Tech pays 78% more
+- 🎯 **Skills** → Cloud + ML = 30% salary boost
 
 ### The One Thing You Can't Skip
 
