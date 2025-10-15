@@ -714,8 +714,7 @@ fig4 = visualizer.create_experience_statistics_table_chart(table_data)
 display_figure(fig4, "exp_statistics_table")
 ```
 
-
-#### Key Insights from Experience Analysis
+### Key Insights from Experience Analysis
 
 ```{python}
 #| label: experience-insights
@@ -771,7 +770,7 @@ bottom_salary = salaries[-1] if len(salaries) > 0 else 85000
 premium = ((top_salary - bottom_salary) / bottom_salary) * 100
 
 insights_text = f"""
-#### Industry Analysis Insights
+### Industry Analysis Insights
 
 - **Top Paying**: {top_industry} at ${top_salary:,.0f} median salary
 - **Industry Premium**: {premium:.0f}% difference between highest and lowest paying sectors
@@ -809,7 +808,7 @@ display_figure(geo_fig, "geographic_analysis")
 from IPython.display import Markdown, display
 
 display(Markdown("""
-#### Geographic Analysis Summary
+### Geographic Analysis Summary
 
 This analysis uses clean city name data to provide accurate geographic insights.
 Key findings include significant salary variations across metropolitan areas.
@@ -817,7 +816,7 @@ Key findings include significant salary variations across metropolitan areas.
 
 ```
 
-#### Interactive Geographic Market Map
+### Interactive Geographic Market Map
 
 The map below provides an interactive visualization of job distribution and salary levels across the United States. Each marker represents a city, with size indicating job volume and color representing median salary levels.
 
@@ -921,7 +920,7 @@ except Exception as e:
 from IPython.display import Markdown, display
 
 insights = """
-#### Correlation Analysis Insights
+### Correlation Analysis Insights
 
 - **Strong correlations** indicate factors that consistently move together
 - **Weak correlations** suggest independent salary determinants
@@ -969,7 +968,7 @@ emp_salary['percentage'] = (emp_salary['count'] / total_jobs * 100).round(1)
 remote_salary['percentage'] = (remote_salary['count'] / total_jobs * 100).round(1)
 ```
 
-#### Employment Type Salary Comparison
+### Employment Type Salary Comparison
 
 ```{python}
 #| label: employment-type-salary
@@ -1003,7 +1002,7 @@ insights = f"""
 display(Markdown(insights))
 ```
 
-#### Remote Work Salary Analysis
+### Remote Work Salary Analysis
 
 ```{python}
 #| label: remote-work-salary
@@ -1048,7 +1047,7 @@ if len(remote_defined) > 0:
     display(Markdown(insights))
 ```
 
-#### Combined Analysis: Employment & Remote Factors
+### Combined Analysis: Employment & Remote Factors
 
 ```{python}
 #| label: employment-remote-combined
@@ -1114,7 +1113,7 @@ except Exception as e:
     from IPython.display import Markdown, display
     # If AI comparison not available, show skills analysis instead
     display(Markdown("""
-#### AI and Technology Trends
+### AI and Technology Trends
 
 *Detailed AI salary premium visualization is being processed based on available data.*
 """))
@@ -1127,7 +1126,7 @@ except Exception as e:
 from IPython.display import Markdown, display
 
 ai_insights = """
-#### Key Technology Trends
+### Key Technology Trends
 
 - **Artificial Intelligence & Machine Learning**: Roles command 20-30% salary premiums
 - **Cloud Computing**: AWS, Azure, GCP skills show strong salary correlation
@@ -1141,7 +1140,7 @@ display(Markdown(ai_insights))
 
 ## Technical Skills Analysis
 
-#### In-Demand Skills by Geographic Location
+### In-Demand Skills by Geographic Location
 
 ```{python}
 #| label: skills-geographic-analysis
@@ -1169,7 +1168,7 @@ geo_skills_fig.update_layout(
 display_figure(geo_skills_fig, "skills_geographic_analysis")
 ```
 
-#### Top Skills by Frequency and Salary Correlation
+### Top Skills by Frequency and Salary Correlation
 
 ```{python}
 #| label: skills-salary-correlation
@@ -1192,7 +1191,7 @@ skills_salary_fig.update_layout(
 display_figure(skills_salary_fig, "skills_salary_correlation")
 ```
 
-#### Emerging High-Value Skills
+### Emerging High-Value Skills
 
 ```{python}
 #| label: emerging-skills-analysis
@@ -1213,7 +1212,7 @@ emerging_skills_fig.update_layout(
 display_figure(emerging_skills_fig, "emerging_skills_analysis")
 ```
 
-#### Skills Analysis Insights
+### Skills Analysis Insights
 
 ```{python}
 #| label: skills-insights
@@ -1238,7 +1237,7 @@ top_paying_skills = salary_correlation.head(5)
 top_emerging = emerging_skills.head(5)
 
 skills_insights = f"""
-### Key Skills Analysis Findings
+#### Key Skills Analysis Findings
 
 **Data Coverage:**
 
@@ -1283,39 +1282,39 @@ display(Markdown(skills_insights))
 
 ## Strategic Insights and Recommendations
 
-#### Career Progression Strategy
+### Career Progression Strategy
 
 Based on our comprehensive analysis, we recommend the following strategic approaches:
 
-##### 1. **Experience-Based Growth Path**
+#### 1. Experience-Based Growth Path
 
 - **Entry Level Focus**: Build foundational skills and gain industry exposure
 - **Mid-Level Advancement**: Develop specialization and leadership capabilities
 - **Senior Level Excellence**: Drive strategic initiatives and mentor teams
 - **Executive Leadership**: Focus on organizational impact and industry influence
 
-##### 2. **Geographic Optimization**
+#### 2. Geographic Optimization
 
 - Major metropolitan areas offer premium compensation packages
 - Remote work opportunities expand geographic flexibility
 - Cost-of-living adjustments impact real purchasing power
 - Emerging tech hubs provide growth opportunities
 
-##### 3. **Industry Specialization**
+#### 3. Industry Specialization
 
 - Technology sector leads in compensation growth
 - Finance and consulting maintain strong salary premiums
 - Healthcare technology represents emerging opportunities
 - Cross-industry skills increase market value
 
-##### 4. **Skills Development Priority**
+#### 4. Skills Development Priority
 
 - Artificial Intelligence and Machine Learning capabilities
 - Cloud computing and DevOps expertise
 - Data science and analytics proficiency
 - Cybersecurity and privacy specialization
 
-#### Market Intelligence Summary
+### Market Intelligence Summary
 
 Our analysis provides several key insights for career planning:
 
@@ -1341,7 +1340,7 @@ display_figure(dashboard_fig, "complete_dashboard")
 
 ## Technical Architecture & Implementation
 
-#### System Design
+### System Design
 
 This platform implements a **layered architecture** optimized for scalable data processing and interactive analysis:
 
@@ -1390,7 +1389,7 @@ This platform implements a **layered architecture** optimized for scalable data 
 
 ::: {.callout-important}
 
-#### Technical Documentation
+### Technical Documentation
 - **Statistical Methodology**: [Methodology & Multivariate Analysis](methodology.qmd) - Complete model specs, feature engineering, evaluation metrics
 - **System Architecture**: `ARCHITECTURE.md` - Detailed system diagrams, data flow, technology stack
 - **Implementation Patterns**: `DESIGN.md` - Code organization, module structure, design decisions
@@ -1398,7 +1397,7 @@ This platform implements a **layered architecture** optimized for scalable data 
 
 **Complete Architecture Documentation**: See files above for comprehensive technical details
 
-#### Reproducibility
+### Reproducibility
 
 **Random Seeds**: All models use `seed=42` for reproducibility
 
@@ -1475,7 +1474,7 @@ model_accuracy = ml_results['classification']['test_accuracy']
 median_salary_k = summary['salary_range']['median'] / 1000
 ```
 
-#### Key Findings Summary
+### Key Findings Summary
 
 ```{python}
 #| label: display-key-findings
@@ -1495,7 +1494,7 @@ findings_text = f"""
 display(Markdown(findings_text))
 ```
 
-#### Limitations and Considerations
+### Limitations and Considerations
 
 **Data Limitations**:
 
