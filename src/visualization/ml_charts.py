@@ -282,17 +282,17 @@ def get_enhanced_colorscales():
             [1.0, '#ffffff']       # White (highest values)
         ],
         'heat_style': [
-            [0.0, '#ffffff'],      # White
-            [0.1, '#fff5f0'],      # Very light red
-            [0.2, '#fee0d2'],      # Light red
-            [0.3, '#fcbba1'],      # Light orange
-            [0.4, '#fc9272'],      # Orange
-            [0.5, '#fb6a4a'],      # Red-orange
-            [0.6, '#ef3b2c'],      # Red
-            [0.7, '#cb181d'],      # Dark red
-            [0.8, '#a50f15'],      # Darker red
-            [0.9, '#67000d'],      # Very dark red
-            [1.0, '#000000']       # Black (highest values)
+            [0.0, '#FFF4E6'],      # Very light orange (cream)
+            [0.1, '#FFE0B2'],      # Light orange
+            [0.2, '#FFCC80'],      # Pale orange
+            [0.3, '#FFB74D'],      # Soft orange
+            [0.4, '#FFA726'],      # Medium orange
+            [0.5, '#FF9800'],      # Orange
+            [0.6, '#FB8C00'],      # Deep orange
+            [0.7, '#F57C00'],      # Dark orange
+            [0.8, '#E65100'],      # Orange-red
+            [0.9, '#D84315'],      # Red-orange
+            [1.0, '#BF360C']       # Dark red (highest values)
         ],
         'cool_warm': [
             [0.0, '#2166ac'],      # Cool blue

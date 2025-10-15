@@ -365,10 +365,9 @@ rf = RandomForestClassifier(
 - Best hyperparameters: `regParam=0.01`, `elasticNetParam=0.0` (Ridge)
 
 ```{python}
-#| label: ml-model-performance
-#| echo: false
-#| fig-height: 5
-#| width: 100%
+# | label: ml-model-performance
+# | echo: false
+# | width: 100%
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -398,8 +397,7 @@ display_figure(fig_ml, "ml_model_performance")
 ```{python}
 #| label: ml-feature-importance
 #| echo: false
-#| fig-height: 4
-#| fig-format: png
+#| width: 100%
 
 # Use centralized feature importance visualization function
 from src.visualization.ml_charts import (
@@ -426,6 +424,7 @@ display_figure(fig_features, "ml_feature_importance")
 ```{python}
 #| label: ml-insights
 #| output: asis
+
 
 from IPython.display import Markdown, display
 
@@ -833,22 +832,22 @@ vis = SalaryVisualizer(df)
 ```
 
 
-::: {.content-hidden unless-format="docx, pdf"}
+::: {.content-hidden unless-format="html"}
 ```{python}
 #| label: geographic-map-folium
 #| echo: false
-#| unless-format: docx, pdf
+#| unless-format: html
 
 folium_map = vis.create_folium_salary_map(top_n=500, height=650)
 folium_map
 ```
 :::
 
-::: {.content-hidden unless-format="html"}
+::: {.content-hidden unless-format="docx"}
 ```{python}
 #| label: geographic-map-plotly
 #| echo: false
-#| unless-format: html
+#| unless-format: docx
 
 geo_map = vis.create_plotly_geographic_map(top_n=500, height=700)
 display_figure(geo_map, "geographic_map_plotly")
