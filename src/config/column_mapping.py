@@ -14,7 +14,7 @@ LIGHTCAST_COLUMN_MAPPING = {
     # 'TITLE': 'title',  # Commented out - TITLE_NAME takes priority
     'TITLE_NAME': 'title',           # Clean title (prioritized)
     'TITLE_CLEAN': 'title_clean',
-    'COMPANY_NAME': 'company',       # Prefer COMPANY_NAME if available
+    'COMPANY_NAME': 'company_name',  # Prefer COMPANY_NAME if available
     # 'COMPANY': 'company',          # Commented out - COMPANY_NAME takes priority
     'LOCATION': 'location',
     # 'CITY': 'city_name',           # Commented out - CITY_NAME takes priority
@@ -68,6 +68,7 @@ ANALYSIS_COLUMNS = {
     'experience_min': 'experience_min',  # Min years of experience (actual column name after mapping)
     'experience_max': 'experience_max',  # Max years of experience (actual column name after mapping)
     'title': 'title',                    # Job title
+    'company': 'company_name',           # Company name
     'location': 'location',              # Job location
     'city': 'city_name',                 # City name
     'remote': 'remote_type',             # Remote work type (NOTE: numeric in current data - 0, 1, 2, 3)
