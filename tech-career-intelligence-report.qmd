@@ -53,22 +53,22 @@ pio.renderers.default = "svg+png+notebook"
 
 ```
 
-## Executive Summary
+# Executive Summary
 
 This comprehensive report presents a data-driven analysis of the technology job market, examining salary patterns, geographic distributions, experience-level progressions, and industry trends. Our analysis leverages advanced data processing techniques and interactive visualizations to provide actionable insights for career planning and strategic decision-making in the technology sector.
 
-### Key Findings
+## Key Findings
 
 - **Salary Progression**: Clear correlation between experience level and compensation, with significant growth opportunities
 - **Geographic Variations**: Substantial salary differences across metropolitan areas
 - **Industry Premiums**: Emerging technologies command significant salary premiums
 - **Skills Impact**: Specialized technical skills correlate with higher compensation packages
 
-### Introduction and Methodology
+# Introduction and Methodology
 
 ::: {.callout-note}
 
-#### Complete Methodology Documentation
+## Complete Methodology Documentation
 
 For comprehensive statistical methodology, feature engineering decisions, and complete model specifications, see **[Methodology & Multivariate Analysis](methodology.qmd)**.
 
@@ -82,7 +82,7 @@ This report provides a high-level overview. The methodology page includes:
 
 :::
 
-#### Research Objectives
+## Research Objectives
 
 This study aims to provide comprehensive insights into the technology job market by analyzing:
 
@@ -93,7 +93,7 @@ This study aims to provide comprehensive insights into the technology job market
 5. **Correlation Analysis** of factors influencing compensation
 6. **Multivariate Analysis** of salary determinants using machine learning
 
-#### Project Context
+### Project Context
 
 This project adopts a **job-seeker perspective**, where students act as job seekers analyzing their career prospects in 2025. Instead of analyzing labor market trends for recruiters, we explore how job seekers can position themselves effectively given changes in hiring trends, salaries, AI adoption, remote work, and employment patterns.
 
@@ -209,7 +209,7 @@ display(Markdown(rationale_text))
 
 ::: {.callout-tip}
 
-#### Detailed Analysis Available
+####Detailed Analysis Available
 
 For complete model specifications, mathematical formulations, and PySpark MLlib implementation code, see **[Methodology & Multivariate Analysis](methodology.qmd)** sections on:
 
@@ -223,7 +223,7 @@ For complete model specifications, mathematical formulations, and PySpark MLlib 
 
 Our machine learning models use multiple predictors to explain salary variation:
 
-**Categorical Features** (One-Hot Encoded):
+#### **Categorical Features** (One-Hot Encoded)
 
 1. **Location** (`city_name`): Top 10 cities by frequency
 
