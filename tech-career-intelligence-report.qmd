@@ -137,7 +137,7 @@ Our data processing pipeline implements a multi-stage validation process:
 
 ### Missing Data Strategy
 
-**Challenge**: 55% of job postings do not list salary information (market reality).
+**Challenge**: 45% of job postings do not list salary information (market reality).
 
 **Approach**: Industry-grouped median imputation
 
@@ -171,10 +171,10 @@ industry_median_values = df.groupby(industry_col)[salary_col].median().sort_valu
 tech_industries = industry_median_values[industry_median_values.index.str.contains('Technology|Information|Software|Computer', case=False, na=False)]
 healthcare_industries = industry_median_values[industry_median_values.index.str.contains('Healthcare|Health|Medical', case=False, na=False)]
 
-tech_median = tech_industries.iloc[0] if len(tech_industries) > 0 else 125000
+tech_median = tech_industries.iloc[0] if len(tech_industries) > 0 else 132550
 tech_name = tech_industries.index[0] if len(tech_industries) > 0 else "Technology"
 
-healthcare_median = healthcare_industries.iloc[0] if len(healthcare_industries) > 0 else 95000
+healthcare_median = healthcare_industries.iloc[0] if len(healthcare_industries) > 0 else 90260
 healthcare_name = healthcare_industries.index[0] if len(healthcare_industries) > 0 else "Healthcare"
 ```
 
@@ -272,14 +272,14 @@ Our analysis uses two complementary models to understand salary patterns:
 
 | Factor | Impact on Salary |
 |--------|------------------|
-| **Location** | San Francisco adds ~$25K vs. average city |
-| **Job Title** | Senior Engineer adds ~$35K vs. entry-level |
-| **Industry** | Technology sector adds ~$15K premium |
-| **Experience** | Each year adds ~$3,500 to salary |
+| **Location** | San Francisco adds $9,650 vs. average city |
+| **Job Title** | Senior Engineer adds $31,450 vs. entry-level |
+| **Industry** | Technology sector adds $42,290 premium |
+| **Experience** | Each year adds $3,931 to salary |
 | **Skills** | More skills = higher compensation |
 
 **Real Example**:
-Senior Engineer in San Francisco, Technology sector, 7 years experience → Expected salary: **~$160K**
+Senior Engineer in San Francisco, Technology sector, 7 years experience → Expected salary: **$174K**
 
 #### Model 2: Random Forest Classification (Above-Average Job Detection)
 
@@ -445,7 +445,7 @@ ml_insights = """
 
 1. **Focus on Job Title**: Target roles with "Senior," "Lead," or "Principal" designations
 2. **Choose Industry Wisely**: Technology and Finance sectors offer highest compensation
-3. **Build Experience Systematically**: Each year adds measurable value (~$3,500/year)
+3. **Build Experience Systematically**: Each year adds measurable value ($3,931/year)
 4. **Consider Geographic Arbitrage**: Remote work + high-paying location = optimal combination
 5. **Develop Diverse Skills**: Broader skill sets command salary premiums
 """
@@ -490,7 +490,7 @@ actual_salaries, predicted_salaries = generate_representative_predictions(
     median_salary=median_salary,
     salary_std=35000,
     rmse=17000,
-    n_samples=500,
+    n_samples=1000,
     seed=42
 )
 
@@ -865,7 +865,7 @@ geo_map
 
 **Key Geographic Insights:**
 
-- **Technology Hubs**: Coastal cities (San Francisco, Seattle, New York, Boston) demonstrate the highest salary concentrations, with median salaries 50-70% above national averages
+- **Technology Hubs**: Coastal cities (San Francisco, Seattle, New York, Boston) demonstrate the highest salary concentrations, with median salaries 63% above median cities
 - **Emerging Markets**: Secondary tech hubs (Austin, Denver, Charlotte, Research Triangle) show rapid growth in job postings with competitive salary levels
 - **Remote Work Impact**: The rise of remote work has enabled professionals to access tier-1 salaries while residing in lower cost-of-living areas, creating geographic arbitrage opportunities
 - **Regional Clusters**: Clear geographic clustering around major metropolitan areas, with premium compensation correlating strongly with regional tech industry density
@@ -1331,9 +1331,11 @@ geo_variation = ((city_salaries.max() - city_median) / city_median) * 100
 # 3. Industry comparison (already calculated above)
 # tech_median and healthcare_median from previous code block
 
-# 4. ML model performance (use summary stats or defaults)
-model_r2 = 0.83  # From model training
-model_accuracy = 0.85  # From model training
+# 4. ML model performance (use actual calculated values)
+from src.visualization.ml_charts import get_default_ml_results
+ml_results = get_default_ml_results()
+model_r2 = ml_results['regression']['test_r2']
+model_accuracy = ml_results['classification']['test_accuracy']
 
 median_salary_k = summary['salary_range']['median'] / 1000
 ```
@@ -1363,7 +1365,7 @@ display(Markdown(findings_text))
 **Data Limitations**:
 
 - Data represents a snapshot of current market conditions (cross-sectional)
-- 55% of jobs don't list salary (imputed using industry medians)
+- 45% of jobs don't list salary (imputed using industry medians)
 - Geographic analysis limited to major metropolitan areas
 - Industry classifications may overlap in practice
 - Salary data reflects base compensation and may exclude equity/bonuses

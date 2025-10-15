@@ -258,6 +258,14 @@ def create_confusion_matrix_heatmap(
     # Total samples for annotation
     total_samples = confusion_matrix.sum() * 625  # Assuming percentages
 
+    # Calculate dynamic colorscale based on actual data range
+    min_val = confusion_matrix.min()
+    max_val = confusion_matrix.max()
+
+    # Normalize values to 0-1 range for colorscale
+    normalized_min = (min_val - min_val) / (max_val - min_val) if max_val != min_val else 0
+    normalized_max = (max_val - min_val) / (max_val - min_val) if max_val != min_val else 1
+
     fig = go.Figure(data=go.Heatmap(
         z=confusion_matrix,
         x=[f'Predicted<br>{label}' for label in class_labels],
@@ -266,10 +274,12 @@ def create_confusion_matrix_heatmap(
         texttemplate='%{text}',
         textfont={"size": 14, "color": "white"},
         colorscale=[
-            [0, '#fee5d9'],      # Light (errors)
+            [0, '#fee5d9'],      # Light (lowest values)
             [0.5, '#fcae91'],    # Medium
-            [1.0, '#fb6a4a']     # Dark (correct predictions)
+            [1.0, '#fb6a4a']     # Dark (highest values)
         ],
+        zmin=min_val,  # Set explicit min/max for proper color mapping
+        zmax=max_val,
         showscale=True,
         colorbar=dict(title="Percentage<br>of Jobs (%)", ticksuffix='%')
     ))

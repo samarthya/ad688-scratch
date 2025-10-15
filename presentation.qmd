@@ -106,13 +106,16 @@ Our thesis: Career outcomes aren't random—they follow patterns we can identify
 *"What factors predict career success in tech?"*
 
 ### The Data
+
 **72,000+ job postings** (2024-2025)
 **83% ML prediction accuracy**
 
 ### Key Findings
+
 ✓ Experience patterns
 ✓ Geographic premiums
 ✓ Industry gaps
+
 :::
 :::
 
@@ -141,7 +144,7 @@ We analyzed 72K real job postings using PySpark and machine learning. Our centra
 
 ## Key Finding 1: The Experience Multiplier
 
-### The 3× Multiplier Effect
+### The 1.3× Multiplier Effect
 Entry **$96K** → Mid **$115K** → Senior **$128K** → Leadership **$126K**
 
 **33% growth over your career—experience compounds like interest**
@@ -153,12 +156,6 @@ Entry **$96K** → Mid **$115K** → Senior **$128K** → Leadership **$126K**
 #| fig-format: png
 
 fig = pcharts.create_experience_progression()
-# Optimize for presentation - reduced height to fit with callout
-fig.update_layout(
-    height=420,
-    margin=dict(l=60, r=40, t=70, b=50),
-    font=dict(size=12)
-)
 display_figure(fig, "presentation_experience_analysis")
 ```
 
@@ -184,13 +181,13 @@ display_figure(fig, "presentation_geographic_analysis")
 ### The Numbers
 - **Top city**: $180K (Edison, NJ)
 - **Lowest city**: $34K (Sterling Heights, MI)
-- **46% premium** for top markets vs. median city
+- **63% premium** for top markets vs. median city
 
 ### 💡 Job Seeker Insight
 Calculate take-home after cost of living. Or negotiate remote work from a low-cost city.
 
 ::: {.notes}
-Geography is the second-biggest lever. Top markets pay 46% more than median cities. But the cost of living difference is real. Smart play: negotiate remote work from a lower-cost city—you keep the high salary AND the low expenses. This is the real arbitrage opportunity.
+Geography is the second-biggest lever. Top markets pay 63% more than median cities. But the cost of living difference is real. Smart play: negotiate remote work from a lower-cost city—you keep the high salary AND the low expenses. This is the real arbitrage opportunity.
 :::
 
 ---
@@ -199,7 +196,9 @@ Geography is the second-biggest lever. Top markets pay 46% more than median citi
 
 ### Where The Money Is
 
-Technology hubs pay **46% more** than median cities. But here's the strategic insight: with remote work, you can access these salaries without the cost of living.
+Technology hubs pay **63% more** than median cities. But here's the strategic insight: with remote work, you can access these salaries without the cost of living.
+
+### Geographic Map
 
 ```{python}
 #| label: geographic-map
@@ -221,7 +220,7 @@ Secure remote role with tier-1 salary, live in tier-2/3 city.
 ## The Industry Multiplier
 
 ### The $57K Industry Gap
-**Tech Services: $130K** | Finance: $114K | Healthcare: $90K | Education: $73K
+**Tech Services: $133K** | Finance: $114K | Healthcare: $90K | Education: $73K
 
 **Switching industries = instant 78% raise** for same skills
 
