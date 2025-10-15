@@ -261,7 +261,7 @@ vis = SalaryVisualizer(df)
 ```
 
 # Create interactive Folium map for HTML
-::: {when-format="html"}
+::: {.content-hidden unless-format="html"}
 ```{python}
 #| label: geographic-map-folium
 #| echo: false
@@ -272,7 +272,7 @@ folium_map
 :::
 
 # Create static Plotly map for DOCX/PDF/PPT
-::: {when-format="docx pdf pptx"}
+::: {.content-hidden unless-format="docx pdf pptx"}
 ```{python}
 #| label: geographic-map-plotly
 #| echo: false

@@ -82,11 +82,13 @@ Every graduate faces these questions. We all know someone who took a job, regret
 
 ### Today's Journey
 
+::: {.compact-list}
 1. **The Data**: 72K job postings → What story do they tell?
 2. **The Big 4 Factors**: Experience, Location, Industry, Remote Work
-3. **The Skill Gap**: What employers actually want vs. what we learn
+3. **The Skill Gap**: What employers want vs. what we learn
 4. **The ROI Question**: Is a Master's degree worth $278K?
 5. **Your Action Plan**: Data-driven decisions you can make today
+:::
 
 ::: {.notes}
 Our thesis: Career outcomes aren't random—they follow patterns we can identify and leverage. We'll walk through our data exploration, show you the insights, and give you an action plan.
@@ -99,6 +101,7 @@ Our thesis: Career outcomes aren't random—they follow patterns we can identify
 :::: {.columns}
 
 ::: {.column width="40%"}
+::: {.compact-content}
 ### The Research Question
 
 ::: {.callout-note icon=false}
@@ -108,24 +111,24 @@ Our thesis: Career outcomes aren't random—they follow patterns we can identify
 ### The Data
 
 **72,000+ job postings** (2024-2025)
-
 - Real salaries from Lightcast
-- Tech, Finance, Healthcare sectors
 - **83% ML prediction accuracy**
 
 ### Our Analysis
 
-✓ Experience progression patterns
-✓ Geographic salary premiums
-✓ Industry compensation gaps
-✓ Remote work salary impact
-✓ In-demand skills identification
+✓ Experience patterns
+✓ Geographic premiums
+✓ Industry gaps
+✓ Remote work impact
+✓ In-demand skills
+:::
 :::
 
 ::: {.column width="60%"}
 ```{python}
 #| label: kpi-overview
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_kpi_overview()
 display_figure(fig, "presentation_kpi_overview")
@@ -182,6 +185,7 @@ Entry **$96K** → Mid **$115K** → Senior **$128K** → Leadership **$126K**
 #| label: experience-analysis
 #| echo: false
 #| fig-height: 4.5
+#| fig-format: png
 
 fig = pcharts.create_experience_progression()
 # Optimize for presentation - reduced height to fit with callout
@@ -208,6 +212,7 @@ This is the most powerful finding: experience compounds. Entry level (0-2 years)
 ```{python}
 #| label: geographic-analysis
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_geographic_analysis()
 display_figure(fig, "presentation_geographic_analysis")
@@ -246,7 +251,7 @@ vis = SalaryVisualizer(df)
 ```
 
 # Create interactive Folium map for HTML/RevealJS
-::: {when-format="html"}
+::: {.content-hidden unless-format="html"}
 ```{python}
 #| label: geographic-map-folium
 #| echo: false
@@ -257,7 +262,7 @@ folium_map
 :::
 
 # Create static Plotly map for DOCX/PDF/PPT
-::: {when-format="docx pdf pptx"}
+::: {.content-hidden unless-format="docx pdf pptx"}
 ```{python}
 #| label: geographic-map-plotly
 #| echo: false
@@ -288,6 +293,7 @@ Switching industries = **instant 78% raise** for same skills (Tech vs Education)
 #| label: industry-analysis
 #| echo: false
 #| fig-height: 4
+#| fig-format: png
 
 # Create simplified industry chart for presentation
 import plotly.graph_objects as go
@@ -321,33 +327,33 @@ industries = [shorten_name(ind) for ind in industry_stats.index.tolist()]
 salaries = industry_stats['median'].tolist()
 
 # Create simple horizontal bar chart
-fig = go.Figure()
+    fig = go.Figure()
 
-fig.add_trace(go.Bar(
+    fig.add_trace(go.Bar(
     y=industries[::-1],
     x=salaries[::-1],
-    orientation='h',
-    marker=dict(
+        orientation='h',
+        marker=dict(
         color=salaries[::-1],
-        colorscale='Viridis',
+            colorscale='Viridis',
         showscale=False
     ),
     text=[f'${s/1000:.0f}K' for s in salaries[::-1]],
     textposition='outside',
     textfont=dict(size=15, color='black'),
     hovertemplate='%{y}<br>Median: %{text}<extra></extra>'
-))
+    ))
 
-fig.update_layout(
+    fig.update_layout(
     title=dict(text="Industry Salary Comparison", font=dict(size=16)),
     xaxis_title="Median Salary",
     height=380,
     font=dict(size=13),
     margin=dict(l=130, r=90, t=60, b=50),
-    plot_bgcolor='white',
+        plot_bgcolor='white',
     paper_bgcolor='white',
     xaxis=dict(showgrid=True, gridcolor='lightgray')
-)
+    )
 
 display_figure(fig, "presentation_industry_analysis")
 ```
@@ -368,6 +374,7 @@ Industry is your third lever. Tech pays 78% more than education for the same ski
 ```{python}
 #| label: remote-analysis
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_remote_work_analysis()
 display_figure(fig, "presentation_remote_analysis")
@@ -416,6 +423,7 @@ display(Markdown(callout_text))
 ```{python}
 #| label: skills-analysis
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_skills_premium_analysis()
 display_figure(fig, "presentation_skills_premium")
@@ -432,6 +440,7 @@ The skill gap is real. Employers want cloud computing (AWS, Kubernetes), modern 
 ```{python}
 #| label: ml-feature-importance
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_feature_importance()
 display_figure(fig, "presentation_ml_feature_importance")
@@ -457,6 +466,7 @@ Our ML model reveals job title matters most (35%), followed by industry and loca
 ```{python}
 #| label: masters-roi
 #| echo: false
+#| fig-format: png
 
 # Calculate breakeven for display
 bachelor_salary = median_salary
@@ -492,6 +502,7 @@ The Master's degree ROI calculation: $50K tuition + $228K foregone earnings = $2
 ```{python}
 #| label: action-plan-roadmap
 #| echo: false
+#| fig-format: png
 
 fig = pcharts.create_action_plan_roadmap()
 display_figure(fig, "presentation_action_plan")
