@@ -209,7 +209,7 @@ display(Markdown(rationale_text))
 
 ::: {.callout-tip}
 
-####Detailed Analysis Available
+#### Detailed Analysis Available
 
 For complete model specifications, mathematical formulations, and PySpark MLlib implementation code, see **[Methodology & Multivariate Analysis](methodology.qmd)** sections on:
 
@@ -832,7 +832,7 @@ vis = SalaryVisualizer(df)
 ```
 
 
-::: {.content-hidden unless-format="html"}
+::: {.content-visible when-format="html"}
 ```{python}
 #| label: geographic-map-folium
 #| echo: false
@@ -843,7 +843,7 @@ folium_map
 ```
 :::
 
-::: {.content-hidden unless-format="docx"}
+::: {.content-visible when-format="docx"}
 ```{python}
 #| label: geographic-map-plotly
 #| echo: false
@@ -1238,42 +1238,43 @@ top_emerging = emerging_skills.head(5)
 skills_insights = f"""
 #### Key Skills Analysis Findings
 
-**Data Coverage:**
+##### Data Coverage:
 
-    - **{total_skills:,}** unique technical skills identified across **{total_skill_instances:,}** skill instances
-    - **{skills_coverage:.1f}%** of job postings include technical skills data
-    - Analysis based on real Lightcast data from **{len(df):,}** job postings
+- **{total_skills:,}** unique technical skills identified across **{total_skill_instances:,}** skill instances
+- **{skills_coverage:.1f}%** of job postings include technical skills data
+- Analysis based on real Lightcast data from **{len(df):,}** job postings
 
-**Top 5 Most In-Demand Skills:**
+##### Top 5 Most In-Demand Skills
 
-    1. **{top_skills.iloc[0]['skill']}** - {top_skills.iloc[0]['frequency']:,} job postings ({top_skills.iloc[0]['percentage']:.1f}%)
-    2. **{top_skills.iloc[1]['skill']}** - {top_skills.iloc[1]['frequency']:,} job postings ({top_skills.iloc[1]['percentage']:.1f}%)
-    3. **{top_skills.iloc[2]['skill']}** - {top_skills.iloc[2]['frequency']:,} job postings ({top_skills.iloc[2]['percentage']:.1f}%)
-    4. **{top_skills.iloc[3]['skill']}** - {top_skills.iloc[3]['frequency']:,} job postings ({top_skills.iloc[3]['percentage']:.1f}%)
-    5. **{top_skills.iloc[4]['skill']}** - {top_skills.iloc[4]['frequency']:,} job postings ({top_skills.iloc[4]['percentage']:.1f}%)
+1. **{top_skills.iloc[0]['skill']}** - {top_skills.iloc[0]['frequency']:,} job postings ({top_skills.iloc[0]['percentage']:.1f}%)
+2. **{top_skills.iloc[1]['skill']}** - {top_skills.iloc[1]['frequency']:,} job postings ({top_skills.iloc[1]['percentage']:.1f}%)
+3. **{top_skills.iloc[2]['skill']}** - {top_skills.iloc[2]['frequency']:,} job postings ({top_skills.iloc[2]['percentage']:.1f}%)
+4. **{top_skills.iloc[3]['skill']}** - {top_skills.iloc[3]['frequency']:,} job postings ({top_skills.iloc[3]['percentage']:.1f}%)
+5. **{top_skills.iloc[4]['skill']}** - {top_skills.iloc[4]['frequency']:,} job postings ({top_skills.iloc[4]['percentage']:.1f}%)
 
-**Top 5 Highest Paying Skills:**
+##### Top 5 Highest Paying Skills
 
-    1. **{top_paying_skills.iloc[0]['skill']}** - ${top_paying_skills.iloc[0]['median_salary']:,.0f} median salary
-    2. **{top_paying_skills.iloc[1]['skill']}** - ${top_paying_skills.iloc[1]['median_salary']:,.0f} median salary
-    3. **{top_paying_skills.iloc[2]['skill']}** - ${top_paying_skills.iloc[2]['median_salary']:,.0f} median salary
-    4. **{top_paying_skills.iloc[3]['skill']}** - ${top_paying_skills.iloc[3]['median_salary']:,.0f} median salary
-    5. **{top_paying_skills.iloc[4]['skill']}** - ${top_paying_skills.iloc[4]['median_salary']:,.0f} median salary
+1. **{top_paying_skills.iloc[0]['skill']}** - ${top_paying_skills.iloc[0]['median_salary']:,.0f} median salary
+2. **{top_paying_skills.iloc[1]['skill']}** - ${top_paying_skills.iloc[1]['median_salary']:,.0f} median salary
+3. **{top_paying_skills.iloc[2]['skill']}** - ${top_paying_skills.iloc[2]['median_salary']:,.0f} median salary
+4. **{top_paying_skills.iloc[3]['skill']}** - ${top_paying_skills.iloc[3]['median_salary']:,.0f} median salary
+5. **{top_paying_skills.iloc[4]['skill']}** - ${top_paying_skills.iloc[4]['median_salary']:,.0f} median salary
 
-**Top 5 Emerging High-Value Skills:**
+##### Top 5 Emerging High-Value Skills
 
-    1. **{top_emerging.iloc[0]['skill']}** - ${top_emerging.iloc[0]['salary_premium']:,.0f} salary premium
-    2. **{top_emerging.iloc[1]['skill']}** - ${top_emerging.iloc[1]['salary_premium']:,.0f} salary premium
-    3. **{top_emerging.iloc[2]['skill']}** - ${top_emerging.iloc[2]['salary_premium']:,.0f} salary premium
-    4. **{top_emerging.iloc[3]['skill']}** - ${top_emerging.iloc[3]['salary_premium']:,.0f} salary premium
-    5. **{top_emerging.iloc[4]['skill']}** - ${top_emerging.iloc[4]['salary_premium']:,.0f} salary premium
+1. **{top_emerging.iloc[0]['skill']}** - ${top_emerging.iloc[0]['salary_premium']:,.0f} salary premium
+2. **{top_emerging.iloc[1]['skill']}** - ${top_emerging.iloc[1]['salary_premium']:,.0f} salary premium
+3. **{top_emerging.iloc[2]['skill']}** - ${top_emerging.iloc[2]['salary_premium']:,.0f} salary premium
+4. **{top_emerging.iloc[3]['skill']}** - ${top_emerging.iloc[3]['salary_premium']:,.0f} salary premium
+5. **{top_emerging.iloc[4]['skill']}** - ${top_emerging.iloc[4]['salary_premium']:,.0f} salary premium
 
-**Strategic Recommendations:**
+##### Strategic Recommendations
 
-    - **Focus on High-Value Skills**: Target skills with both high demand and salary correlation
-    - **Geographic Strategy**: Different skills are in demand in different markets
-    - **Emerging Opportunities**: Invest in emerging skills for future growth potential
-    - **Skill Combinations**: Develop complementary skill sets for maximum market value
+- **Focus on High-Value Skills**: Target skills with both high demand and salary correlation
+- **Geographic Strategy**: Different skills are in demand in different markets
+- **Emerging Opportunities**: Invest in emerging skills for future growth potential
+- **Skill Combinations**: Develop complementary skill sets for maximum market value
+
 """
 
 display(Markdown(skills_insights))
