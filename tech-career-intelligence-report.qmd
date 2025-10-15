@@ -539,7 +539,7 @@ display(Markdown(pred_insights))
 
 # Use centralized confusion matrix visualization function
 import numpy as np
-from src.visualization.ml_charts import create_confusion_matrix_heatmap
+from src.visualization.ml_charts import create_confusion_matrix_heatmap, create_confusion_matrix_heatmap_docx_optimized
 
 # Confusion matrix values (normalized to percentages)
 # Based on 85% accuracy classification model
@@ -551,8 +551,8 @@ confusion_data = np.array([
 
 class_labels = ['Below Average', 'Above Average']
 
-# Create confusion matrix using reusable function
-fig_conf = create_confusion_matrix_heatmap(
+# Create confusion matrix using DOCX-optimized function for better rendering
+fig_conf = create_confusion_matrix_heatmap_docx_optimized(
     confusion_data,
     class_labels,
     title="Classification Model: Confusion Matrix (Above/Below Median Salary)"
@@ -1065,7 +1065,7 @@ import pandas as pd
 
 # Create combined heatmap using abstraction layer
 fig = visualizer.create_employment_remote_heatmap()
-    display_figure(fig, "employment_remote_heatmap")
+display_figure(fig, "employment_remote_heatmap")
 ```
 
 ```{python}

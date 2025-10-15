@@ -239,7 +239,7 @@ def create_confusion_matrix_heatmap(
     title: str = "Classification Model: Confusion Matrix"
 ) -> go.Figure:
     """
-    Create confusion matrix heatmap.
+    Create confusion matrix heatmap with DOCX-compatible colorscale.
 
     Args:
         confusion_matrix: 2D array with confusion matrix values (as percentages)
@@ -262,9 +262,16 @@ def create_confusion_matrix_heatmap(
     min_val = confusion_matrix.min()
     max_val = confusion_matrix.max()
 
-    # Normalize values to 0-1 range for colorscale
-    normalized_min = (min_val - min_val) / (max_val - min_val) if max_val != min_val else 0
-    normalized_max = (max_val - min_val) / (max_val - min_val) if max_val != min_val else 1
+    # Use a more DOCX-friendly colorscale with better contrast
+    # This colorscale works better when converted to PNG for DOCX
+    colorscale = [
+        [0.0, '#f0f8ff'],      # Very light blue (lowest values)
+        [0.2, '#b3d9ff'],      # Light blue
+        [0.4, '#66b3ff'],      # Medium blue
+        [0.6, '#1a8cff'],      # Darker blue
+        [0.8, '#0066cc'],      # Dark blue
+        [1.0, '#003d7a']       # Very dark blue (highest values)
+    ]
 
     fig = go.Figure(data=go.Heatmap(
         z=confusion_matrix,
@@ -273,15 +280,17 @@ def create_confusion_matrix_heatmap(
         text=[[f'{val}%<br>(n={val*625:.0f})' for val in row] for row in confusion_matrix],
         texttemplate='%{text}',
         textfont={"size": 14, "color": "white"},
-        colorscale=[
-            [0, '#fee5d9'],      # Light (lowest values)
-            [0.5, '#fcae91'],    # Medium
-            [1.0, '#fb6a4a']     # Dark (highest values)
-        ],
+        colorscale=colorscale,
         zmin=min_val,  # Set explicit min/max for proper color mapping
         zmax=max_val,
         showscale=True,
-        colorbar=dict(title="Percentage<br>of Jobs (%)", ticksuffix='%')
+        colorbar=dict(
+            title="Percentage<br>of Jobs (%)",
+            ticksuffix='%',
+            tickmode='linear',
+            tick0=min_val,
+            dtick=(max_val - min_val) / 4  # 5 ticks total
+        )
     ))
 
     fig.update_layout(
@@ -295,6 +304,73 @@ def create_confusion_matrix_heatmap(
         paper_bgcolor='white',
         font=dict(size=11),
         margin=dict(l=180, r=180, t=120, b=100)  # Increased margins for labels and colorbar
+    )
+
+    # Reverse y-axis for conventional confusion matrix layout
+    fig.update_yaxes(autorange='reversed')
+
+    # Ensure proper spacing for axis labels
+    fig.update_xaxes(tickangle=0)
+    fig.update_yaxes(tickangle=0)
+
+    return fig
+
+
+def create_confusion_matrix_heatmap_docx_optimized(
+    confusion_matrix: np.ndarray,
+    class_labels: List[str],
+    title: str = "Classification Model: Confusion Matrix"
+) -> go.Figure:
+    """
+    Create confusion matrix heatmap optimized for DOCX rendering.
+
+    Uses a simpler colorscale that renders better in DOCX format.
+
+    Args:
+        confusion_matrix: 2D array with confusion matrix values (as percentages)
+        class_labels: List of class labels (e.g., ['Below Average', 'Above Average'])
+        title: Chart title
+
+    Returns:
+        Plotly Figure with heatmap optimized for DOCX
+    """
+    # Calculate dynamic colorscale based on actual data range
+    min_val = confusion_matrix.min()
+    max_val = confusion_matrix.max()
+
+    # Use a simple, high-contrast colorscale that works well in DOCX
+    # This uses Plotly's built-in 'Blues' colorscale which is well-tested
+    fig = go.Figure(data=go.Heatmap(
+        z=confusion_matrix,
+        x=[f'Predicted<br>{label}' for label in class_labels],
+        y=[f'Actual<br>{label}' for label in class_labels],
+        text=[[f'{val}%<br>(n={val*625:.0f})' for val in row] for row in confusion_matrix],
+        texttemplate='%{text}',
+        textfont={"size": 14, "color": "white"},
+        colorscale='Blues',  # Built-in colorscale that works well in DOCX
+        zmin=min_val,
+        zmax=max_val,
+        showscale=True,
+        colorbar=dict(
+            title="Percentage<br>of Jobs (%)",
+            ticksuffix='%',
+            tickmode='linear',
+            tick0=min_val,
+            dtick=(max_val - min_val) / 4
+        )
+    ))
+
+    fig.update_layout(
+        title=title,
+        title_x=0.5,
+        title_font_size=16,
+        xaxis_title="Predicted Category",
+        yaxis_title="Actual Category",
+        height=650,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=11),
+        margin=dict(l=180, r=180, t=120, b=100)
     )
 
     # Reverse y-axis for conventional confusion matrix layout

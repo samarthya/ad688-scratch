@@ -26,6 +26,7 @@ from .ml_charts import (
     create_feature_importance_chart,
     create_predicted_vs_actual_plot,
     create_confusion_matrix_heatmap,
+    create_confusion_matrix_heatmap_docx_optimized,
     generate_representative_predictions,
     get_default_ml_results,
     get_default_feature_importance
@@ -41,6 +42,7 @@ __all__ = [
     "create_feature_importance_chart",
     "create_predicted_vs_actual_plot",
     "create_confusion_matrix_heatmap",
+    "create_confusion_matrix_heatmap_docx_optimized",
     "generate_representative_predictions",
     "get_default_ml_results",
     "get_default_feature_importance",
