@@ -58,10 +58,17 @@ def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures
         svg_path = Path(save_dir) / f"{filename}.svg"
         png_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Save static images only - Quarto will handle HTML generation for interactive outputs
+        # Save static images with high quality for DOCX compatibility
         try:
-            fig.write_image(str(png_path), width=1200, height=800, scale=2)
-            fig.write_image(str(svg_path), width=1200, height=800)
+            # High-quality PNG for DOCX (higher DPI and scale)
+            fig.write_image(str(png_path), width=1200, height=800, scale=3, format='png')
+            # SVG for HTML
+            fig.write_image(str(svg_path), width=1200, height=800, format='svg')
+
+            # Also save a high-DPI version specifically for DOCX
+            docx_png_path = Path(save_dir) / f"{filename}_docx.png"
+            fig.write_image(str(docx_png_path), width=1600, height=1000, scale=2, format='png')
+
         except Exception as e:
             print(f"Warning: Could not save static images for {filename}: {e}")
 

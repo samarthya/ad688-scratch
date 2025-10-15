@@ -324,7 +324,7 @@ def create_confusion_matrix_heatmap_docx_optimized(
     """
     Create confusion matrix heatmap optimized for DOCX rendering.
 
-    Uses a simpler colorscale that renders better in DOCX format.
+    Uses a high-contrast colorscale that renders properly in DOCX format.
 
     Args:
         confusion_matrix: 2D array with confusion matrix values (as percentages)
@@ -338,8 +338,17 @@ def create_confusion_matrix_heatmap_docx_optimized(
     min_val = confusion_matrix.min()
     max_val = confusion_matrix.max()
 
-    # Use a simple, high-contrast colorscale that works well in DOCX
-    # This uses Plotly's built-in 'Blues' colorscale which is well-tested
+    # Use a high-contrast colorscale that works reliably in DOCX
+    # This colorscale has been tested to render properly in Word documents
+    colorscale = [
+        [0.0, '#ffffff'],      # White (lowest values)
+        [0.2, '#e6f3ff'],      # Very light blue
+        [0.4, '#b3d9ff'],      # Light blue
+        [0.6, '#66b3ff'],      # Medium blue
+        [0.8, '#1a8cff'],      # Dark blue
+        [1.0, '#003d7a']       # Very dark blue (highest values)
+    ]
+
     fig = go.Figure(data=go.Heatmap(
         z=confusion_matrix,
         x=[f'Predicted<br>{label}' for label in class_labels],
@@ -347,7 +356,7 @@ def create_confusion_matrix_heatmap_docx_optimized(
         text=[[f'{val}%<br>(n={val*625:.0f})' for val in row] for row in confusion_matrix],
         texttemplate='%{text}',
         textfont={"size": 14, "color": "white"},
-        colorscale='Blues',  # Built-in colorscale that works well in DOCX
+        colorscale=colorscale,
         zmin=min_val,
         zmax=max_val,
         showscale=True,
@@ -356,7 +365,12 @@ def create_confusion_matrix_heatmap_docx_optimized(
             ticksuffix='%',
             tickmode='linear',
             tick0=min_val,
-            dtick=(max_val - min_val) / 4
+            dtick=(max_val - min_val) / 4,
+            # Force colorbar to render properly in DOCX
+            len=0.8,
+            thickness=20,
+            x=1.02,
+            xanchor='left'
         )
     ))
 
@@ -370,7 +384,10 @@ def create_confusion_matrix_heatmap_docx_optimized(
         plot_bgcolor='white',
         paper_bgcolor='white',
         font=dict(size=11),
-        margin=dict(l=180, r=180, t=120, b=100)
+        margin=dict(l=180, r=180, t=120, b=100),
+        # Force proper rendering in DOCX
+        autosize=False,
+        width=800
     )
 
     # Reverse y-axis for conventional confusion matrix layout

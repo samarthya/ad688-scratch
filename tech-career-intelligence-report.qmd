@@ -362,7 +362,7 @@ rf = RandomForestClassifier(
 #| label: ml-model-performance
 #| echo: false
 #| fig-height: 4
-#| fig-format: png
+#| fig-format: svg
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -536,6 +536,7 @@ display(Markdown(pred_insights))
 #| echo: false
 #| fig-height: 4
 #| fig-format: png
+#| fig-dpi: 300
 
 # Use centralized confusion matrix visualization function
 import numpy as np
@@ -558,11 +559,26 @@ fig_conf = create_confusion_matrix_heatmap_docx_optimized(
     title="Classification Model: Confusion Matrix (Above/Below Median Salary)"
 )
 
-# Adjust layout for DOCX compatibility
+# Force high-quality rendering for DOCX
 fig_conf.update_layout(
-    height=400,  # Reduced height for DOCX
-    margin=dict(l=60, r=60, t=80, b=60),
-    font=dict(size=11)  # Slightly smaller font
+    height=500,  # Increased height for better visibility
+    margin=dict(l=80, r=80, t=100, b=80),
+    font=dict(size=12),  # Slightly larger font for DOCX
+    # Force proper rendering
+    autosize=False,
+    width=900
+)
+
+# Ensure colorscale is properly set for DOCX
+fig_conf.update_traces(
+    colorscale=[
+        [0.0, '#ffffff'],      # White (lowest values)
+        [0.2, '#e6f3ff'],      # Very light blue
+        [0.4, '#b3d9ff'],      # Light blue
+        [0.6, '#66b3ff'],      # Medium blue
+        [0.8, '#1a8cff'],      # Dark blue
+        [1.0, '#003d7a']       # Very dark blue (highest values)
+    ]
 )
 
 display_figure(fig_conf, "ml_confusion_matrix")
@@ -840,7 +856,6 @@ from src.visualization.charts import SalaryVisualizer, display_figure
 vis = SalaryVisualizer(df)
 ```
 
-# Create interactive Folium map for HTML
 ::: {.content-hidden unless-format="html"}
 ```{python}
 #| label: geographic-map-folium
@@ -851,7 +866,6 @@ folium_map
 ```
 :::
 
-# Create static Plotly map for DOCX/PDF/PPT
 ::: {.content-hidden unless-format="docx pdf pptx"}
 ```{python}
 #| label: geographic-map-plotly
