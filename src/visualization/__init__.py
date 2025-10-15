@@ -21,6 +21,7 @@ Modules:
 
 from .charts import SalaryVisualizer, QuartoChartExporter, display_figure
 from .presentation_charts import PresentationCharts
+from .skills_charts import SkillsVisualizer, create_skills_visualization
 from .ml_charts import (
     create_ml_performance_comparison,
     create_feature_importance_chart,
@@ -37,6 +38,8 @@ __all__ = [
     "SalaryVisualizer",
     "QuartoChartExporter",
     "PresentationCharts",
+    "SkillsVisualizer",
+    "create_skills_visualization",
     # ML visualization functions
     "create_ml_performance_comparison",
     "create_feature_importance_chart",

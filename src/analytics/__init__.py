@@ -21,6 +21,7 @@ from .salary_models import SalaryAnalyticsModels
 from .nlp_analysis import JobMarketNLPAnalyzer
 from .predictive_dashboard import PredictiveAnalyticsDashboard
 from .docx_report_generator import JobMarketReportGenerator, generate_comprehensive_docx_report
+from .skills_analysis import SkillsAnalyzer, run_skills_analysis
 
 # Convenience functions following existing patterns
 def create_analytics_report(df=None):
@@ -75,14 +76,28 @@ def generate_docx_report(df=None, output_path="job_market_analytics_report.docx"
     """
     return generate_comprehensive_docx_report(df, output_path)
 
+def run_skills_analysis_complete(df=None):
+    """
+    Run complete skills analysis pipeline.
+
+    Args:
+        df: Optional DataFrame. If None, uses auto data loading.
+
+    Returns:
+        Dict with skills analysis results and insights
+    """
+    return run_skills_analysis(df)
+
 __all__ = [
     "SalaryAnalyticsModels",
     "JobMarketNLPAnalyzer",
     "PredictiveAnalyticsDashboard",
     "JobMarketReportGenerator",
+    "SkillsAnalyzer",
     "create_analytics_report",
     "run_predictive_analysis",
     "run_nlp_analysis",
+    "run_skills_analysis_complete",
     "generate_docx_report",
     "generate_comprehensive_docx_report"
 ]

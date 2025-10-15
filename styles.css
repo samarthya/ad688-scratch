@@ -15,11 +15,49 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text-color);
   line-height: 1.6;
+  font-size: 16px; /* Base font size for body text */
 }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--primary-color);
   font-weight: 600;
+}
+
+/* Proper heading hierarchy - ensure titles are larger than body text */
+h1 {
+  font-size: 2.5rem; /* 40px - largest for main titles */
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 2rem; /* 32px - section headers */
+  margin-bottom: 0.8rem;
+}
+
+h3 {
+  font-size: 1.5rem; /* 24px - subsection headers */
+  margin-bottom: 0.6rem;
+}
+
+h4 {
+  font-size: 1.25rem; /* 20px - smaller headers */
+  margin-bottom: 0.5rem;
+}
+
+h5 {
+  font-size: 1.1rem; /* 17.6px - even smaller headers */
+  margin-bottom: 0.4rem;
+}
+
+h6 {
+  font-size: 1rem; /* 16px - smallest headers, same as body */
+  margin-bottom: 0.3rem;
+}
+
+/* Ensure body text is smaller than all headings */
+p, li, div {
+  font-size: 1rem; /* 16px - base body text size */
+  line-height: 1.6;
 }
 
 /* Navigation */

@@ -42,10 +42,11 @@ def create_ml_performance_comparison(
     fig = make_subplots(
         rows=1, cols=2,
         subplot_titles=[
-            "Model 1: Regression Performance (R²)",
-            "Model 2: Classification Performance (Accuracy)"
+            "M1: Regression Performance (R²)",
+            "M2: Classification Performance (Accuracy)"
         ],
-        specs=[[{"type": "bar"}, {"type": "bar"}]]
+        specs=[[{"type": "bar"}, {"type": "bar"}]],
+        horizontal_spacing=0.3
     )
 
     # Regression R² scores
@@ -88,7 +89,7 @@ def create_ml_performance_comparison(
         showlegend=False,
         plot_bgcolor='white',
         paper_bgcolor='white',
-        font=dict(size=11),
+        font=dict(size=10),
         margin=dict(l=80, r=80, t=120, b=80)  # Increased top margin for title
     )
 
@@ -233,10 +234,83 @@ def create_predicted_vs_actual_plot(
     return fig
 
 
+def get_enhanced_colorscales():
+    """
+    Get enhanced colorscale options for confusion matrix heatmaps.
+
+    Returns:
+        dict: Dictionary of colorscale options with different visual styles
+    """
+    return {
+        'blue_gradient': [
+            [0.0, '#ffffff'],      # Pure white (lowest values)
+            [0.1, '#f0f8ff'],      # Alice blue
+            [0.2, '#e6f3ff'],      # Very light blue
+            [0.3, '#cce7ff'],      # Light blue
+            [0.4, '#99d6ff'],      # Medium light blue
+            [0.5, '#66c2ff'],      # Medium blue
+            [0.6, '#33adff'],      # Medium dark blue
+            [0.7, '#0099ff'],      # Bright blue
+            [0.8, '#0088e6'],      # Dark blue
+            [0.9, '#0077cc'],      # Darker blue
+            [1.0, '#0066b3']       # Deep blue (highest values)
+        ],
+        'viridis_style': [
+            [0.0, '#440154'],      # Dark purple
+            [0.1, '#482777'],      # Purple
+            [0.2, '#3f4a8a'],      # Blue-purple
+            [0.3, '#31678e'],      # Blue
+            [0.4, '#26838e'],      # Blue-green
+            [0.5, '#1f9d8a'],      # Teal
+            [0.6, '#6cce5a'],      # Green
+            [0.7, '#b6de2b'],      # Yellow-green
+            [0.8, '#fee825'],      # Yellow
+            [0.9, '#f0f921'],      # Light yellow
+            [1.0, '#ffffff']       # White (highest values)
+        ],
+        'plasma_style': [
+            [0.0, '#0d0887'],      # Dark purple
+            [0.1, '#46039f'],      # Purple
+            [0.2, '#7201a8'],      # Magenta-purple
+            [0.3, '#9c179e'],      # Magenta
+            [0.4, '#bd3786'],      # Pink-magenta
+            [0.5, '#d8576b'],      # Pink
+            [0.6, '#ed7953'],      # Orange-pink
+            [0.7, '#fb9f3a'],      # Orange
+            [0.8, '#fdca26'],      # Yellow-orange
+            [0.9, '#f0f921'],      # Yellow
+            [1.0, '#ffffff']       # White (highest values)
+        ],
+        'heat_style': [
+            [0.0, '#ffffff'],      # White
+            [0.1, '#fff5f0'],      # Very light red
+            [0.2, '#fee0d2'],      # Light red
+            [0.3, '#fcbba1'],      # Light orange
+            [0.4, '#fc9272'],      # Orange
+            [0.5, '#fb6a4a'],      # Red-orange
+            [0.6, '#ef3b2c'],      # Red
+            [0.7, '#cb181d'],      # Dark red
+            [0.8, '#a50f15'],      # Darker red
+            [0.9, '#67000d'],      # Very dark red
+            [1.0, '#000000']       # Black (highest values)
+        ],
+        'cool_warm': [
+            [0.0, '#2166ac'],      # Cool blue
+            [0.2, '#4393c3'],      # Light blue
+            [0.4, '#92c5de'],      # Very light blue
+            [0.5, '#ffffff'],      # White (neutral)
+            [0.6, '#fdb462'],      # Light orange
+            [0.8, '#f4a582'],      # Orange
+            [1.0, '#d6604d']       # Warm red
+        ]
+    }
+
+
 def create_confusion_matrix_heatmap(
     confusion_matrix: np.ndarray,
     class_labels: List[str],
-    title: str = "Classification Model: Confusion Matrix"
+    title: str = "Classification Model: Confusion Matrix",
+    colorscale_name: str = 'blue_gradient'
 ) -> go.Figure:
     """
     Create confusion matrix heatmap with DOCX-compatible colorscale.
@@ -262,16 +336,9 @@ def create_confusion_matrix_heatmap(
     min_val = confusion_matrix.min()
     max_val = confusion_matrix.max()
 
-    # Use a more DOCX-friendly colorscale with better contrast
-    # This colorscale works better when converted to PNG for DOCX
-    colorscale = [
-        [0.0, '#f0f8ff'],      # Very light blue (lowest values)
-        [0.2, '#b3d9ff'],      # Light blue
-        [0.4, '#66b3ff'],      # Medium blue
-        [0.6, '#1a8cff'],      # Darker blue
-        [0.8, '#0066cc'],      # Dark blue
-        [1.0, '#003d7a']       # Very dark blue (highest values)
-    ]
+    # Get enhanced colorscale based on user preference
+    colorscales = get_enhanced_colorscales()
+    colorscale = colorscales.get(colorscale_name, colorscales['blue_gradient'])
 
     fig = go.Figure(data=go.Heatmap(
         z=confusion_matrix,
@@ -285,11 +352,18 @@ def create_confusion_matrix_heatmap(
         zmax=max_val,
         showscale=True,
         colorbar=dict(
-            title="Percentage<br>of Jobs (%)",
+            title=dict(
+                text="Percentage<br>of Jobs (%)",
+                font=dict(size=12, color='#2c3e50')
+            ),
             ticksuffix='%',
             tickmode='linear',
             tick0=min_val,
-            dtick=(max_val - min_val) / 4  # 5 ticks total
+            dtick=(max_val - min_val) / 4,  # 5 ticks total
+            tickfont=dict(size=10, color='#2c3e50'),
+            tickcolor='#2c3e50',
+            outlinewidth=1,
+            outlinecolor='#bdc3c7'
         )
     ))
 
@@ -319,7 +393,8 @@ def create_confusion_matrix_heatmap(
 def create_confusion_matrix_heatmap_docx_optimized(
     confusion_matrix: np.ndarray,
     class_labels: List[str],
-    title: str = "Classification Model: Confusion Matrix"
+    title: str = "Classification Model: Confusion Matrix",
+    colorscale_name: str = 'blue_gradient'
 ) -> go.Figure:
     """
     Create confusion matrix heatmap optimized for DOCX rendering.
@@ -338,16 +413,9 @@ def create_confusion_matrix_heatmap_docx_optimized(
     min_val = confusion_matrix.min()
     max_val = confusion_matrix.max()
 
-    # Use a high-contrast colorscale that works reliably in DOCX
-    # This colorscale has been tested to render properly in Word documents
-    colorscale = [
-        [0.0, '#ffffff'],      # White (lowest values)
-        [0.2, '#e6f3ff'],      # Very light blue
-        [0.4, '#b3d9ff'],      # Light blue
-        [0.6, '#66b3ff'],      # Medium blue
-        [0.8, '#1a8cff'],      # Dark blue
-        [1.0, '#003d7a']       # Very dark blue (highest values)
-    ]
+    # Get enhanced colorscale based on user preference
+    colorscales = get_enhanced_colorscales()
+    colorscale = colorscales.get(colorscale_name, colorscales['blue_gradient'])
 
     fig = go.Figure(data=go.Heatmap(
         z=confusion_matrix,
@@ -361,16 +429,23 @@ def create_confusion_matrix_heatmap_docx_optimized(
         zmax=max_val,
         showscale=True,
         colorbar=dict(
-            title="Percentage<br>of Jobs (%)",
+            title=dict(
+                text="Percentage<br>of Jobs (%)",
+                font=dict(size=12, color='#2c3e50')
+            ),
             ticksuffix='%',
             tickmode='linear',
             tick0=min_val,
             dtick=(max_val - min_val) / 4,
-            # Force colorbar to render properly in DOCX
-            len=0.8,
-            thickness=20,
+            # Enhanced colorbar styling for better visibility
+            len=0.85,
+            thickness=25,
             x=1.02,
-            xanchor='left'
+            xanchor='left',
+            tickfont=dict(size=10, color='#2c3e50'),
+            tickcolor='#2c3e50',
+            outlinewidth=1,
+            outlinecolor='#bdc3c7'
         )
     ))
 

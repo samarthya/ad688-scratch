@@ -3,7 +3,7 @@
 // Fonts
 $font-family-sans-serif: "Helvetica Neue", Helvetica, Arial, sans-serif;
 $presentation-heading-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-$presentation-font-size-root: 36px; // Reduced from 40px to fit more content
+$presentation-font-size-root: 28px; // Reduced from 36px for more compact presentation
 
 // Colors
 $body-bg: #ffffff;
@@ -13,9 +13,9 @@ $selection-bg: #1f77b4;
 
 // Headings
 $presentation-heading-color: #1f77b4;
-$presentation-h1-font-size: 2.5em;
-$presentation-h2-font-size: 1.6em;
-$presentation-h3-font-size: 1.3em;
+$presentation-h1-font-size: 2.0em; // Reduced from 2.5em
+$presentation-h2-font-size: 1.3em; // Reduced from 1.6em
+$presentation-h3-font-size: 1.1em; // Reduced from 1.3em
 
 /*-- scss:rules --*/
 
@@ -28,6 +28,11 @@ $presentation-h3-font-size: 1.3em;
 .reveal h3,
 .reveal h4 {
   font-weight: 600;
+}
+
+.reveal h4 {
+  font-size: 1.0em; // Smaller h4 headings
+  margin: 10px 0 6px 0;
 }
 
 .reveal h2 {
@@ -194,29 +199,31 @@ $presentation-h3-font-size: 1.3em;
 }
 
 .reveal h2 {
-  margin-bottom: 20px;
-  font-size: 1.8em;
+  margin-bottom: 15px;
+  font-size: 1.4em; // Reduced from 1.8em
 }
 
 .reveal h3 {
-  margin: 15px 0 10px 0;
-  font-size: 1.3em;
+  margin: 12px 0 8px 0;
+  font-size: 1.1em; // Reduced from 1.3em
 }
 
 .reveal p {
-  margin: 10px 0;
-  line-height: 1.4;
+  margin: 8px 0; // Reduced from 10px
+  line-height: 1.3; // Reduced from 1.4
+  font-size: 0.95em; // Slightly smaller body text
 }
 
 // Better spacing for bullet points
 .reveal ul, .reveal ol {
-  margin: 15px 0;
-  padding-left: 25px;
+  margin: 12px 0; // Reduced from 15px
+  padding-left: 20px; // Reduced from 25px
 }
 
 .reveal li {
-  margin: 8px 0;
-  line-height: 1.3;
+  margin: 6px 0; // Reduced from 8px
+  line-height: 1.25; // Reduced from 1.3
+  font-size: 0.95em; // Slightly smaller list text
 }
 
 // Emphasize key numbers and stats

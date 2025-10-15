@@ -18,6 +18,12 @@ format:
     fig-width: 8
     fig-height: 6
     fig-dpi: 300
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: False
+    highlight-style: github
+
 bibliography: references.bib
 csl: csl/econometrica.csl
 cite-method: citeproc
@@ -40,30 +46,29 @@ import sys
 import os
 import plotly.io as pio
 
-# Import display_figure from visualization module
 from src.visualization.charts import display_figure
 
-# Configure Plotly renderer for static images (svg+notebook for HTML, png for DOCX)
+# Configure Plotly renderer for static images (svg for HTML, png for DOCX)
 pio.renderers.default = "svg+png+notebook"
 
 ```
 
-# Executive Summary
+## Executive Summary
 
 This comprehensive report presents a data-driven analysis of the technology job market, examining salary patterns, geographic distributions, experience-level progressions, and industry trends. Our analysis leverages advanced data processing techniques and interactive visualizations to provide actionable insights for career planning and strategic decision-making in the technology sector.
 
-## Key Findings
+### Key Findings
 
 - **Salary Progression**: Clear correlation between experience level and compensation, with significant growth opportunities
 - **Geographic Variations**: Substantial salary differences across metropolitan areas
 - **Industry Premiums**: Emerging technologies command significant salary premiums
 - **Skills Impact**: Specialized technical skills correlate with higher compensation packages
 
-# Introduction and Methodology
+### Introduction and Methodology
 
 ::: {.callout-note}
 
-## Complete Methodology Documentation
+#### Complete Methodology Documentation
 
 For comprehensive statistical methodology, feature engineering decisions, and complete model specifications, see **[Methodology & Multivariate Analysis](methodology.qmd)**.
 
@@ -77,7 +82,7 @@ This report provides a high-level overview. The methodology page includes:
 
 :::
 
-## Research Objectives
+#### Research Objectives
 
 This study aims to provide comprehensive insights into the technology job market by analyzing:
 
@@ -88,7 +93,7 @@ This study aims to provide comprehensive insights into the technology job market
 5. **Correlation Analysis** of factors influencing compensation
 6. **Multivariate Analysis** of salary determinants using machine learning
 
-### Project Context
+#### Project Context
 
 This project adopts a **job-seeker perspective**, where students act as job seekers analyzing their career prospects in 2025. Instead of analyzing labor market trends for recruiters, we explore how job seekers can position themselves effectively given changes in hiring trends, salaries, AI adoption, remote work, and employment patterns.
 
@@ -203,7 +208,8 @@ display(Markdown(rationale_text))
 ## Multivariate Analysis Framework
 
 ::: {.callout-tip}
-## Detailed Analysis Available
+
+#### Detailed Analysis Available
 
 For complete model specifications, mathematical formulations, and PySpark MLlib implementation code, see **[Methodology & Multivariate Analysis](methodology.qmd)** sections on:
 
@@ -361,8 +367,8 @@ rf = RandomForestClassifier(
 ```{python}
 #| label: ml-model-performance
 #| echo: false
-#| fig-height: 4
-#| fig-format: svg
+#| fig-height: 5
+#| width: 100%
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -424,6 +430,7 @@ display_figure(fig_features, "ml_feature_importance")
 from IPython.display import Markdown, display
 
 ml_insights = """
+
 ### Machine Learning Model Insights
 
 **Model Performance**:
@@ -535,12 +542,11 @@ display(Markdown(pred_insights))
 #| label: ml-confusion-matrix
 #| echo: false
 #| fig-height: 4
-#| fig-format: png
-#| fig-dpi: 300
+
 
 # Use centralized confusion matrix visualization function
 import numpy as np
-from src.visualization.ml_charts import create_confusion_matrix_heatmap, create_confusion_matrix_heatmap_docx_optimized
+from src.visualization.ml_charts import create_confusion_matrix_heatmap_docx_optimized
 
 # Confusion matrix values (normalized to percentages)
 # Based on 85% accuracy classification model
@@ -552,33 +558,21 @@ confusion_data = np.array([
 
 class_labels = ['Below Average', 'Above Average']
 
-# Create confusion matrix using DOCX-optimized function for better rendering
+# Create confusion matrix using DOCX-optimized function with enhanced gradient
 fig_conf = create_confusion_matrix_heatmap_docx_optimized(
     confusion_data,
     class_labels,
-    title="Classification Model: Confusion Matrix (Above/Below Median Salary)"
+    title="Classification Model: Confusion Matrix (Above/Below Median Salary)",
+    colorscale_name='heat_style'  # Use heat style for maximum readability
 )
 
-# Force high-quality rendering for DOCX
+# Adjust layout for DOCX compatibility (let the function handle colorscale)
 fig_conf.update_layout(
     height=500,  # Increased height for better visibility
     margin=dict(l=80, r=80, t=100, b=80),
     font=dict(size=12),  # Slightly larger font for DOCX
-    # Force proper rendering
     autosize=False,
     width=900
-)
-
-# Ensure colorscale is properly set for DOCX
-fig_conf.update_traces(
-    colorscale=[
-        [0.0, '#ffffff'],      # White (lowest values)
-        [0.2, '#e6f3ff'],      # Very light blue
-        [0.4, '#b3d9ff'],      # Light blue
-        [0.6, '#66b3ff'],      # Medium blue
-        [0.8, '#1a8cff'],      # Dark blue
-        [1.0, '#003d7a']       # Very dark blue (highest values)
-    ]
 )
 
 display_figure(fig_conf, "ml_confusion_matrix")
@@ -637,7 +631,7 @@ if 'src.visualization.presentation_charts' in sys.modules:
     importlib.reload(sys.modules['src.visualization.presentation_charts'])
 
 from src.visualization.presentation_charts import PresentationCharts
-from src.visualization.charts import display_figure
+
 
 pcharts = PresentationCharts(df, summary)
 fig = pcharts.create_report_kpi_dashboard()
@@ -679,24 +673,11 @@ for i, level in enumerate(levels):
     ])
 ```
 
-::: {.content-hidden unless-format="html"}
-
-```{python}
-#| label: experience-html-2x2
-#| echo: false
-
-# HTML: Render as 2x2 interactive subplot using PresentationCharts
-fig = pcharts.create_experience_2x2_report(levels, salaries, counts, growth_rates, table_data)
-display_figure(fig, "career_progression_combined")
-```
-
-:::
-
-::: {.content-hidden unless-format="docx"}
 
 ```{python}
 #| label: experience-docx-separate-1
 #| echo: false
+
 
 # DOCX: Figure 1 - Salary Progression Bar Chart
 fig1 = visualizer.create_experience_salary_progression_chart(levels, salaries)
@@ -706,6 +687,7 @@ display_figure(fig1, "exp_salary_progression")
 ```{python}
 #| label: experience-docx-separate-2
 #| echo: false
+#| unless-format: docx, pdf
 
 # DOCX: Figure 2 - Job Market Distribution Pie Chart
 fig2 = visualizer.create_experience_job_distribution_chart(levels, counts)
@@ -715,6 +697,7 @@ display_figure(fig2, "exp_market_distribution")
 ```{python}
 #| label: experience-docx-separate-3
 #| echo: false
+#| unless-format: docx, pdf
 
 # DOCX: Figure 3 - Career Growth Trajectory
 fig3 = visualizer.create_experience_growth_trajectory_chart(levels, growth_rates)
@@ -724,15 +707,15 @@ display_figure(fig3, "exp_growth_trajectory")
 ```{python}
 #| label: experience-docx-separate-4
 #| echo: false
+#| unless-format: docx, pdf
 
 # DOCX: Figure 4 - Statistics Table
 fig4 = visualizer.create_experience_statistics_table_chart(table_data)
 display_figure(fig4, "exp_statistics_table")
 ```
 
-:::
 
-### Key Insights from Experience Analysis
+#### Key Insights from Experience Analysis
 
 ```{python}
 #| label: experience-insights
@@ -788,7 +771,7 @@ bottom_salary = salaries[-1] if len(salaries) > 0 else 85000
 premium = ((top_salary - bottom_salary) / bottom_salary) * 100
 
 insights_text = f"""
-### Industry Analysis Insights
+#### Industry Analysis Insights
 
 - **Top Paying**: {top_industry} at ${top_salary:,.0f} median salary
 - **Industry Premium**: {premium:.0f}% difference between highest and lowest paying sectors
@@ -813,42 +796,36 @@ from src.visualization import SalaryVisualizer
 
 visualizer = SalaryVisualizer(df)
 
-try:
-    # Create interactive geographic analysis using city_name (plain text)
-    geo_fig = visualizer.plot_salary_by_category('city_name')
-    geo_fig.update_layout(
-        title="Geographic Salary Analysis: Top Cities by Median Salary",
-        height=600,
-        margin=dict(l=80, r=80, t=100, b=80)
-    )
-    display_figure(geo_fig, "geographic_analysis")
 
-    from IPython.display import Markdown, display
-    display(Markdown("""
-### Geographic Analysis Summary
+# Create interactive geographic analysis using city_name (plain text)
+geo_fig = visualizer.plot_salary_by_category('city_name')
+geo_fig.update_layout(
+    title="Geographic Salary Analysis: Top Cities by Median Salary",
+    height=600,
+    margin=dict(l=80, r=80, t=100, b=80)
+)
+display_figure(geo_fig, "geographic_analysis")
+
+from IPython.display import Markdown, display
+
+display(Markdown("""
+#### Geographic Analysis Summary
 
 This analysis uses clean city name data to provide accurate geographic insights.
 Key findings include significant salary variations across metropolitan areas.
 """))
 
-except Exception as e:
-    from IPython.display import Markdown, display
-    display(Markdown("""
-### Geographic Analysis Summary
-
-Analysis shows significant salary variations across major metropolitan areas.
-Data processing is being optimized for enhanced visualization.
-"""))
 ```
 
-### Interactive Geographic Market Map
+#### Interactive Geographic Market Map
 
 The map below provides an interactive visualization of job distribution and salary levels across the United States. Each marker represents a city, with size indicating job volume and color representing median salary levels.
 
-# Create interactive map showing job distribution and salary by location
+
 ```{python}
 #| label: geographic-map-setup
 #| echo: false
+#\ include: false
 
 from src.visualization.charts import SalaryVisualizer, display_figure
 
@@ -856,24 +833,26 @@ from src.visualization.charts import SalaryVisualizer, display_figure
 vis = SalaryVisualizer(df)
 ```
 
-::: {.content-hidden unless-format="html"}
+
+::: {.content-hidden unless-format="docx, pdf"}
 ```{python}
 #| label: geographic-map-folium
 #| echo: false
+#| unless-format: docx, pdf
 
-folium_map = vis.create_folium_salary_map(top_n=500, height=700)
+folium_map = vis.create_folium_salary_map(top_n=500, height=650)
 folium_map
 ```
 :::
 
-::: {.content-hidden unless-format="docx pdf pptx"}
+::: {.content-hidden unless-format="html"}
 ```{python}
 #| label: geographic-map-plotly
 #| echo: false
-#| fig-format: png
+#| unless-format: html
 
 geo_map = vis.create_plotly_geographic_map(top_n=500, height=700)
-geo_map
+display_figure(geo_map, "geographic_map_plotly")
 ```
 :::
 
@@ -926,7 +905,7 @@ except Exception as e:
     from IPython.display import Markdown, display
     import traceback
     error_msg = f"""
-### Correlation Analysis
+#### Correlation Analysis
 
 *Correlation matrix visualization is being processed.*
 
@@ -942,7 +921,7 @@ except Exception as e:
 from IPython.display import Markdown, display
 
 insights = """
-### Correlation Analysis Insights
+#### Correlation Analysis Insights
 
 - **Strong correlations** indicate factors that consistently move together
 - **Weak correlations** suggest independent salary determinants
@@ -990,7 +969,7 @@ emp_salary['percentage'] = (emp_salary['count'] / total_jobs * 100).round(1)
 remote_salary['percentage'] = (remote_salary['count'] / total_jobs * 100).round(1)
 ```
 
-### Employment Type Salary Comparison
+#### Employment Type Salary Comparison
 
 ```{python}
 #| label: employment-type-salary
@@ -1024,7 +1003,7 @@ insights = f"""
 display(Markdown(insights))
 ```
 
-### Remote Work Salary Analysis
+#### Remote Work Salary Analysis
 
 ```{python}
 #| label: remote-work-salary
@@ -1069,7 +1048,7 @@ if len(remote_defined) > 0:
     display(Markdown(insights))
 ```
 
-### Combined Analysis: Employment & Remote Factors
+#### Combined Analysis: Employment & Remote Factors
 
 ```{python}
 #| label: employment-remote-combined
@@ -1135,7 +1114,7 @@ except Exception as e:
     from IPython.display import Markdown, display
     # If AI comparison not available, show skills analysis instead
     display(Markdown("""
-### AI and Technology Trends
+#### AI and Technology Trends
 
 *Detailed AI salary premium visualization is being processed based on available data.*
 """))
@@ -1148,7 +1127,7 @@ except Exception as e:
 from IPython.display import Markdown, display
 
 ai_insights = """
-### Key Technology Trends
+#### Key Technology Trends
 
 - **Artificial Intelligence & Machine Learning**: Roles command 20-30% salary premiums
 - **Cloud Computing**: AWS, Azure, GCP skills show strong salary correlation
@@ -1160,41 +1139,183 @@ ai_insights = """
 display(Markdown(ai_insights))
 ```
 
-# Strategic Insights and Recommendations
+## Technical Skills Analysis
 
-## Career Progression Strategy
+#### In-Demand Skills by Geographic Location
+
+```{python}
+#| label: skills-geographic-analysis
+#| echo: false
+#| fig-height: 8
+
+# Import skills analysis modules
+from src.analytics.skills_analysis import run_skills_analysis
+from src.visualization.skills_charts import create_skills_visualization
+
+# Run comprehensive skills analysis
+skills_results = run_skills_analysis(df)
+
+# Create geographic skills heatmap
+geo_skills_fig = create_skills_visualization(skills_results, "geographic")
+geo_skills_fig.update_layout(
+    title="Technical Skills Demand by Geographic Location",
+    height=600,
+    margin=dict(l=150, r=50, t=100, b=150),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=11)
+)
+
+display_figure(geo_skills_fig, "skills_geographic_analysis")
+```
+
+#### Top Skills by Frequency and Salary Correlation
+
+```{python}
+#| label: skills-salary-correlation
+#| echo: false
+#| fig-height: 6
+
+# Create skills vs salary correlation chart (top 5 for readability)
+from src.visualization.skills_charts import SkillsVisualizer
+skills_visualizer = SkillsVisualizer(skills_results)
+skills_salary_fig = skills_visualizer.create_skills_salary_correlation_chart(top_n=5)
+skills_salary_fig.update_layout(
+    title="Top 5 Technical Skills vs Salary Correlation",
+    height=400,
+    margin=dict(l=50, r=50, t=100, b=80),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
+
+display_figure(skills_salary_fig, "skills_salary_correlation")
+```
+
+#### Emerging High-Value Skills
+
+```{python}
+#| label: emerging-skills-analysis
+#| echo: false
+#| fig-height: 6
+
+# Create emerging skills chart (top 5 for readability)
+emerging_skills_fig = skills_visualizer.create_emerging_skills_chart(top_n=5)
+emerging_skills_fig.update_layout(
+    title="Top 5 Emerging High-Value Skills: Growth Potential & Salary Premium",
+    height=400,
+    margin=dict(l=50, r=50, t=100, b=80),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
+
+display_figure(emerging_skills_fig, "emerging_skills_analysis")
+```
+
+#### Skills Analysis Insights
+
+```{python}
+#| label: skills-insights
+#| output: asis
+
+from IPython.display import Markdown, display
+
+# Extract key insights from skills analysis (top 5 for readability)
+top_skills = skills_results['top_skills'].head(5)
+salary_correlation = skills_results['salary_correlation'].head(5)
+emerging_skills = skills_results['emerging_skills'].head(5)
+
+# Calculate key metrics
+total_skills = skills_results['overview']['unique_skills']
+skills_coverage = skills_results['overview']['skills_coverage']
+total_skill_instances = skills_results['overview']['total_skill_instances']
+
+# Get top paying skills (top 5)
+top_paying_skills = salary_correlation.head(5)
+
+# Get emerging skills with highest salary premium (top 5)
+top_emerging = emerging_skills.head(5)
+
+skills_insights = f"""
+### Key Skills Analysis Findings
+
+**Data Coverage:**
+
+    - **{total_skills:,}** unique technical skills identified across **{total_skill_instances:,}** skill instances
+    - **{skills_coverage:.1f}%** of job postings include technical skills data
+    - Analysis based on real Lightcast data from **{len(df):,}** job postings
+
+**Top 5 Most In-Demand Skills:**
+
+    1. **{top_skills.iloc[0]['skill']}** - {top_skills.iloc[0]['frequency']:,} job postings ({top_skills.iloc[0]['percentage']:.1f}%)
+    2. **{top_skills.iloc[1]['skill']}** - {top_skills.iloc[1]['frequency']:,} job postings ({top_skills.iloc[1]['percentage']:.1f}%)
+    3. **{top_skills.iloc[2]['skill']}** - {top_skills.iloc[2]['frequency']:,} job postings ({top_skills.iloc[2]['percentage']:.1f}%)
+    4. **{top_skills.iloc[3]['skill']}** - {top_skills.iloc[3]['frequency']:,} job postings ({top_skills.iloc[3]['percentage']:.1f}%)
+    5. **{top_skills.iloc[4]['skill']}** - {top_skills.iloc[4]['frequency']:,} job postings ({top_skills.iloc[4]['percentage']:.1f}%)
+
+**Top 5 Highest Paying Skills:**
+
+    1. **{top_paying_skills.iloc[0]['skill']}** - ${top_paying_skills.iloc[0]['median_salary']:,.0f} median salary
+    2. **{top_paying_skills.iloc[1]['skill']}** - ${top_paying_skills.iloc[1]['median_salary']:,.0f} median salary
+    3. **{top_paying_skills.iloc[2]['skill']}** - ${top_paying_skills.iloc[2]['median_salary']:,.0f} median salary
+    4. **{top_paying_skills.iloc[3]['skill']}** - ${top_paying_skills.iloc[3]['median_salary']:,.0f} median salary
+    5. **{top_paying_skills.iloc[4]['skill']}** - ${top_paying_skills.iloc[4]['median_salary']:,.0f} median salary
+
+**Top 5 Emerging High-Value Skills:**
+
+    1. **{top_emerging.iloc[0]['skill']}** - ${top_emerging.iloc[0]['salary_premium']:,.0f} salary premium
+    2. **{top_emerging.iloc[1]['skill']}** - ${top_emerging.iloc[1]['salary_premium']:,.0f} salary premium
+    3. **{top_emerging.iloc[2]['skill']}** - ${top_emerging.iloc[2]['salary_premium']:,.0f} salary premium
+    4. **{top_emerging.iloc[3]['skill']}** - ${top_emerging.iloc[3]['salary_premium']:,.0f} salary premium
+    5. **{top_emerging.iloc[4]['skill']}** - ${top_emerging.iloc[4]['salary_premium']:,.0f} salary premium
+
+**Strategic Recommendations:**
+
+    - **Focus on High-Value Skills**: Target skills with both high demand and salary correlation
+    - **Geographic Strategy**: Different skills are in demand in different markets
+    - **Emerging Opportunities**: Invest in emerging skills for future growth potential
+    - **Skill Combinations**: Develop complementary skill sets for maximum market value
+"""
+
+display(Markdown(skills_insights))
+```
+
+## Strategic Insights and Recommendations
+
+#### Career Progression Strategy
 
 Based on our comprehensive analysis, we recommend the following strategic approaches:
 
-### 1. **Experience-Based Growth Path**
+##### 1. **Experience-Based Growth Path**
 
 - **Entry Level Focus**: Build foundational skills and gain industry exposure
 - **Mid-Level Advancement**: Develop specialization and leadership capabilities
 - **Senior Level Excellence**: Drive strategic initiatives and mentor teams
 - **Executive Leadership**: Focus on organizational impact and industry influence
 
-### 2. **Geographic Optimization**
+##### 2. **Geographic Optimization**
 
 - Major metropolitan areas offer premium compensation packages
 - Remote work opportunities expand geographic flexibility
 - Cost-of-living adjustments impact real purchasing power
 - Emerging tech hubs provide growth opportunities
 
-### 3. **Industry Specialization**
+##### 3. **Industry Specialization**
 
 - Technology sector leads in compensation growth
 - Finance and consulting maintain strong salary premiums
 - Healthcare technology represents emerging opportunities
 - Cross-industry skills increase market value
 
-### 4. **Skills Development Priority**
+##### 4. **Skills Development Priority**
 
 - Artificial Intelligence and Machine Learning capabilities
 - Cloud computing and DevOps expertise
 - Data science and analytics proficiency
 - Cybersecurity and privacy specialization
 
-## Market Intelligence Summary
+#### Market Intelligence Summary
 
 Our analysis provides several key insights for career planning:
 
@@ -1218,9 +1339,9 @@ dashboard_fig.update_layout(
 display_figure(dashboard_fig, "complete_dashboard")
 ```
 
-# Technical Architecture & Implementation
+## Technical Architecture & Implementation
 
-## System Design
+#### System Design
 
 This platform implements a **layered architecture** optimized for scalable data processing and interactive analysis:
 
@@ -1269,7 +1390,7 @@ This platform implements a **layered architecture** optimized for scalable data 
 
 ::: {.callout-important}
 
-## Technical Documentation
+#### Technical Documentation
 - **Statistical Methodology**: [Methodology & Multivariate Analysis](methodology.qmd) - Complete model specs, feature engineering, evaluation metrics
 - **System Architecture**: `ARCHITECTURE.md` - Detailed system diagrams, data flow, technology stack
 - **Implementation Patterns**: `DESIGN.md` - Code organization, module structure, design decisions
@@ -1277,7 +1398,7 @@ This platform implements a **layered architecture** optimized for scalable data 
 
 **Complete Architecture Documentation**: See files above for comprehensive technical details
 
-## Reproducibility
+#### Reproducibility
 
 **Random Seeds**: All models use `seed=42` for reproducibility
 
@@ -1311,7 +1432,7 @@ quarto render tech-career-intelligence-report.qmd
 
 ---
 
-# Conclusions
+## Conclusions
 
 ```{python}
 #| label: calculate-key-findings
@@ -1354,7 +1475,7 @@ model_accuracy = ml_results['classification']['test_accuracy']
 median_salary_k = summary['salary_range']['median'] / 1000
 ```
 
-## Key Findings Summary
+#### Key Findings Summary
 
 ```{python}
 #| label: display-key-findings
@@ -1374,7 +1495,7 @@ findings_text = f"""
 display(Markdown(findings_text))
 ```
 
-## Limitations and Considerations
+#### Limitations and Considerations
 
 **Data Limitations**:
 
@@ -1395,7 +1516,7 @@ display(Markdown(findings_text))
 
 ---
 
-# References and Data Sources
+## References and Data Sources
 
 This analysis is based on comprehensive job market data processed through our advanced analytics pipeline. All data processing follows established academic standards for reproducibility and validation.
 
