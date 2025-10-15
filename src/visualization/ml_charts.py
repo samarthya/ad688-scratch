@@ -282,17 +282,17 @@ def get_enhanced_colorscales():
             [1.0, '#ffffff']       # White (highest values)
         ],
         'heat_style': [
-            [0.0, '#FFF4E6'],      # Very light orange (cream)
-            [0.1, '#FFE0B2'],      # Light orange
-            [0.2, '#FFCC80'],      # Pale orange
-            [0.3, '#FFB74D'],      # Soft orange
-            [0.4, '#FFA726'],      # Medium orange
-            [0.5, '#FF9800'],      # Orange
-            [0.6, '#FB8C00'],      # Deep orange
-            [0.7, '#F57C00'],      # Dark orange
-            [0.8, '#E65100'],      # Orange-red
-            [0.9, '#D84315'],      # Red-orange
-            [1.0, '#BF360C']       # Dark red (highest values)
+            [0.0, '#FFF8F0'],      # Very light cream (almost white)
+            [0.1, '#FFE8CC'],      # Light peachy cream
+            [0.2, '#FFD9A8'],      # Pale orange
+            [0.3, '#FFCA85'],      # Soft peach
+            [0.4, '#FFB862'],      # Light orange
+            [0.5, '#FFA640'],      # Medium orange
+            [0.6, '#FF9420'],      # Orange
+            [0.7, '#FF8200'],      # Bright orange
+            [0.8, '#E67300'],      # Deep orange
+            [0.9, '#CC6600'],      # Orange-red
+            [1.0, '#B35900']       # Dark orange-brown (highest values)
         ],
         'cool_warm': [
             [0.0, '#2166ac'],      # Cool blue
@@ -421,13 +421,11 @@ def create_confusion_matrix_heatmap_docx_optimized(
         z=confusion_matrix,
         x=[f'Predicted<br>{label}' for label in class_labels],
         y=[f'Actual<br>{label}' for label in class_labels],
-        text=[[f'{val}%<br>(n={val*625:.0f})' for val in row] for row in confusion_matrix],
-        texttemplate='%{text}',
-        textfont={"size": 14, "color": "white"},
         colorscale=colorscale,
         zmin=min_val,
         zmax=max_val,
         showscale=True,
+        hovertemplate='%{y} → %{x}<br>%{z}%<extra></extra>',
         colorbar=dict(
             title=dict(
                 text="Percentage<br>of Jobs (%)",
@@ -449,6 +447,25 @@ def create_confusion_matrix_heatmap_docx_optimized(
         )
     ))
 
+    # Add annotations with adaptive text colors for better readability
+    # Black text for all values - the gradient is light enough for good contrast
+    annotations = []
+    for i, row in enumerate(confusion_matrix):
+        for j, val in enumerate(row):
+            # Use black text for all cells since our gradient is now light-to-medium
+            text_color = '#000000'
+            annotations.append(
+                dict(
+                    x=j,
+                    y=i,
+                    text=f'{val}%<br>(n={val*625:.0f})',
+                    showarrow=False,
+                    font=dict(size=14, color=text_color, family='Arial, sans-serif', weight='bold'),
+                    xref='x',
+                    yref='y'
+                )
+            )
+
     fig.update_layout(
         title=title,
         title_x=0.5,
@@ -462,7 +479,8 @@ def create_confusion_matrix_heatmap_docx_optimized(
         margin=dict(l=180, r=180, t=120, b=100),
         # Force proper rendering in DOCX
         autosize=False,
-        width=800
+        width=800,
+        annotations=annotations
     )
 
     # Reverse y-axis for conventional confusion matrix layout
