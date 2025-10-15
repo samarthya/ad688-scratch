@@ -27,16 +27,30 @@ src/
 │   ├── validators.py       # Data quality checks
 │   └── website_processor.py # Main entry point for analysis
 │
-├── analytics/              # Machine learning models
-│   └── salary_models.py    # Regression & classification
+├── analytics/              # Machine learning & specialized analysis
+│   ├── salary_models.py    # Regression & classification (PySpark MLlib)
+│   ├── skills_analysis.py  # Technical skills analysis
+│   ├── ai_ml_location_analysis.py  # AI/ML job market analysis ✨ NEW
+│   └── nlp_analysis.py     # NLP features
 │
 ├── visualization/          # Charts & dashboards
 │   ├── charts.py           # Core visualization (SalaryVisualizer)
+│   ├── ml_charts.py        # ML model visualizations
+│   ├── skills_charts.py    # Skills analysis charts
+│   ├── ai_ml_charts.py     # AI/ML location analysis charts ✨ NEW
+│   ├── presentation_charts.py  # Presentation-optimized charts
 │   └── key_findings_dashboard.py  # Dashboard layouts
 │
 ├── config/                 # Configuration
 │   ├── settings.py         # Paths, constants
-│   └── column_mapping.py   # Column name mappings (SOFTWARE_SKILLS_NAME → technical_skills)
+│   └── column_mapping.py   # Column mappings (SOFTWARE_SKILLS_NAME, SPECIALIZED_SKILLS_NAME)
+│
+├── ml/                     # Machine learning modules (PySpark MLlib)
+│   ├── regression.py       # Linear & Random Forest regression
+│   ├── classification.py   # Random Forest & Logistic Regression
+│   ├── feature_engineering.py  # Feature transformations
+│   ├── evaluation.py       # Model evaluation metrics
+│   └── clustering.py       # K-means clustering
 │
 └── utils/                  # Utilities
     ├── spark_utils.py      # Spark session management
@@ -599,6 +613,113 @@ This script validates 14 key metrics against the actual data pipeline:
 - Geographic variation (1 check)
 - Industry premiums (1 check)
 - Remote work data (1 check)
+
+---
+
+## AI/ML Job Market Analysis Module
+
+### Overview
+
+New specialized analysis module that identifies AI/ML jobs based on specialized skills (not just job titles) and analyzes their geographic distribution.
+
+### Module Components
+
+#### Analysis Module: `src/analytics/ai_ml_location_analysis.py`
+
+**Purpose**: Identify AI/ML jobs using specialized skills keywords and analyze by location
+
+**Key Functions**:
+
+```python
+def analyze_ai_ml_jobs_by_location(df: pd.DataFrame, top_n: int = 5) -> pd.DataFrame:
+    """
+    Identifies AI/ML jobs using 40+ keywords in specialized_skills column.
+
+    Returns DataFrame with:
+    - city_name
+    - total_jobs
+    - ai_ml_jobs
+    - ai_ml_percentage
+    - median_salary
+    """
+```
+
+**AI/ML Detection Keywords** (40+ keywords):
+- **Core AI/ML**: artificial intelligence, machine learning, deep learning, neural network
+- **Frameworks**: tensorflow, pytorch, keras, scikit-learn
+- **Techniques**: nlp, computer vision, supervised learning, clustering
+- **MLOps**: model deployment, feature engineering, mlops
+- **Data Science**: data science, predictive modeling, advanced analytics
+
+**Why Specialized Skills?**
+- More accurate than job title matching ("Data Scientist" may not do ML)
+- Captures actual required expertise
+- Identifies roles that genuinely need AI/ML skills
+
+#### Visualization Module: `src/visualization/ai_ml_charts.py`
+
+**Purpose**: Create publication-quality visualizations for AI/ML analysis
+
+**Key Functions**:
+
+```python
+def create_ai_ml_jobs_by_location_chart(city_stats: pd.DataFrame) -> go.Figure:
+    """Grouped bar chart: Total jobs vs AI/ML jobs by city"""
+
+def create_ai_ml_percentage_chart(city_stats: pd.DataFrame) -> go.Figure:
+    """Horizontal bar chart: AI/ML job concentration (%) by city"""
+
+def create_ai_ml_combined_dashboard(city_stats: pd.DataFrame) -> go.Figure:
+    """4-panel dashboard: Count, percentage, salary, distribution"""
+```
+
+### Integration Points
+
+#### 1. Column Mapping (`src/config/column_mapping.py`)
+
+```python
+LIGHTCAST_COLUMN_MAPPING = {
+    ...
+    'SPECIALIZED_SKILLS_NAME': 'specialized_skills',  # ← NEW mapping
+    ...
+}
+```
+
+#### 2. Report Integration (`tech-career-intelligence-report.qmd`)
+
+New section added after "Technical Skills Analysis":
+- "AI/ML Job Market Analysis by Location"
+- 3 visualizations + data-driven insights
+- Lines 1283-1406
+
+#### 3. Chart Preview Tool (`scripts/generate_charts_preview.py`)
+
+New chart category:
+```bash
+python scripts/generate_charts_preview.py --charts ai_ml
+```
+
+Generates:
+- `preview_ai_ml_jobs_by_location.png`
+- `preview_ai_ml_percentage.png`
+- `preview_ai_ml_dashboard.png`
+
+### Design Decisions
+
+**Why Separate from General Skills Analysis?**
+- AI/ML is a specialized subset requiring different analysis
+- Uses different data source (`specialized_skills` vs `technical_skills`)
+- Targets specific audience (AI/ML job seekers)
+
+**Why Location-Based?**
+- AI/ML jobs are highly concentrated geographically
+- Helps job seekers make relocation decisions
+- Shows market maturity by city
+
+**Why Not sklearn?**
+- Consistent with project architecture (100% PySpark MLlib)
+- This is data processing + visualization, no ML modeling needed
+- Uses Pandas for analysis (72K rows is small enough)
 
 ---
 

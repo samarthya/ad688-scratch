@@ -87,7 +87,9 @@ flowchart TD
 ### Step 2: Column Standardization
 
 - **Mapping**: Raw column names → Analysis-ready names
-  - `SOFTWARE_SKILLS_NAME` → `technical_skills`
+  - `SOFTWARE_SKILLS_NAME` → `technical_skills` (pure technical/software skills)
+  - `SPECIALIZED_SKILLS_NAME` → `specialized_skills` (domain-specific advanced skills for AI/ML analysis)
+  - `SKILLS_NAME` → `required_skills` (general skills - not used in primary analysis)
   - `NAICS2_NAME` → `industry`
   - `REMOTE_TYPE_NAME` → `remote_type`
   - `EMPLOYMENT_TYPE_NAME` → `employment_type`
@@ -144,13 +146,26 @@ flowchart TD
 - **Solution**: Parquet is compressed & columnar
 - **Result**: 10x smaller, 50x faster to load
 
-### Why SOFTWARE_SKILLS_NAME → technical_skills?
+### Why Multiple Skills Columns?
 
-- **Problem**: Raw data has 3 skills columns (SKILLS_NAME, SPECIALIZED_SKILLS_NAME, SOFTWARE_SKILLS_NAME)
-- **Solution**: Use SOFTWARE_SKILLS_NAME (pure technical/software skills)
-- **Why**: Most actionable for job seekers - learnable in 3-6 months
-- **Result**: Clear insights like "Learn Python → +28% salary"
-- **Mapping**: `SOFTWARE_SKILLS_NAME` → `technical_skills` (semantic naming)
+- **Problem**: Raw data has 3 skills columns with different granularities
+  - `SKILLS_NAME` → All skills (soft + hard + technical) - not used
+  - `SOFTWARE_SKILLS_NAME` → Pure technical/software skills - **primary analysis**
+  - `SPECIALIZED_SKILLS_NAME` → Domain-specific advanced skills - **AI/ML analysis**
+
+- **Solution**: Use different columns for different purposes
+  - `SOFTWARE_SKILLS_NAME` → `technical_skills` for general skills analysis
+  - `SPECIALIZED_SKILLS_NAME` → `specialized_skills` for AI/ML job identification
+
+- **Why This Approach**:
+  - `technical_skills`: Most actionable for job seekers - learnable in 3-6 months
+  - `specialized_skills`: Captures advanced domain expertise (AI/ML, Data Science, MLOps)
+  - Result: Clear insights like "Learn Python → +28% salary" + "AI/ML jobs concentrated in top 5 cities"
+
+- **AI/ML Analysis**: Uses 40+ keywords in `specialized_skills` to identify AI/ML roles:
+  - Machine Learning, Deep Learning, TensorFlow, PyTorch
+  - NLP, Computer Vision, MLOps, Model Deployment
+  - More accurate than job title matching alone
 
 ### Why "Undefined" Categories Instead of NaN/Null?
 

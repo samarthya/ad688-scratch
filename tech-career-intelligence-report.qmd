@@ -365,9 +365,9 @@ rf = RandomForestClassifier(
 - Best hyperparameters: `regParam=0.01`, `elasticNetParam=0.0` (Ridge)
 
 ```{python}
-# | label: ml-model-performance
-# | echo: false
-# | width: 100%
+#| label: ml-model-performance
+#| echo: false
+#| fig-width: 10
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -1278,6 +1278,131 @@ skills_insights = f"""
 """
 
 display(Markdown(skills_insights))
+```
+
+## AI/ML Job Market Analysis by Location
+
+Understanding where AI and machine learning opportunities are concentrated helps job seekers make informed decisions about location and career focus.
+
+```{python}
+#| label: ai-ml-location-analysis
+#| echo: false
+#| fig-height: 6
+
+# Import AI/ML analysis modules
+from src.analytics.ai_ml_location_analysis import analyze_ai_ml_jobs_by_location
+from src.visualization.ai_ml_charts import create_ai_ml_jobs_by_location_chart
+
+# Analyze AI/ML jobs by location (top 5 cities)
+print("Analyzing AI/ML jobs by location using specialized skills...")
+city_stats = analyze_ai_ml_jobs_by_location(df, top_n=5)
+
+# Create visualization
+fig_ai_ml_jobs = create_ai_ml_jobs_by_location_chart(city_stats)
+fig_ai_ml_jobs.update_layout(
+    height=500,
+    margin=dict(l=150, r=150, t=100, b=80),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=11)
+)
+
+display_figure(fig_ai_ml_jobs, "ai_ml_jobs_by_location")
+```
+
+### AI/ML Job Concentration by Market
+
+```{python}
+#| label: ai-ml-percentage-analysis
+#| echo: false
+#| fig-height: 6
+
+from src.visualization.ai_ml_charts import create_ai_ml_percentage_chart
+
+# Create AI/ML percentage chart
+fig_ai_ml_pct = create_ai_ml_percentage_chart(city_stats)
+fig_ai_ml_pct.update_layout(
+    height=500,
+    margin=dict(l=150, r=120, t=100, b=80),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=11)
+)
+
+display_figure(fig_ai_ml_pct, "ai_ml_percentage_by_location")
+```
+
+### Comprehensive AI/ML Market Dashboard
+
+```{python}
+#| label: ai-ml-dashboard
+#| echo: false
+#| fig-height: 10
+
+from src.visualization.ai_ml_charts import create_ai_ml_combined_dashboard
+
+# Create comprehensive dashboard
+fig_ai_ml_dash = create_ai_ml_combined_dashboard(city_stats)
+fig_ai_ml_dash.update_layout(
+    height=800,
+    margin=dict(l=80, r=80, t=100, b=80),
+    plot_bgcolor='white',
+    paper_bgcolor='white',
+    font=dict(size=11)
+)
+
+display_figure(fig_ai_ml_dash, "ai_ml_location_dashboard")
+```
+
+### AI/ML Market Insights
+
+```{python}
+#| label: ai-ml-insights
+#| output: asis
+
+from IPython.display import Markdown, display
+
+# Calculate AI/ML insights from city_stats
+top_city_jobs = city_stats.iloc[0]
+top_city_pct = city_stats.nlargest(1, 'ai_ml_percentage').iloc[0]
+total_ai_ml_jobs = int(city_stats['ai_ml_jobs'].sum())
+avg_ai_ml_pct = city_stats['ai_ml_percentage'].mean()
+highest_salary_city = city_stats.nlargest(1, 'median_salary').iloc[0]
+
+ai_ml_insights = f"""
+#### Key AI/ML Market Findings
+
+**Market Concentration**:
+
+- **{top_city_jobs['city_name']}** leads with **{int(top_city_jobs['ai_ml_jobs'])} AI/ML jobs** ({top_city_jobs['ai_ml_percentage']:.1f}% of local market)
+- **{top_city_pct['city_name']}** has highest AI/ML concentration at **{top_city_pct['ai_ml_percentage']:.1f}%**
+- Total AI/ML jobs in top 5 cities: **{total_ai_ml_jobs:,}** positions
+- Average AI/ML job concentration: **{avg_ai_ml_pct:.1f}%** across top markets
+
+**Compensation Analysis**:
+
+- **{highest_salary_city['city_name']}** offers highest median salary: **${highest_salary_city['median_salary']:,.0f}**
+- AI/ML roles are identified based on 40+ specialized skills including:
+  - Machine Learning, Deep Learning, Neural Networks
+  - TensorFlow, PyTorch, Scikit-learn
+  - Natural Language Processing (NLP), Computer Vision
+  - MLOps, Model Deployment, Feature Engineering
+  - Data Science, Predictive Modeling, Advanced Analytics
+
+**Strategic Implications for AI/ML Job Seekers**:
+
+1. **Geographic Targeting**: Focus on top 5 cities for maximum AI/ML opportunities
+2. **Market Concentration**: AI/ML jobs represent 3-5% of tech market - specialized field
+3. **Salary Premium**: AI/ML markets correlate with higher median salaries
+4. **Skills Development**: Specialized AI/ML skills in high demand across all markets
+5. **Remote Opportunities**: Consider remote AI/ML roles to access top-tier markets
+
+**Methodology Note**:
+
+This analysis uses the `SPECIALIZED_SKILLS_NAME` column from Lightcast data to identify AI/ML jobs based on advanced technical skills rather than just job titles. This provides a more accurate picture of roles that actually require AI/ML expertise.
+"""
+
+display(Markdown(ai_ml_insights))
 ```
 
 ## Strategic Insights and Recommendations

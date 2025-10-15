@@ -37,6 +37,7 @@ LIGHTCAST_COLUMN_MAPPING = {
     # Skills & Requirements
     'SKILLS_NAME': 'required_skills',
     'SOFTWARE_SKILLS_NAME': 'technical_skills',  # Primary: Pure technical/software skills (most actionable)
+    'SPECIALIZED_SKILLS_NAME': 'specialized_skills',  # Domain-specific advanced skills (AI/ML, Data Science, etc.)
     'EDUCATION_LEVELS_NAME': 'education_required',
 
     # Work Arrangements
