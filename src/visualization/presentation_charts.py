@@ -907,154 +907,64 @@ class PresentationCharts:
         return fig
 
     def create_action_plan_roadmap(self) -> go.Figure:
-        """Create enhanced visual action plan roadmap with data-driven insights."""
+        """Create simplified visual action plan roadmap with data-driven insights."""
 
-        # Enhanced phases with more specific data
-        phases = [
-            '0-6 months<br><b>Foundation</b>',
-            '6-24 months<br><b>Acceleration</b>',
-            '2-5 years<br><b>Specialization</b>'
-        ]
+        # Simplified phases
+        phases = ['Foundation\n(0-6 months)', 'Acceleration\n(6-24 months)', 'Specialization\n(2-5 years)']
 
-        # More detailed actions based on actual data insights
+        # Simplified actions - avoid special characters that may cause encoding issues
         actions = [
-            '🎯 <b>Location Strategy</b><br>Target SF ($180K), NY ($165K), Seattle ($160K)<br>📈 <b>Industry Focus</b><br>Tech sector premium: +$42K<br>💻 <b>Skill Building</b><br>AI/ML, Cloud (AWS/Azure)',
-            '📊 <b>Experience Growth</b><br>Each year adds $3,931 to salary<br>🎓 <b>Education Decision</b><br>Master\'s ROI: 12-year breakeven<br>🤝 <b>Strategic Networking</b><br>Build industry connections',
-            '👑 <b>Senior Positioning</b><br>Job title = 35% of salary variance<br>🎯 <b>Specialization</b><br>Focus on high-value skills<br>🌐 <b>Remote Flexibility</b><br>Geographic arbitrage opportunities'
+            'Location: SF, NY, Seattle\nIndustry: Tech sector\nSkills: AI/ML, Cloud',
+            'Experience Growth\nEducation Planning\nStrategic Networking',
+            'Senior Positioning\nSpecialization Focus\nRemote Flexibility'
         ]
 
-        # Data-driven salary progression
-        outcomes = [
-            '<b>$70K → $90K</b><br><span style="color:#27ae60">+29% increase</span>',
-            '<b>$90K → $120K</b><br><span style="color:#27ae60">+33% increase</span>',
-            '<b>$120K → $180K+</b><br><span style="color:#27ae60">+50% increase</span>'
-        ]
+        # Simple salary progression
+        outcomes = ['$70K to $90K\n+29% increase', '$90K to $120K\n+33% increase', '$120K to $180K+\n+50% increase']
 
-        # Add success metrics
-        metrics = [
-            '📊 <b>Key Metrics</b><br>• 83% ML accuracy<br>• 35% title importance<br>• 63% location premium',
-            '📈 <b>Growth Targets</b><br>• 2+ years experience<br>• 5+ technical skills<br>• Industry specialization',
-            '🏆 <b>Success Indicators</b><br>• Senior/Lead titles<br>• Remote work options<br>• $150K+ compensation'
-        ]
+        # Define colors
+        colors = ['#3498db', '#2ecc71', '#f39c12']
 
         fig = go.Figure()
 
-        # Create enhanced timeline with phases
-        for i, (phase, action, outcome, metric) in enumerate(zip(phases, actions, outcomes, metrics)):
-            # Phase boxes with gradient colors
-            colors = ['#3498db', '#2ecc71', '#f39c12']
-            fig.add_trace(go.Scatter(
-                x=[i], y=[3],
-                mode='markers+text',
-                marker=dict(
-                    size=120,
-                    color=colors[i],
-                    symbol='square',
-                    line=dict(width=3, color='white')
-                ),
-                text=phase,
-                textposition='middle center',
-                textfont=dict(size=14, color='white', family='Arial Black'),
-                showlegend=False,
-                hoverinfo='skip'
+        # Create simple bars for each phase
+        for i in range(len(phases)):
+            # Phase bar
+            fig.add_trace(go.Bar(
+                x=[phases[i]],
+                y=[100],
+                name=phases[i],
+                marker=dict(color=colors[i]),
+                text=outcomes[i],
+                textposition='inside',
+                textfont=dict(size=12, color='white'),
+                hovertemplate=f'<b>{phases[i]}</b><br>{actions[i]}<br>{outcomes[i]}<extra></extra>',
+                showlegend=False
             ))
 
-            # Actions text with better formatting
-            fig.add_annotation(
-                x=i, y=2.2,
-                text=action,
-                showarrow=False,
-                font=dict(size=11, color='#2c3e50'),
-                align='center',
-                xanchor='center',
-                yanchor='top',
-                bgcolor='rgba(255,255,255,0.8)',
-                bordercolor='#bdc3c7',
-                borderwidth=1
-            )
-
-            # Outcome text with enhanced styling
-            fig.add_annotation(
-                x=i, y=1.2,
-                text=outcome,
-                showarrow=False,
-                font=dict(size=13, color=colors[i]),
-                align='center',
-                xanchor='center',
-                yanchor='top',
-                bgcolor='rgba(255,255,255,0.9)',
-                bordercolor=colors[i],
-                borderwidth=2
-            )
-
-            # Success metrics
-            fig.add_annotation(
-                x=i, y=0.4,
-                text=metric,
-                showarrow=False,
-                font=dict(size=10, color='#7f8c8d'),
-                align='center',
-                xanchor='center',
-                yanchor='top',
-                bgcolor='rgba(236,240,241,0.8)',
-                bordercolor='#95a5a6',
-                borderwidth=1
-            )
-
-            # Enhanced arrows between phases
-            if i < 2:
-                fig.add_annotation(
-                    x=i+0.5, y=3,
-                    ax=i, ay=3,
-                    xref='x', yref='y',
-                    axref='x', ayref='y',
-                    showarrow=True,
-                    arrowhead=3,
-                    arrowsize=2,
-                    arrowwidth=4,
-                    arrowcolor=colors[i+1],
-                    arrowside='end'
-                )
-
-        # Add data source annotation
-        fig.add_annotation(
-            x=1, y=0.1,
-            text="<b>Data Source:</b> 72K+ job postings analysis",
-            showarrow=False,
-            font=dict(size=9, color='#95a5a6'),
-            align='center',
-            xanchor='center',
-            yanchor='top'
-        )
-
+        # Update layout
         fig.update_layout(
-            title={
-                "text": "Your Data-Driven Career Roadmap",
-                "x": 0.5,
-                "font": {"size": 24, "color": "#2c3e50", "family": "Arial Black"}
-            },
+            title=dict(
+                text='Data-Driven Career Roadmap',
+                x=0.5,
+                xanchor='center',
+                font=dict(size=20, color='#2c3e50')
+            ),
             xaxis=dict(
-                showgrid=False,
-                showticklabels=False,
-                zeroline=False,
-                range=[-0.7, 2.7],
-                fixedrange=True
+                title='Career Phase',
+                showgrid=False
             ),
             yaxis=dict(
-                showgrid=False,
+                title='Salary Progression',
                 showticklabels=False,
-                zeroline=False,
-                range=[0.1, 3.5],
-                fixedrange=True,
-                scaleanchor='x',
-                scaleratio=0.6
+                showgrid=False
             ),
-            height=650,
-            width=1400,
-            font=dict(size=12, family='Arial'),
-            margin=dict(l=100, r=100, t=140, b=120),
+            height=500,
+            width=1000,
             plot_bgcolor='white',
-            paper_bgcolor='white'
+            paper_bgcolor='white',
+            barmode='group',
+            margin=dict(l=50, r=50, t=100, b=100)
         )
 
         return fig
