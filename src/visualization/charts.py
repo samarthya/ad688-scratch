@@ -56,19 +56,14 @@ def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures
     if filename:
         png_path = Path(save_dir) / f"{filename}.png"
         svg_path = Path(save_dir) / f"{filename}.svg"
-        html_path = Path(save_dir) / f"{filename}.html"
         png_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Save all formats for flexibility with full interactivity config
-        config = {
-            'displayModeBar': True,  # Always show control bar
-            'displaylogo': False,    # Hide Plotly logo
-            'scrollZoom': True,      # Enable scroll wheel zoom
-            'modeBarButtonsToRemove': ['lasso2d', 'select2d'],  # Clean up toolbar
-        }
-        fig.write_html(str(html_path), config=config)
-        fig.write_image(str(png_path), width=1200, height=800, scale=2)
-        fig.write_image(str(svg_path), width=1200, height=800)
+        # Save static images only - Quarto will handle HTML generation for interactive outputs
+        try:
+            fig.write_image(str(png_path), width=1200, height=800, scale=2)
+            fig.write_image(str(svg_path), width=1200, height=800)
+        except Exception as e:
+            print(f"Warning: Could not save static images for {filename}: {e}")
 
     # Return the figure object - Quarto will automatically render it
     # in the appropriate format (interactive HTML for .html, static PNG for .docx)

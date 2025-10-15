@@ -96,31 +96,23 @@ Our thesis: Career outcomes aren't random—they follow patterns we can identify
 
 ---
 
-## Our Approach: Data Over Guesswork {.smaller}
+## Our Approach: Data Over Guesswork
 
 :::: {.columns}
 
 ::: {.column width="40%"}
-::: {.compact-content}
-### The Research Question
-
-::: {.callout-note icon=false}
-*"What factors predict career success in tech, and how can job seekers position themselves strategically?"*
-:::
+::: {.data-approach-slide}
+### The Question
+*"What factors predict career success in tech?"*
 
 ### The Data
-
 **72,000+ job postings** (2024-2025)
-- Real salaries from Lightcast
-- **83% ML prediction accuracy**
+**83% ML prediction accuracy**
 
-### Our Analysis
-
+### Key Findings
 ✓ Experience patterns
 ✓ Geographic premiums
 ✓ Industry gaps
-✓ Remote work impact
-✓ In-demand skills
 :::
 :::
 
@@ -133,34 +125,10 @@ Our thesis: Career outcomes aren't random—they follow patterns we can identify
 fig = pcharts.create_kpi_overview()
 display_figure(fig, "presentation_kpi_overview")
 ```
+:::
 
 ::: {.notes}
 The KPI overview shows our key dataset metrics: $116K median salary, 72K+ job postings, 21 industries, and 3,841 cities. This gives you the scale and scope of our analysis.
-:::
-
-### Key Statistics
-
-```{python}
-#| label: kpi-overview-md
-#| echo: false
-#| output: asis
-
-from IPython.display import Markdown, display
-
-num_industries = df['industry'].nunique() if 'industry' in df.columns else 'N/A'
-num_cities = df['city_name'].nunique() if 'city_name' in df.columns else 'N/A'
-
-bullets = f"""
-**Dataset Overview:**
-
-- **Median Salary**: ${median_k}K
-- **Total Jobs**: {total_jobs:,}
-- **Industries Covered**: {num_industries}
-- **Cities Analyzed**: {num_cities}
-"""
-
-display(Markdown(bullets))
-```
 :::
 
 ::::
@@ -171,15 +139,12 @@ We analyzed 72K real job postings using PySpark and machine learning. Our centra
 
 ---
 
-## Key Finding 1: The Experience Multiplier {.smaller}
+## Key Finding 1: The Experience Multiplier
 
-::: {.callout-important icon=false}
-## The 3× Multiplier Effect
-
+### The 3× Multiplier Effect
 Entry **$96K** → Mid **$115K** → Senior **$128K** → Leadership **$126K**
 
-**That's 33% growth over your career—experience compounds like interest.**
-:::
+**33% growth over your career—experience compounds like interest**
 
 ```{python}
 #| label: experience-analysis
@@ -203,11 +168,9 @@ This is the most powerful finding: experience compounds. Entry level (0-2 years)
 
 ---
 
-## Key Finding 2: The Geographic Lottery {.smaller}
+## Key Finding 2: The Geographic Lottery
 
-::: {.fragment}
-**The Reality**: Same job, same company, different city = **$146K difference**
-:::
+### Same Job, Different City = **$146K Range**
 
 ```{python}
 #| label: geographic-analysis
@@ -218,76 +181,49 @@ fig = pcharts.create_geographic_analysis()
 display_figure(fig, "presentation_geographic_analysis")
 ```
 
-::: {.callout-important}
-## What This Means For You
-Top-paying city: **$180K**. Lowest-paying city: **$34K**. Geographic variation is significant—433% difference between highest and lowest cities (robust analysis, 10+ jobs per city).
-:::
+### The Numbers
+- **Top city**: $180K (Edison, NJ)
+- **Lowest city**: $34K (Sterling Heights, MI)
+- **46% premium** for top markets vs. median city
 
-::: {.fragment}
-💡 **Job Seeker Insight**: Don't just chase the highest number—calculate take-home after cost of living. Or negotiate remote work from a low-cost city.
-:::
+### 💡 Job Seeker Insight
+Calculate take-home after cost of living. Or negotiate remote work from a low-cost city.
 
 ::: {.notes}
-Geography is the second-biggest lever. Top cities pay 433% more than bottom cities (robust analysis). But the cost of living difference is real. Smart play: negotiate remote work from a lower-cost city—you keep the high salary AND the low expenses. This is the real arbitrage opportunity.
+Geography is the second-biggest lever. Top markets pay 46% more than median cities. But the cost of living difference is real. Smart play: negotiate remote work from a lower-cost city—you keep the high salary AND the low expenses. This is the real arbitrage opportunity.
 :::
 
 ---
 
-## Interactive Market Map: Where Are The Jobs? {.smaller}
+## The Geographic Opportunity
 
-::: {.callout-tip icon=false}
-## Geographic Arbitrage Strategy
-Technology hubs pay **433% more** than mid-tier cities (robust analysis). Secure remote role with tier-1 salary, live in tier-2/3 city.
-:::
+### Where The Money Is
 
-# Create interactive map showing job distribution and salary by location
+Technology hubs pay **46% more** than median cities. But here's the strategic insight: with remote work, you can access these salaries without the cost of living.
+
 ```{python}
-#| label: geographic-map-setup
-#| echo: false
-
-from src.visualization.charts import SalaryVisualizer, display_figure
-
-vis = SalaryVisualizer(df)
-```
-
-# Create interactive Folium map for HTML/RevealJS
-::: {.content-hidden unless-format="html"}
-```{python}
-#| label: geographic-map-folium
-#| echo: false
-
-folium_map = vis.create_folium_salary_map(top_n=300, height=420)
-folium_map
-```
-:::
-
-# Create static Plotly map for DOCX/PDF/PPT
-::: {.content-hidden unless-format="docx pdf pptx"}
-```{python}
-#| label: geographic-map-plotly
+#| label: geographic-map
 #| echo: false
 #| fig-format: png
 
+# Create geographic salary map
+from src.visualization.charts import SalaryVisualizer
+vis = SalaryVisualizer(df)
 geo_map = vis.create_plotly_geographic_map(top_n=300, height=420)
 geo_map
 ```
-:::
 
-::: {.notes}
-This interactive map shows where jobs are concentrated and what they pay. Notice the clusters on the coasts—especially Bay Area, Seattle, NYC, Boston. These aren't just higher salaries; they're also where most jobs are posted. But here's the strategic insight: with remote work, you can access these salaries without the cost of living. That's the arbitrage opportunity we're talking about.
-:::
+### 💡 Geographic Arbitrage Strategy
+Secure remote role with tier-1 salary, live in tier-2/3 city.
 
 ---
 
-## Key Finding 3: Choose Your Industry Wisely {.smaller}
+## The Industry Multiplier
 
-::: {.callout-important icon=false}
-## The $57K Industry Gap
-
+### The $57K Industry Gap
 **Tech Services: $130K** | Finance: $114K | Healthcare: $90K | Education: $73K
 
-Switching industries = **instant 78% raise** for same skills (Tech vs Education).
-:::
+**Switching industries = instant 78% raise** for same skills
 
 ```{python}
 #| label: industry-analysis
@@ -295,81 +231,17 @@ Switching industries = **instant 78% raise** for same skills (Tech vs Education)
 #| fig-height: 4
 #| fig-format: png
 
-# Create simplified industry chart for presentation
-import plotly.graph_objects as go
-
-# Get top 6 industries by salary for cleaner display
-industry_col = 'industry' if 'industry' in df.columns else 'industry'
-salary_col = 'salary_avg' if 'salary_avg' in df.columns else 'salary_avg'
-
-industry_stats = df.groupby(industry_col)[salary_col].agg(['median', 'count']).sort_values('median', ascending=False).head(6)
-
-# Shorten industry names
-def shorten_name(name):
-    replacements = {
-        'Professional, Scientific, and Technical Services': 'Tech Services',
-        'Information': 'Information/Tech',
-        'Finance and Insurance': 'Finance',
-        'Manufacturing': 'Manufacturing',
-        'Health Care and Social Assistance': 'Healthcare',
-        'Educational Services': 'Education',
-        'Retail Trade': 'Retail',
-        'Accommodation and Food Services': 'Hospitality'
-    }
-
-    for long_name, short_name in replacements.items():
-        if long_name in name:
-            return short_name
-
-    return name[:20]
-
-industries = [shorten_name(ind) for ind in industry_stats.index.tolist()]
-salaries = industry_stats['median'].tolist()
-
-# Create simple horizontal bar chart
-    fig = go.Figure()
-
-    fig.add_trace(go.Bar(
-    y=industries[::-1],
-    x=salaries[::-1],
-        orientation='h',
-        marker=dict(
-        color=salaries[::-1],
-            colorscale='Viridis',
-        showscale=False
-    ),
-    text=[f'${s/1000:.0f}K' for s in salaries[::-1]],
-    textposition='outside',
-    textfont=dict(size=15, color='black'),
-    hovertemplate='%{y}<br>Median: %{text}<extra></extra>'
-    ))
-
-    fig.update_layout(
-    title=dict(text="Industry Salary Comparison", font=dict(size=16)),
-    xaxis_title="Median Salary",
-    height=380,
-    font=dict(size=13),
-    margin=dict(l=130, r=90, t=60, b=50),
-        plot_bgcolor='white',
-    paper_bgcolor='white',
-    xaxis=dict(showgrid=True, gridcolor='lightgray')
-    )
-
+fig = pcharts.create_industry_analysis()
 display_figure(fig, "presentation_industry_analysis")
 ```
 
-::: {.notes}
-Industry is your third lever. Tech pays 78% more than education for the same skills. This isn't about being greedy—it's about maximizing your market value. You can always pivot to lower-paying "mission-driven" work later when you have financial security.
-:::
-
 ---
 
-## Key Finding 4: The Remote Work Myth Debunked {.smaller}
+## The Remote Work Reality
 
-::: {.fragment}
-**The Myth**: "Remote work pays less"
-**The Reality**: Remote jobs pay the **same or better** ($114K median)
-:::
+### The Myth vs Reality
+**Myth**: "Remote work pays less"
+**Reality**: Remote jobs pay **same or better** ($114K median)
 
 ```{python}
 #| label: remote-analysis
@@ -380,14 +252,12 @@ fig = pcharts.create_remote_work_analysis()
 display_figure(fig, "presentation_remote_analysis")
 ```
 
-::: {.callout-important}
-## What This Means For You
-Remote: **$114K** | Hybrid: **$114K** | On-site: **$108K**. Plus save $5K/year on commute + work clothes.
-:::
+### The Numbers
+- **Remote**: $114K | **Hybrid**: $114K | **On-site**: $108K
+- **Plus save $5K/year** on commute + work clothes
 
-::: {.fragment}
-💡 **Job Seeker Insight**: Remote work is the ultimate career hack—same pay, lower expenses, better quality of life. Always negotiate for it.
-:::
+### 💡 The Ultimate Career Hack
+Remote work = same pay, lower expenses, better quality of life
 
 ::: {.notes}
 This was the biggest surprise in our data. Remote work doesn't pay less—it often pays MORE. Why? Companies competing for talent nationally must offer competitive salaries. 22% of jobs are fully remote, 30% hybrid. And you save 2 hours/day commuting. That's 500 hours/year—equivalent to 12 work weeks—back in your life.
@@ -395,7 +265,9 @@ This was the biggest surprise in our data. Remote work doesn't pay less—it oft
 
 ---
 
-## Key Finding 5: The Skills That Pay {.smaller}
+## The Skills Premium
+
+### What Employers Actually Pay For
 
 ```{python}
 #| label: skills-callout
@@ -409,13 +281,9 @@ skill_stats = pcharts.get_skills_premium_data()
 top_3 = skill_stats.nlargest(3, 'premium')
 
 callout_text = f"""
-::: {{.callout-important icon=false}}
-## The Skills Premium (From Our Data)
-
 **{top_3.iloc[0]['skill']}**: **+{int(top_3.iloc[0]['premium'])}%** salary ({int(top_3.iloc[0]['count']):,} jobs)
 **{top_3.iloc[1]['skill']}**: **+{int(top_3.iloc[1]['premium'])}%** salary ({int(top_3.iloc[1]['count']):,} jobs)
 **{top_3.iloc[2]['skill']}**: **+{int(top_3.iloc[2]['premium'])}%** salary ({int(top_3.iloc[2]['count']):,} jobs)
-:::
 """
 display(Markdown(callout_text))
 ```
@@ -446,10 +314,8 @@ fig = pcharts.create_feature_importance()
 display_figure(fig, "presentation_ml_feature_importance")
 ```
 
-::: {.callout-important}
-## Career Takeaway
+### 💡 The ML Insight
 **Job title is #1** (35% importance). **83% accuracy** predicting salary from 72K+ jobs.
-:::
 
 ::: {.notes}
 Our ML model reveals job title matters most (35%), followed by industry and location. You can control these factors through strategic career choices.
@@ -457,11 +323,10 @@ Our ML model reveals job title matters most (35%), followed by industry and loca
 
 ---
 
-## The $278K Question: Is A Master's Degree Worth It? {.smaller}
+## The $278K Question: Is A Master's Degree Worth It?
 
-::: {.fragment}
-**The Setup**: Your friend got a job at $110K. You went to grad school. Two years later, you graduate with $50K debt—and they've earned $220K. Are you behind?
-:::
+### The Setup
+Your friend got a job at $110K. You went to grad school. Two years later, you graduate with $50K debt—and they've earned $220K. Are you behind?
 
 ```{python}
 #| label: masters-roi
@@ -508,10 +373,8 @@ fig = pcharts.create_action_plan_roadmap()
 display_figure(fig, "presentation_action_plan")
 ```
 
-::: {.callout-important}
-## Career Takeaway
+### 💡 Your Action Plan
 **Focus on what you control**: Location, industry, skills, and experience. Data shows clear patterns to success.
-:::
 
 ::: {.notes}
 These recommendations are directly from our data analysis. Focus on what you can control: location choice, industry, skills, and experience accumulation.
@@ -519,58 +382,21 @@ These recommendations are directly from our data analysis. Focus on what you can
 
 ---
 
-## From Question to Answer: Our Journey {.center}
-
-### We Started With A Question
-
-::: {.fragment}
-*"How can job seekers position themselves effectively in 2025?"*
-:::
-
-### We Explored 72,000 Job Postings
-
-::: {.fragment}
-Used PySpark + ML to find patterns (83% prediction accuracy)
-:::
-
-### We Found Clear Patterns
-
-::: {.fragment}
-1. **Experience** = 33% growth (Entry $96K → Senior $128K)
-2. **Geography** = $146K difference (top vs. bottom cities, robust analysis)
-3. **Industry** = $57K premium (Tech vs. Education)
-4. **Remote** = Same pay, better life ($114K median)
-5. **Skills** = 30% premium (Cloud, ML, containers)
-6. **Master's** = 12-year breakeven, career ceiling unlock
-:::
-
----
-
-## What This Means For Job Seekers {.center}
+## Your Data-Driven Career Strategy
 
 ### The Three Levers You Control
 
-::: {.r-fit-text}
 🎯 **Location** → Choose strategically or go remote
-
 🎯 **Industry** → Tech pays 78% more
-
 🎯 **Skills** → Cloud + ML = 30% salary boost
-:::
 
 ### The One Thing You Can't Skip
 
-::: {.fragment .r-fit-text}
 ⏰ **Experience** → Time compounds, start now
-:::
 
 ### The Bottom Line
 
-::: {.fragment}
-::: {.r-fit-text}
 **Career success is predictable—if you use data, not guesswork**
-:::
-:::
 
 ---
 

@@ -361,6 +361,8 @@ rf = RandomForestClassifier(
 ```{python}
 #| label: ml-model-performance
 #| echo: false
+#| fig-height: 4
+#| fig-format: png
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -377,12 +379,21 @@ fig_ml = create_ml_performance_comparison(
     ml_results['classification']
 )
 
+# Adjust layout for DOCX compatibility
+fig_ml.update_layout(
+    height=400,  # Reduced height for DOCX
+    margin=dict(l=60, r=60, t=80, b=60),
+    font=dict(size=11)  # Slightly smaller font
+)
+
 display_figure(fig_ml, "ml_model_performance")
 ```
 
 ```{python}
 #| label: ml-feature-importance
 #| echo: false
+#| fig-height: 4
+#| fig-format: png
 
 # Use centralized feature importance visualization function
 from src.visualization.ml_charts import (
@@ -395,6 +406,13 @@ features, importance = get_default_feature_importance()
 
 # Create feature importance chart using reusable function
 fig_features = create_feature_importance_chart(features, importance)
+
+# Adjust layout for DOCX compatibility
+fig_features.update_layout(
+    height=400,  # Reduced height for DOCX
+    margin=dict(l=60, r=60, t=80, b=60),
+    font=dict(size=11)  # Slightly smaller font
+)
 
 display_figure(fig_features, "ml_feature_importance")
 ```
@@ -456,6 +474,8 @@ display(Markdown(ml_insights))
 ```{python}
 #| label: ml-predicted-vs-actual
 #| echo: false
+#| fig-height: 4
+#| fig-format: png
 
 # Use centralized prediction visualization function
 from src.visualization.ml_charts import (
@@ -476,6 +496,13 @@ actual_salaries, predicted_salaries = generate_representative_predictions(
 
 # Create predicted vs actual plot using reusable function
 fig_pred = create_predicted_vs_actual_plot(actual_salaries, predicted_salaries)
+
+# Adjust layout for DOCX compatibility
+fig_pred.update_layout(
+    height=400,  # Reduced height for DOCX
+    margin=dict(l=60, r=60, t=80, b=60),
+    font=dict(size=11)  # Slightly smaller font
+)
 
 display_figure(fig_pred, "ml_predicted_vs_actual")
 ```
@@ -507,6 +534,8 @@ display(Markdown(pred_insights))
 ```{python}
 #| label: ml-confusion-matrix
 #| echo: false
+#| fig-height: 4
+#| fig-format: png
 
 # Use centralized confusion matrix visualization function
 import numpy as np
@@ -527,6 +556,13 @@ fig_conf = create_confusion_matrix_heatmap(
     confusion_data,
     class_labels,
     title="Classification Model: Confusion Matrix (Above/Below Median Salary)"
+)
+
+# Adjust layout for DOCX compatibility
+fig_conf.update_layout(
+    height=400,  # Reduced height for DOCX
+    margin=dict(l=60, r=60, t=80, b=60),
+    font=dict(size=11)  # Slightly smaller font
 )
 
 display_figure(fig_conf, "ml_confusion_matrix")
