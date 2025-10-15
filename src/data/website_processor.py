@@ -1,12 +1,24 @@
 """
-Website Data Processor - PySpark-Based ETL
+Website Data Processor - Hybrid PySpark + Pandas Architecture
 
 This module provides the data processing interface for the Quarto website.
-It uses PySpark for heavy ETL processing (13M rows) and saves to Parquet.
-The website then loads the processed Parquet with Pandas for fast analysis.
 
-Architecture:
-    Raw CSV (13M rows) → PySpark ETL → Parquet (~30-50K rows) → Pandas Analysis
+Architecture (Optimized Hybrid):
+    Raw CSV (13M rows)
+    → PySpark ETL (heavy lifting)
+    → PySpark MLlib (ML training)
+    → Parquet (~30-50K rows) ← BOUNDARY
+    → Pandas (visualization layer)
+    → Plotly (interactive charts)
+
+Rationale:
+    - PySpark: Excels at processing millions of rows
+    - Parquet: Efficient storage boundary (10x compression)
+    - Pandas: Excellent for 30-50K rows, better Plotly integration
+    - Result: Fast website (1-2 sec load), static deployment, no Spark cluster needed
+
+Trade-off:
+    Framework purity (not 100% PySpark) vs. pragmatic performance and deployment simplicity
 """
 
 from pathlib import Path
@@ -18,6 +30,10 @@ warnings.filterwarnings('ignore')
 # Add src to path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
+
+# Import logger (silent by default for Quarto)
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")  # Only show warnings/errors in Quarto
 
 def _generate_common_figures(df: Any) -> None:
     """
@@ -50,8 +66,8 @@ def _generate_common_figures(df: Any) -> None:
             return
 
     # Generate figures
-    print("\n[FIGURES] Generating common visualizations...")
-    print(f"  Output directory: {figures_dir}")
+    logger.info("\n[FIGURES] Generating common visualizations...")
+    logger.info(f" Output directory: {figures_dir}")
 
     try:
         from src.visualization.charts import SalaryVisualizer
@@ -60,19 +76,17 @@ def _generate_common_figures(df: Any) -> None:
 
         # Generate key findings graphics
         key_findings = visualizer.create_key_findings_graphics(str(figures_dir))
-        print(f"  ✓ Generated {len(key_findings)} key finding graphics")
+        logger.info(f" Generated {len(key_findings)} key finding graphics")
 
         # Generate executive dashboard suite
         dashboard = visualizer.create_executive_dashboard_suite(str(figures_dir))
-        print(f"  ✓ Generated {len(dashboard)} executive dashboard graphics")
+        logger.info(f" Generated {len(dashboard)} executive dashboard graphics")
 
-        print(f"  ✓ Total figures saved: {len(key_findings) + len(dashboard)}")
+        logger.info(f" Total figures saved: {len(key_findings) + len(dashboard)}")
 
     except Exception as e:
-        print(f"  [WARNING] Figure generation failed: {e}")
+        logger.warning(f" Figure generation failed: {e}")
         # Don't fail the entire load if figure generation fails
-        import traceback
-        traceback.print_exc()
 
 
 def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
@@ -96,10 +110,10 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
 
     # Check if processed data exists (FAST PATH)
     if parquet_path.exists():
-        print("Loading job market data...")
-        print(f"  Loading processed Parquet (fast!)...")
+        logger.info("Loading job market data...")
+        logger.info(f" Loading processed Parquet (fast!)...")
         df = pd.read_parquet(parquet_path)
-        print(f"  Loaded {len(df):,} records in 1-2 seconds")
+        logger.info(f" Loaded {len(df):,} records in 1-2 seconds")
 
         # Generate common figures if they don't exist (OPTIMIZATION)
         _generate_common_figures(df)
@@ -112,13 +126,13 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
         raise FileNotFoundError(
             "No data source found.\n\n"
             "Expected data location:\n"
-            f"  {raw_csv_path}\n\n"
+            f" {raw_csv_path}\n\n"
             "Please ensure raw data file exists in the data/raw/ directory."
         )
 
-    print("Loading job market data...")
-    print(f"  Processing raw data with PySpark (first time - may take 5-10 minutes)...")
-    print(f"  Raw CSV: {raw_csv_path.name}")
+    logger.info("Loading job market data...")
+    logger.info(f" Processing raw data with PySpark (first time - may take 5-10 minutes)...")
+    logger.info(f" Raw CSV: {raw_csv_path.name}")
 
     # Import PySpark processor
     from src.core.processor import JobMarketDataProcessor
@@ -128,7 +142,7 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
     settings = Settings()
     processor = JobMarketDataProcessor(settings=settings)
 
-    print(f"  [PySpark] Loading {raw_csv_path.name}...")
+    logger.info(f" [PySpark] Loading {raw_csv_path.name}...")
 
     # Process with PySpark (this does all the heavy lifting)
     # The processor automatically saves to Parquet in process_raw_data()
@@ -147,27 +161,27 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
 
         if parquet_path.exists():
             file_size = parquet_path.stat().st_size / (1024*1024)
-            print(f"  Saved to {parquet_path.name} ({file_size:.1f} MB)")
-            print(f"  Processed {record_count:,} records")
+            logger.info(f" Saved to {parquet_path.name} ({file_size:.1f} MB)")
+            logger.info(f" Processed {record_count:,} records")
         else:
-            print(f"  [WARNING] Expected Parquet file not found at {parquet_path}")
+            logger.warning(f" Expected Parquet file not found at {parquet_path}")
 
-        print(f"  Next run will load from Parquet instantly!")
+        logger.info(f" Next run will load from Parquet instantly!")
 
         # Now load the Parquet with Pandas (efficient for the filtered/processed data)
-        print(f"  [Pandas] Loading processed Parquet...")
+        logger.info(f" [Pandas] Loading processed Parquet...")
         df = pd.read_parquet(parquet_path)
 
         # Generate common figures (OPTIMIZATION)
         _generate_common_figures(df)
 
         summary = get_data_summary(df)
-        print(f"  Loaded {len(df):,} records for analysis")
+        logger.info(f" Loaded {len(df):,} records for analysis")
 
         return df, summary
 
     except Exception as e:
-        print(f"  [ERROR] PySpark processing failed: {e}")
+        logger.error(f" PySpark processing failed: {e}")
         import traceback
         traceback.print_exc()
         # Try to stop Spark if it was started
@@ -178,20 +192,146 @@ def load_and_process_data() -> Tuple[Any, Dict[str, Any]]:
         raise
 
 
+def decode_numeric_columns(df: Any) -> Any:
+    """
+    Decode numeric codes to text descriptions for remote_type and employment_type.
+
+    This is a workaround because the processed data has numeric codes but code expects text.
+
+    Args:
+        df: Pandas DataFrame with numeric remote_type and employment_type columns
+
+    Returns:
+        DataFrame with decoded text columns
+    """
+    import pandas as pd
+
+    df = df.copy()
+
+    # Decode remote_type (0, 1, 2, 3 → text)
+    if 'remote_type' in df.columns and df['remote_type'].dtype in ['float64', 'int64']:
+        remote_mapping = {
+            0.0: 'Not Specified',
+            1.0: 'Remote',
+            2.0: 'Not Remote',
+            3.0: 'Hybrid Remote'
+        }
+        df['remote_type'] = df['remote_type'].map(remote_mapping).fillna('Not Specified')
+
+    # Decode employment_type (1, 2, 3 → text)
+    if 'employment_type' in df.columns and df['employment_type'].dtype in ['float64', 'int64']:
+        employment_mapping = {
+            1.0: 'Full-time (> 32 hours)',
+            2.0: 'Part-time (< 32 hours)',
+            3.0: 'Contract'
+        }
+        df['employment_type'] = df['employment_type'].map(employment_mapping).fillna('Not Specified')
+
+    return df
+
+
+def add_experience_level(df: Any) -> Any:
+    """
+    Add experience_level categorical column from min_years_experience.
+
+    This is calculated on-the-fly from existing columns, not stored in ETL.
+
+    Categories based on industry standards and data distribution:
+    - Unknown: NULL values
+    - Entry Level: 0-2 years (9.9K records, median $96K)
+    - Mid Level: 3-5 years (20.8K records, median $115K)
+    - Senior Level: 6-10 years (15.2K records, median $128K)
+    - Leadership Level: 10+ years (3.5K records, median $126K)
+
+    Args:
+        df: Pandas DataFrame with min_years_experience column
+
+    Returns:
+        DataFrame with experience_level column added
+    """
+    import pandas as pd
+    import numpy as np
+
+    df = df.copy()
+
+    # Create experience_level from min_years_experience
+    # Bins: Entry (0-2), Mid (3-5), Senior (6-9), Executive (10+)
+    # Use the mapped column name from column_mapping.py
+    # MIN_YEARS_EXPERIENCE → experience_min
+    exp_col = 'experience_min' if 'experience_min' in df.columns else 'min_years_experience'
+
+    df['experience_level'] = pd.cut(
+        df[exp_col],
+        bins=[-np.inf, 2, 5, 9, np.inf],
+        labels=['Entry Level', 'Mid Level', 'Senior Level', 'Executive Level'],
+        include_lowest=True
+    )
+
+    # Handle NaN values
+    df['experience_level'] = df['experience_level'].cat.add_categories(['Unknown'])
+    df.loc[df[exp_col].isna(), 'experience_level'] = 'Unknown'
+
+    return df
+
+
+def compute_salary_avg(df: Any) -> Any:
+    """
+    Compute salary_avg from available salary columns.
+
+    Priority:
+    1. Use salary_single if available
+    2. Compute average of salary_min and salary_max
+    3. Use salary_min if only that's available
+
+    Args:
+        df: Pandas DataFrame with salary columns
+
+    Returns:
+        DataFrame with salary_avg column added/updated
+    """
+    import numpy as np
+
+    # Initialize salary_avg with NaN
+    df['salary_avg'] = np.nan
+
+    # Priority 1: Use salary_single
+    if 'salary_single' in df.columns:
+        mask = df['salary_single'].notna()
+        df.loc[mask, 'salary_avg'] = df.loc[mask, 'salary_single']
+
+    # Priority 2: Compute from min/max
+    if 'salary_min' in df.columns and 'salary_max' in df.columns:
+        mask = df['salary_avg'].isna() & df['salary_min'].notna() & df['salary_max'].notna()
+        df.loc[mask, 'salary_avg'] = (df.loc[mask, 'salary_min'] + df.loc[mask, 'salary_max']) / 2
+
+    # Priority 3: Use salary_min if nothing else
+    if 'salary_min' in df.columns:
+        mask = df['salary_avg'].isna() & df['salary_min'].notna()
+        df.loc[mask, 'salary_avg'] = df.loc[mask, 'salary_min']
+
+    return df
+
+
 def get_processed_dataframe() -> Any:
     """
     Get the processed dataframe for analysis.
 
     This is the main entry point for Quarto QMD files.
-    Returns Pandas DataFrame for visualization compatibility.
+    Returns Pandas DataFrame with all derived columns already created in PySpark ETL.
+    Note: All derived columns (salary_avg, experience_level, etc.) are created in PySpark ETL.
     """
     df, _ = load_and_process_data()
+    df = decode_numeric_columns(df)  # Decode remote_type and employment_type to text
+    # All derived columns (salary_avg, experience_level, experience_years, ai_related, remote_allowed)
+    # are already created in PySpark ETL - no need to recompute
     return df
 
 
 def get_website_data_summary() -> Dict[str, Any]:
     """Get summary statistics for the website."""
-    _, summary = load_and_process_data()
+    # Load fresh data to ensure summary reflects computed salary_avg
+    df = get_processed_dataframe()
+    summary = get_data_summary(df)
     return summary
 
 
@@ -215,31 +355,14 @@ def get_data_summary(df: Any = None) -> Dict[str, Any]:
     if hasattr(df, 'toPandas'):
         df = df.toPandas()
 
-    # Find salary column
-    salary_col = None
-    for col in ['salary_avg', 'salary', 'SALARY_AVG']:
-        if col in df.columns:
-            salary_col = col
-            break
+    # Use processed salary column (lowercase after ETL)
+    salary_col = 'salary_avg' if 'salary_avg' in df.columns else 'salary'
 
-    # Find other columns (handle both snake_case and UPPERCASE)
-    industry_col = None
-    for col in ['industry', 'INDUSTRY', 'NAICS2_NAME', 'naics2_name']:
-        if col in df.columns:
-            industry_col = col
-            break
+    # Use processed column names (lowercase after ETL)
+    industry_col = 'industry' if 'industry' in df.columns else None
+    location_col = 'city_name' if 'city_name' in df.columns else 'location'
 
-    location_col = None
-    for col in ['city_name', 'location', 'CITY_NAME', 'LOCATION']:
-        if col in df.columns:
-            location_col = col
-            break
-
-    company_col = None
-    for col in ['company', 'company_name', 'COMPANY', 'COMPANY_NAME']:
-        if col in df.columns:
-            company_col = col
-            break
+    company_col = 'company' if 'company' in df.columns else None
 
     # Calculate summary statistics
     total_records = len(df)

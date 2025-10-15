@@ -13,6 +13,10 @@ from pyspark.ml import Pipeline
 from pyspark.sql.functions import col, when, isnan, isnull
 import numpy as np
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class SalaryRegressionModel:
     """
@@ -113,7 +117,7 @@ class SalaryRegressionModel:
                               feature_columns: List[str]) -> Dict[str, Any]:
         """Train Multiple Linear Regression model."""
 
-        print("Training Multiple Linear Regression model...")
+        logger.info("Training Multiple Linear Regression model...")
 
         # Prepare data
         regression_data = self.prepare_regression_data(df, feature_columns)
@@ -162,7 +166,7 @@ class SalaryRegressionModel:
                                      feature_columns: List[str]) -> Dict[str, Any]:
         """Train Random Forest Regression model."""
 
-        print("Training Random Forest Regression model...")
+        logger.info("Training Random Forest Regression model...")
 
         # Prepare data
         regression_data = self.prepare_regression_data(df, feature_columns)
@@ -241,11 +245,11 @@ class SalaryRegressionModel:
             'mape_percent': mape * 100
         }
 
-        print(f"{dataset_type} Metrics:")
-        print(f"  RMSE: {rmse:.2f}")
-        print(f"  MAE: {mae:.2f}")
-        print(f"  R²: {r2:.4f}")
-        print(f"  MAPE: {mape*100:.2f}%")
+        logger.info(f"{dataset_type} Metrics:")
+        logger.info(f"  RMSE: {rmse:.2f}")
+        logger.info(f"  MAE: {mae:.2f}")
+        logger.info(f"  R²: {r2:.4f}")
+        logger.info(f"  MAPE: {mape*100:.2f}%")
 
         return metrics
 
@@ -307,7 +311,7 @@ class SalaryRegressionModel:
             return sorted_importance
 
         except Exception as e:
-            print(f"Error getting linear regression coefficients: {e}")
+            logger.error(f"Error getting linear regression coefficients: {e}")
             return {}
 
     def _get_random_forest_importance(self, model,
@@ -335,7 +339,7 @@ class SalaryRegressionModel:
             return sorted_importance
 
         except Exception as e:
-            print(f"Error getting random forest importance: {e}")
+            logger.error(f"Error getting random forest importance: {e}")
             return {}
 
     def predict_salary(self, df: DataFrame, model_name: str = 'linear_regression') -> DataFrame:

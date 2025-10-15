@@ -22,9 +22,11 @@ This dashboard provides comprehensive job market intelligence with key metrics, 
 ```{python}
 #| label: data-loading
 #| echo: false
+#| output: false
 
 # Load data using the website processor
 from src.data.website_processor import get_website_data, get_processed_dataframe, get_analysis_results, get_figure_paths, get_website_data_summary
+from src.visualization.charts import display_figure
 
 # Get processed data - this triggers the complete pipeline including figure generation
 website_data = get_website_data()
@@ -33,25 +35,29 @@ analysis = get_analysis_results()
 figures = get_figure_paths()
 summary = get_website_data_summary()
 
-print(f"Loaded {summary['total_records']:,} records")
-print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
-print(f"Generated {len(figures)} figures")
-
 # Ensure figures are saved to disk
 import os
 figures_dir = "figures"
+
 if not os.path.exists(figures_dir):
     os.makedirs(figures_dir)
-    print(f"Created {figures_dir} directory")
+```
 
-# List generated figures
-if figures:
-    print("Figure files generated:")
-    for name, path in figures.items():
-        exists = os.path.exists(path)
-        print(f"  {name}: {path} - {'[OK]' if exists else '[ERROR]'}")
-else:
-    print("[WARNING] No figures were generated")
+```{python}
+#| label: data-summary
+#| output: asis
+
+from IPython.display import Markdown, display
+
+data_summary = f"""
+**Data Pipeline Status:**
+
+- **Records Loaded**: {summary['total_records']:,}
+- **Salary Coverage**: {summary['salary_coverage']:.1f}%
+- **Figures Generated**: {len(figures)}
+"""
+
+display(Markdown(data_summary))
 ```
 
 ## Key Metrics Overview
@@ -64,7 +70,7 @@ else:
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_key_metrics_cards()
-fig.show()
+display_figure(fig, "dashboard_key_metrics")
 ```
 
 ## Executive Market Overview
@@ -77,7 +83,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_complete_intelligence_dashboard()
-fig.show()
+display_figure(fig, "dashboard_executive_overview")
 ```
 
 ## Salary Insights
@@ -90,7 +96,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_company_strategy_analysis()
-fig.show()
+display_figure(fig, "dashboard_salary_insights")
 ```
 
 ## Geographic Analysis
@@ -110,7 +116,7 @@ geo_fig.update_layout(
     height=600,
     margin=dict(l=80, r=80, t=100, b=80)
 )
-geo_fig.show()
+display_figure(geo_fig, "dashboard_geographic_analysis")
 ```
 
 ## AI & Technology Salary Analysis
@@ -123,7 +129,7 @@ geo_fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_ai_technology_analysis()
-fig.show()
+display_figure(fig, "dashboard_ai_technology")
 ```
 
 ## Career Progression Analysis
@@ -136,7 +142,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_career_progression_analysis()
-fig.show()
+display_figure(fig, "dashboard_career_progression")
 ```
 
 ## Education ROI Analysis
@@ -149,7 +155,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_education_roi_analysis()
-fig.show()
+display_figure(fig, "dashboard_education_roi")
 ```
 
 ## Company Strategy Analysis
@@ -162,7 +168,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_company_strategy_analysis()
-fig.show()
+display_figure(fig, "dashboard_company_strategy")
 ```
 
 ## Complete Intelligence Dashboard
@@ -175,7 +181,7 @@ fig.show()
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_complete_intelligence_dashboard()
-fig.show()
+display_figure(fig, "dashboard_complete_intelligence")
 ```
 
 ## Key Findings Summary
@@ -195,12 +201,23 @@ try:
     markdown_content = f"""
 ### Market Overview
 
+*These statistics are calculated from the complete dataset loaded above and visualized in the dashboards throughout this page.*
+
 - **Total Records**: {summary.get('total_records', 'N/A'):,} job postings analyzed
+  *Source: [Data Pipeline Status](#data-loading) - Complete dataset processed*
+
 - **Salary Coverage**: {summary.get('salary_coverage', 0):.1f}% of records have salary data
+  *Note: Industry-median imputation used for missing values (see [methodology](methodology.qmd))*
+
 - **Industries**: {summary.get('unique_industries', 'N/A')} unique industries represented
+  *Visualized in: [Salary Insights](#salary-insights) and [Company Strategy](#company-strategy)*
+
 - **Locations**: {summary.get('unique_locations', 'N/A')} unique locations analyzed
+  *Visualized in: [Geographic Analysis](#geographic-analysis)*
 
 ### Salary Insights
+
+*Calculated from the full dataset and displayed in the charts above.*
 """
 
     salary_range = summary.get('salary_range', {})
@@ -210,15 +227,29 @@ try:
 
     markdown_content += f"""
 - **Median Salary**: ${median_salary:,.0f}
+  *See distribution in: [Key Metrics Overview](#key-metrics-overview) and [Salary Insights](#salary-insights)*
+
 - **Salary Range**: ${min_salary:,.0f} - ${max_salary:,.0f}
+  *Full range analysis in: [Executive Market Overview](#executive-market-overview)*
+
 - **Data Quality**: High-quality dataset with comprehensive coverage
+  *Processing details: [Data Pipeline](data-pipeline.qmd)*
 
 ### Strategic Recommendations
 
+*Based on the analysis visualized in the dashboards above:*
+
 1. **Career Development**: Focus on experience progression for salary growth
+   *See: [Career Progression Analysis](#career-progression-analysis)*
+
 2. **Industry Selection**: Consider high-paying industries for career advancement
+   *See: [Salary Insights](#salary-insights)*
+
 3. **Location Strategy**: Geographic factors significantly impact compensation
+   *See: [Geographic Analysis](#geographic-analysis)*
+
 4. **Education Investment**: ROI varies by industry and experience level
+   *See: [Education ROI Analysis](#education-roi-analysis)*
 """
 
     # Display as markdown

@@ -5,12 +5,20 @@ This module creates a comprehensive dashboard that effectively communicates
 the key findings and objectives of the job market analysis.
 """
 
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
+# Standard library imports
+from typing import Any, Dict, List
+
+# Third-party imports
 import numpy as np
-from typing import Dict, List, Any
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Local imports
+from src.utils.logger import get_logger
+
+logger = get_logger(level="WARNING")
 
 class KeyFindingsDashboard:
     """
@@ -349,7 +357,7 @@ class KeyFindingsDashboard:
         )
 
         # Salary distribution
-        salary_cols = ['salary_avg', 'SALARY_AVG', 'salary', 'SALARY', 'median_salary', 'MEDIAN_SALARY']
+        salary_cols = ['salary_avg', 'salary', 'median_salary']
         salary_data = None
 
         for col in salary_cols:
@@ -443,7 +451,7 @@ class KeyFindingsDashboard:
             # Debug: Check if this is where the debug output is coming from
             error_msg = str(e)
             if "DEBUG" in error_msg or "DataFrame shape" in error_msg:
-                print(f"FOUND DEBUG SOURCE: Exception message contains debug info: {error_msg[:200]}")
+                logger.error(f"FOUND DEBUG SOURCE: Exception message contains debug info: {error_msg[:200]}")
 
             # Create error visualization with consistent styling
             fig = go.Figure()
@@ -471,7 +479,7 @@ class KeyFindingsDashboard:
         """Calculate the four key metrics for the dashboard."""
 
         # Try different possible salary column names
-        salary_cols = ['salary_avg', 'SALARY_AVG', 'salary', 'SALARY', 'median_salary', 'MEDIAN_SALARY']
+        salary_cols = ['salary_avg', 'salary', 'median_salary']
         salary_data = None
 
         for col in salary_cols:
@@ -511,7 +519,7 @@ class KeyFindingsDashboard:
         """Calculate experience progression data."""
 
         # Create experience levels based on salary percentiles
-        salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'SALARY_AVG'
+        salary_col = 'salary_avg'  # Processed column name (lowercase after ETL)
         salary_data = pd.to_numeric(self.df[salary_col], errors='coerce').dropna()
 
         if len(salary_data) == 0:
@@ -567,7 +575,7 @@ class KeyFindingsDashboard:
     def _calculate_comprehensive_metrics(self) -> Dict[str, Any]:
         """Calculate comprehensive metrics for complete intelligence."""
         # Try different possible salary column names
-        salary_cols = ['salary_avg', 'SALARY_AVG', 'salary', 'SALARY', 'median_salary', 'MEDIAN_SALARY']
+        salary_cols = ['salary_avg', 'salary', 'median_salary']
         salary_data = None
 
         for col in salary_cols:

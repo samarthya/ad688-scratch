@@ -13,6 +13,10 @@ from pyspark.ml.classification import LogisticRegression, RandomForestClassifier
 from pyspark.sql.functions import col, abs as spark_abs, sqrt, mean, stddev
 import numpy as np
 
+# Import logger for controlled output
+from src.utils.logger import get_logger
+logger = get_logger(level="WARNING")
+
 
 class ModelEvaluator:
     """
@@ -69,7 +73,7 @@ class ModelEvaluator:
                                 model_name: str = "Regression Model") -> Dict[str, float]:
         """Evaluate regression model performance."""
 
-        print(f"Evaluating {model_name}...")
+        logger.info(f"Evaluating {model_name}...")
 
         # Calculate standard metrics
         rmse = self.rmse_evaluator.evaluate(predictions)
@@ -93,10 +97,10 @@ class ModelEvaluator:
             'mape_percent': mape_percent
         }
 
-        print(f"RMSE: {rmse:.2f}")
-        print(f"R²: {r2:.4f}")
-        print(f"MAE: {mae:.2f}")
-        print(f"MAPE: {mape_percent:.2f}%")
+        logger.info(f"RMSE: {rmse:.2f}")
+        logger.info(f"R²: {r2:.4f}")
+        logger.info(f"MAE: {mae:.2f}")
+        logger.info(f"MAPE: {mape_percent:.2f}%")
 
         return evaluation_results
 
@@ -104,7 +108,7 @@ class ModelEvaluator:
                                     model_name: str = "Classification Model") -> Dict[str, float]:
         """Evaluate classification model performance."""
 
-        print(f"Evaluating {model_name}...")
+        logger.info(f"Evaluating {model_name}...")
 
         # Calculate standard metrics
         accuracy = self.accuracy_evaluator.evaluate(predictions)
@@ -124,10 +128,10 @@ class ModelEvaluator:
             'confusion_matrix': confusion_matrix
         }
 
-        print(f"Accuracy: {accuracy:.4f}")
-        print(f"F1 Score: {f1:.4f}")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
+        logger.info(f"Accuracy: {accuracy:.4f}")
+        logger.info(f"F1 Score: {f1:.4f}")
+        logger.info(f"Precision: {precision:.4f}")
+        logger.info(f"Recall: {recall:.4f}")
 
         return evaluation_results
 
@@ -213,51 +217,51 @@ class ModelEvaluator:
         if 'rmse' in evaluation_results:
             # Regression model report
             report += "REGRESSION METRICS:\n"
-            report += f"  RMSE: {evaluation_results['rmse']:.2f}\n"
-            report += f"  R²: {evaluation_results['r2']:.4f}\n"
-            report += f"  MAE: {evaluation_results['mae']:.2f}\n"
-            report += f"  MSE: {evaluation_results['mse']:.2f}\n"
-            report += f"  MAPE: {evaluation_results['mape_percent']:.2f}%\n\n"
+            report += f" RMSE: {evaluation_results['rmse']:.2f}\n"
+            report += f" R²: {evaluation_results['r2']:.4f}\n"
+            report += f" MAE: {evaluation_results['mae']:.2f}\n"
+            report += f" MSE: {evaluation_results['mse']:.2f}\n"
+            report += f" MAPE: {evaluation_results['mape_percent']:.2f}%\n\n"
 
             # Interpretation
             report += "INTERPRETATION:\n"
             if evaluation_results['r2'] > 0.7:
-                report += "  ✓ Good model fit (R² > 0.7)\n"
+                report += " Good model fit (R² > 0.7)\n"
             elif evaluation_results['r2'] > 0.5:
-                report += "  ⚠ Moderate model fit (R² > 0.5)\n"
+                report += " Moderate model fit (R² > 0.5)\n"
             else:
-                report += "  ✗ Poor model fit (R² < 0.5)\n"
+                report += " Poor model fit (R² < 0.5)\n"
 
             if evaluation_results['mape_percent'] < 10:
-                report += "  ✓ Low prediction error (MAPE < 10%)\n"
+                report += " Low prediction error (MAPE < 10%)\n"
             elif evaluation_results['mape_percent'] < 20:
-                report += "  ⚠ Moderate prediction error (MAPE < 20%)\n"
+                report += " Moderate prediction error (MAPE < 20%)\n"
             else:
-                report += "  ✗ High prediction error (MAPE > 20%)\n"
+                report += " High prediction error (MAPE > 20%)\n"
 
         elif 'accuracy' in evaluation_results:
             # Classification model report
             report += "CLASSIFICATION METRICS:\n"
-            report += f"  Accuracy: {evaluation_results['accuracy']:.4f}\n"
-            report += f"  F1 Score: {evaluation_results['f1_score']:.4f}\n"
-            report += f"  Precision: {evaluation_results['precision']:.4f}\n"
-            report += f"  Recall: {evaluation_results['recall']:.4f}\n\n"
+            report += f" Accuracy: {evaluation_results['accuracy']:.4f}\n"
+            report += f" F1 Score: {evaluation_results['f1_score']:.4f}\n"
+            report += f" Precision: {evaluation_results['precision']:.4f}\n"
+            report += f" Recall: {evaluation_results['recall']:.4f}\n\n"
 
             # Interpretation
             report += "INTERPRETATION:\n"
             if evaluation_results['accuracy'] > 0.8:
-                report += "  ✓ High accuracy (> 80%)\n"
+                report += " High accuracy (> 80%)\n"
             elif evaluation_results['accuracy'] > 0.6:
-                report += "  ⚠ Moderate accuracy (> 60%)\n"
+                report += " Moderate accuracy (> 60%)\n"
             else:
-                report += "  ✗ Low accuracy (< 60%)\n"
+                report += " Low accuracy (< 60%)\n"
 
             if evaluation_results['f1_score'] > 0.7:
-                report += "  ✓ Good F1 score (> 0.7)\n"
+                report += " Good F1 score (> 0.7)\n"
             elif evaluation_results['f1_score'] > 0.5:
-                report += "  ⚠ Moderate F1 score (> 0.5)\n"
+                report += " Moderate F1 score (> 0.5)\n"
             else:
-                report += "  ✗ Poor F1 score (< 0.5)\n"
+                report += " Poor F1 score (< 0.5)\n"
 
         return report
 

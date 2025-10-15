@@ -12,9 +12,10 @@ Options:
     --force    Force regeneration even if Parquet exists
 """
 
+# Standard library imports
+import argparse
 import sys
 from pathlib import Path
-import argparse
 
 # Add project root to path
 project_root = Path(__file__).parent.parent

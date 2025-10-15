@@ -8,6 +8,12 @@ author:
         name: Boston University
         city: Boston
         state: MA
+  - name: Haocun Wang
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
 date: today
 format:
   html:
@@ -17,24 +23,83 @@ format:
     theme: cosmo
 ---
 
+```{python}
+#| echo: false
+#| output: false
+
+# Load data to calculate key metrics
+from src.data.website_processor import get_processed_dataframe, get_website_data_summary
+import pandas as pd
+
+df = get_processed_dataframe()
+summary = get_website_data_summary()
+
+# Use processed column names (all lowercase after ETL)
+salary_col = 'salary_avg'
+city_col = 'city_name'
+
+# Validate required columns
+if city_col not in df.columns:
+    raise ValueError(f"ERROR: Required column '{city_col}' not found in dataframe")
+
+# experience_level is calculated on-the-fly by get_processed_dataframe()
+exp_col = 'experience_level'
+
+# Experience gap calculation
+exp_salaries = df.groupby(exp_col)[salary_col].median().sort_values()
+if len(exp_salaries) < 2:
+    raise ValueError(f"ERROR: Not enough experience levels in data. Found only {len(exp_salaries)} levels")
+entry_salary = exp_salaries.iloc[0]
+senior_salary = exp_salaries.iloc[-2] if len(exp_salaries) > 2 else exp_salaries.iloc[-1]
+experience_gap_pct = ((senior_salary - entry_salary) / entry_salary) * 100
+
+# Geographic variation (calculate as difference from median, not minimum)
+city_salaries = df.groupby(city_col)[salary_col].median()
+if len(city_salaries) == 0:
+    raise ValueError(f"ERROR: No city salary data available")
+# Calculate variation as percentage difference from median (more meaningful metric)
+city_median = city_salaries.median()
+geo_variation_pct = ((city_salaries.max() - city_median) / city_median) * 100
+
+# Total jobs
+total_jobs = summary['total_records']
+total_jobs_k = int(total_jobs / 1000)
+```
+
 ## Your Career Questions, Answered with Data
 
 Welcome to your comprehensive guide for navigating the technology job market. This analysis answers the critical questions every student and professional faces when planning their career path.
 
 ## Interactive Key Findings Dashboard
 
-**[→ View Interactive Dashboard](market-dashboard.qmd)** - Critical salary disparities and career insights
+**[View Market Dashboard](market-dashboard.qmd)** - Comprehensive visualization of salary trends, career progression, and market intelligence
 
-Get instant answers to your most pressing career questions with our interactive dashboard featuring:
+```{python}
+#| echo: false
+#| output: asis
 
-- **90% Experience Gap** analysis
-- **9% Education Premium** calculations
-- **32% Company Size Gap** insights
-- **72K+ Jobs Analyzed** for reliable data
+from IPython.display import Markdown, display
+
+dashboard_text = f"""
+Explore our interactive market dashboard featuring:
+
+- **[{experience_gap_pct:.0f}% Experience Gap](salary-insights.qmd#experience-level-analysis-and-career-progression)** - Senior roles earn {experience_gap_pct:.0f}% more than entry-level
+
+- **[Career Progression](salary-insights.qmd#key-insights-from-experience-analysis)** analysis across experience levels with salary timelines
+
+- **[Education ROI](market-dashboard.qmd)** calculations and salary premiums with investment return analysis
+
+- **[Geographic Intelligence](tech-career-intelligence-report.qmd#geographic-salary-analysis)** - salary variations up to {geo_variation_pct:.0f}% by location
+
+- **[{total_jobs_k}K+ Jobs Analyzed](data-pipeline.qmd)** for reliable, data-driven insights
+"""
+
+display(Markdown(dashboard_text))
+```
 
 ## Data Processing Pipeline
 
-**[→ View Data Pipeline](data-pipeline.qmd)** - How the website processes data automatically
+**[View Data Pipeline](data-pipeline.qmd)** - How the website processes data automatically
 
 See how our intelligent auto-processing pipeline works:
 
@@ -75,33 +140,74 @@ See how our intelligent auto-processing pipeline works:
 - Cost-of-living adjusted salary analysis
 - Industry concentration by region
 
-## Key Insights from 72,000+ Job Postings
+```{python}
+#| echo: false
+#| output: false
 
-- **3.0x Salary Growth**: Entry-level to Executive progression potential
-- **9% Education Premium**: Advanced degree ROI quantified
-- **32% Company Size Impact**: Startup vs. Enterprise compensation differences
-- **25% Remote Availability**: Location-flexible opportunities in tech
+# Calculate additional key insights
+industry_col = 'industry' if 'industry' in df.columns else 'industry'
 
-### New: Machine Learning Insights
+# Salary growth multiplier (experience_level already exists from get_processed_dataframe())
+exp_salaries_sorted = df.groupby(exp_col)[salary_col].median().sort_values()
+if len(exp_salaries_sorted) < 2:
+    raise ValueError(f"ERROR: Not enough experience levels in data. Found only {len(exp_salaries_sorted)} levels")
+salary_multiplier = exp_salaries_sorted.iloc[-1] / exp_salaries_sorted.iloc[0]
 
-- **Predictive Models**: ML algorithms predict salary with 85%+ accuracy
-- **Skills Analysis**: NLP identifies 1,000+ unique skills and salary premiums
-- **Job Classification**: AI flags above-average paying opportunities
-- **Strategic Recommendations**: Data-driven advice for job seekers and employers
+# Use processed remote column name (decoded to text in get_processed_dataframe())
+remote_col = 'remote_type'
+if remote_col not in df.columns:
+    raise ValueError(f"ERROR: Required column '{remote_col}' not found in dataframe")
+# Calculate percentage of remote jobs (Remote + Hybrid Remote)
+remote_pct = (df[remote_col].str.contains('Remote', case=False, na=False).sum() / len(df)) * 100
+
+# ML model accuracy (from our training)
+ml_accuracy = 0.85
+```
+
+## Key Insights from Our Analysis
+
+```{python}
+#| echo: false
+#| output: asis
+
+from IPython.display import Markdown, display
+
+insights_text = f"""
+- **[{salary_multiplier:.1f}× Salary Growth](tech-career-intelligence-report.qmd#experience-level-analysis-and-career-progression)** - Entry-level to Executive progression potential
+
+- **[Education Premium](presentation.qmd)** - Advanced degree ROI with 12-year breakeven analysis
+
+- **[{geo_variation_pct:.0f}% Geographic Variation](tech-career-intelligence-report.qmd#geographic-salary-analysis)** - Location drives major salary differences across cities
+
+- **[{remote_pct:.0f}% Remote Availability](tech-career-intelligence-report.qmd#remote-work-salary-analysis)** - Location-flexible opportunities with competitive compensation
+
+### Machine Learning Insights
+
+- **[{ml_accuracy:.0%} Prediction Accuracy](tech-career-intelligence-report.qmd#model-1-salary-prediction)** - ML algorithms predict salary with high accuracy
+
+- **[Feature Importance](presentation.qmd)** - Job title (35%), Industry (28%), Location (20%) drive salaries
+
+- **[Skills Analysis](predictive-analytics.qmd)** - NLP identifies in-demand skills and salary premiums
+
+- **[Strategic Recommendations](presentation.qmd)** - Data-driven career advice based on 72K+ job postings
+"""
+
+display(Markdown(insights_text))
+```
 
 ## Interactive Career Intelligence Dashboard
 
 ### Career Progression: "How much will I earn as I grow?"
 
-**[→ View Experience Analysis](salary-insights.qmd)** - Complete career progression analysis with interactive charts
+**[View Experience Analysis](salary-insights.qmd)** - Complete career progression analysis with interactive charts
 
 ### Education ROI: "Is graduate school worth it?"
 
-**[→ View Education & Skills Analysis](salary-insights.qmd)** - Education ROI and skills premium analysis
+**[View Education & Skills Analysis](salary-insights.qmd)** - Education ROI and skills premium analysis
 
 ### Company Strategy: "Startup or Enterprise?"
 
-**[→ View Industry Analysis](salary-insights.qmd)** - Company size effects and industry comparisons
+**[View Industry Analysis](salary-insights.qmd)** - Company size effects and industry comparisons
 
 **Key Insight:** Large companies pay 32% more on average, but startups offer equity upside. Consider total compensation packages.
 
@@ -124,6 +230,17 @@ This analysis is organized to answer your questions in the order you'd naturally
   - Classification for above-average paying jobs
   - NLP analysis with skills clustering and word clouds
   - Strategic recommendations for job seekers
+
+### Statistical Methodology
+
+- **[Methodology & Multivariate Analysis](methodology.qmd)** How do the models work?
+
+  - Feature selection and engineering rationale
+  - Missing data handling and imputation strategy
+  - Complete model specifications (regression + classification)
+  - Evaluation metrics and cross-validation
+  - Categorical variable encoding decisions
+  - Reproducibility documentation
 
 ### Market Intelligence
 

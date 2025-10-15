@@ -13,14 +13,20 @@ from pyspark.sql.functions import (
     sum as spark_sum, count, avg, max as spark_max, min as spark_min,
     row_number, rank, dense_rank, percent_rank, cume_dist
 )
+
+# Import logger for controlled output
+from src.utils.logger import get_logger
+
 from pyspark.sql.window import Window
 from pyspark.ml.feature import (
     StringIndexer, OneHotEncoder, VectorAssembler,
     StandardScaler, MinMaxScaler, PCA
 )
+
 from pyspark.ml import Pipeline
 import re
 
+logger = get_logger(level="WARNING")
 
 class SalaryDisparityFeatureEngineer:
     """
@@ -112,31 +118,31 @@ class SalaryDisparityFeatureEngineer:
         # Job title categorization
         df = df.withColumn(
             'job_title_category',
-            when(col('TITLE').isNull(), 'Unknown')
-            .when(col('TITLE').rlike('(?i)(manager|director|vp|vice president|head|lead)'), 'Management')
-            .when(col('TITLE').rlike('(?i)(senior|sr|principal|staff)'), 'Senior')
-            .when(col('TITLE').rlike('(?i)(junior|jr|entry|associate)'), 'Junior')
-            .when(col('TITLE').rlike('(?i)(intern|trainee|apprentice)'), 'Entry')
+            when(col('title').isNull(), 'Unknown')
+            .when(col('title').rlike('(?i)(manager|director|vp|vice president|head|lead)'), 'Management')
+            .when(col('title').rlike('(?i)(senior|sr|principal|staff)'), 'Senior')
+            .when(col('title').rlike('(?i)(junior|jr|entry|associate)'), 'Junior')
+            .when(col('title').rlike('(?i)(intern|trainee|apprentice)'), 'Entry')
             .otherwise('Individual Contributor')
         )
 
         # Industry categorization
         df = df.withColumn(
             'industry_category',
-            when(col('INDUSTRY').isNull(), 'Unknown')
-            .when(col('INDUSTRY').rlike('(?i)(technology|software|tech|it)'), 'Technology')
-            .when(col('INDUSTRY').rlike('(?i)(finance|banking|financial)'), 'Finance')
-            .when(col('INDUSTRY').rlike('(?i)(healthcare|medical|pharma)'), 'Healthcare')
-            .when(col('INDUSTRY').rlike('(?i)(consulting|professional services)'), 'Consulting')
+            when(col('industry').isNull(), 'Unknown')
+            .when(col('industry').rlike('(?i)(technology|software|tech|it)'), 'Technology')
+            .when(col('industry').rlike('(?i)(finance|banking|financial)'), 'Finance')
+            .when(col('industry').rlike('(?i)(healthcare|medical|pharma)'), 'Healthcare')
+            .when(col('industry').rlike('(?i)(consulting|professional services)'), 'Consulting')
             .otherwise('Other')
         )
 
         # Company size estimation (based on job posting patterns)
         df = df.withColumn(
             'company_size_tier',
-            when(col('COMPANY').isNull(), 'Unknown')
-            .when(col('COMPANY').rlike('(?i)(inc|corp|corporation|llc)'), 'Large')
-            .when(col('COMPANY').rlike('(?i)(startup|start-up|small)'), 'Small')
+            when(col('company_name').isNull(), 'Unknown')
+            .when(col('company_name').rlike('(?i)(inc|corp|corporation|llc)'), 'Large')
+            .when(col('company_name').rlike('(?i)(startup|start-up|small)'), 'Small')
             .otherwise('Medium')
         )
 
@@ -152,7 +158,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'ai_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in ai_keywords
             ])
         )
@@ -164,7 +170,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'technical_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in tech_keywords
             ])
         )
@@ -176,7 +182,7 @@ class SalaryDisparityFeatureEngineer:
         df = df.withColumn(
             'soft_skills_score',
             sum([
-                when(col('TITLE').rlike(f'(?i){keyword}'), 1).otherwise(0)
+                when(col('title').rlike(f'(?i){keyword}'), 1).otherwise(0)
                 for keyword in soft_skills_keywords
             ])
         )
@@ -260,22 +266,22 @@ class SalaryDisparityFeatureEngineer:
     def prepare_ml_features(self, df: DataFrame) -> DataFrame:
         """Prepare all features for machine learning models."""
 
-        print("Creating demographic features...")
+        logger.info("Creating demographic features...")
         df = self.create_demographic_features(df)
 
-        print("Creating job characteristics features...")
+        logger.info("Creating job characteristics features...")
         df = self.create_job_characteristics_features(df)
 
-        print("Creating skills features...")
+        logger.info("Creating skills features...")
         df = self.create_skills_features(df)
 
-        print("Creating work arrangement features...")
+        logger.info("Creating work arrangement features...")
         df = self.create_work_arrangement_features(df)
 
-        print("Creating market factors features...")
+        logger.info("Creating market factors features...")
         df = self.create_market_factors_features(df)
 
-        print("Creating salary disparity features...")
+        logger.info("Creating salary disparity features...")
         df = self.create_salary_disparity_features(df)
 
         return df

@@ -1,0 +1,568 @@
+---
+title: Tech Career Intelligence
+subtitle: Your Data-Driven Career Roadmap for 2025
+author: Saurabh Sharma & Haocun Wang
+date: today
+format:
+  revealjs:
+    theme: [default, serif, custom-presentation.scss]
+    slide-number: true
+    preview-links: auto
+    footer: Tech Career Intelligence | BU AD688
+    transition: slide
+    background-transition: fade
+    smaller: False
+    scrollable: True
+    incremental: true
+  beamer:
+    theme: Madrid
+    colortheme: default
+    fonttheme: structurebold
+    navigation: horizontal
+    section-titles: true
+    toc: false
+  docx:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    highlight-style: github
+    fig-width: 8
+    fig-height: 6
+    fig-dpi: 300
+---
+
+```{python}
+#| label: setup
+#| echo: false
+#| eval: True
+#| include: false
+
+# Local imports (organized alphabetically)
+from src.data.website_processor import get_processed_dataframe, get_website_data_summary
+from src.visualization.charts import display_figure
+from src.visualization.presentation_charts import PresentationCharts
+
+# Load data
+df = get_processed_dataframe()
+summary = get_website_data_summary()
+
+# Recalculate salary metrics from df (since summary may be cached without computed salaries)
+median_salary = df['salary_avg'].median()
+summary['salary_range']['median'] = median_salary
+summary['salary_range']['min'] = df['salary_avg'].min()
+summary['salary_range']['max'] = df['salary_avg'].max()
+
+# Initialize presentation charts
+pcharts = PresentationCharts(df, summary)
+
+# Calculate key metrics
+median_k = int(median_salary / 1000)
+
+total_jobs = summary['total_records']
+```
+
+## The Career Question We All Face {.center}
+
+::: {.r-fit-text}
+**Should I get a Master's degree or start working?**
+**Where should I work?**
+**What skills should I learn?**
+**What salary should I expect?**
+:::
+
+::: {.fragment}
+### Today's Answer: **Data, Not Guesswork**
+:::
+
+::: {.notes}
+Every graduate faces these questions. We all know someone who took a job, regretted it, or wondered if grad school was worth it. Today we answer these questions with data from 72,000+ real job postings.
+:::
+
+---
+
+## Our Thesis and Roadmap {.smaller}
+
+### The Thesis
+
+::: {.r-fit-text .smaller}
+**Career success in tech is predictable and strategic—if you know where to look in the data**
+:::
+
+### Today's Journey
+
+::: {.compact-list .incremental}
+
+- **The Data**: 72K job postings → What story do they tell?
+- **The Big 4 Factors**: Experience, Location, Industry, Remote Work
+- **The Skill Gap**: What employers want vs. what we learn
+- **The ROI Question**: Is a Master's degree worth $278K?
+- **Your Action Plan**: Data-driven decisions you can make today
+:::
+
+::: {.notes}
+Our thesis: Career outcomes aren't random—they follow patterns we can identify and leverage. We'll walk through our data exploration, show you the insights, and give you an action plan.
+:::
+
+---
+
+## Our Approach: Data Over Guesswork
+
+:::: {.columns}
+
+::: {.column width="42%"}
+::: {.data-approach-slide}
+
+#### The Question
+
+*"What factors predict career success in tech?"*
+
+#### The Data
+
+   - 72,000+ job postings (2024-2025)
+   - 83% ML prediction accuracy
+
+#### Key Findings {.smaller}
+
+::: {.compact-list}
+- Experience patterns
+- Geographic premiums
+- Industry gaps
+:::
+
+:::
+:::
+
+::: {.column width="58%"}
+```{python}
+#| label: kpi-overview
+#| echo: false
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_kpi_overview()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_kpi_overview")
+```
+:::
+
+::: {.notes}
+The KPI overview shows our key dataset metrics: $116K median salary, 72K+ job postings, 21 industries, and 3,841 cities. This gives you the scale and scope of our analysis.
+:::
+
+::::
+
+::: {.notes}
+We analyzed 72K real job postings using PySpark and machine learning. Our central research question: What predicts success in tech careers? We explored salary patterns, geography, industry, remote work, and skills to answer this.
+:::
+
+---
+
+## Key Finding 1: The Experience Multiplier
+
+#### The 1.3× Multiplier Effect
+
+  - Entry **$96K** → Mid **$115K** → Senior **$128K** → Leadership **$126K**
+  - **33% growth over your career—experience compounds like interest**
+
+```{python}
+#| label: experience-analysis
+#| echo: false
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_experience_progression()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_experience_analysis")
+```
+
+::: {.notes}
+This is the most powerful finding: experience compounds. Entry level (0-2 years) ~$96K, mid-level (3-5 years) ~$115K, senior (6-10 years) ~$128K, leadership (10+ years) $126K. That's 33% total growth. Real-world example: your friend who started 5 years before you isn't earning 20% more—they're earning 30%+ more due to compounding experience.
+:::
+
+---
+
+## Key Finding 2: The Geographic Lottery
+
+### Same Job, Different City = **$146K Range**
+
+:::: {.columns}
+
+::: {.column width="60%"}
+```{python}
+#| label: geographic-analysis
+#| echo: false
+#| eval: True
+#| fig-width: 8
+#| fig-height: 5
+#| unless-format: docx, pdf
+
+fig = pcharts.create_geographic_analysis()
+# Ensure chart uses full width and auto-scales properly for side-by-side layout
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=450,
+    margin=dict(l=40, r=40, t=60, b=40)
+)
+display_figure(fig, "presentation_geographic_analysis")
+```
+:::
+
+::: {.column width="40%"}
+### The Numbers
+
+- **Top city**: $180K (Edison, NJ)
+- **Lowest city**: $34K (Sterling Heights, MI)
+- **63% premium** for top markets vs. median city
+
+### 💡 Job Seeker Insight
+
+Calculate take-home after cost of living. Or negotiate remote work from a low-cost city.
+:::
+
+::::
+
+::: {.notes}
+Geography is the second-biggest lever. Top markets pay 63% more than median cities. But the cost of living difference is real. Smart play: negotiate remote work from a lower-cost city—you keep the high salary AND the low expenses. This is the real arbitrage opportunity.
+:::
+
+---
+
+## The Geographic Opportunity
+
+### Where The Money Is
+
+Technology hubs pay **63% more** than median cities. But here's the strategic insight: with remote work, you can access these salaries without the cost of living.
+
+:::: {.columns}
+
+::: {.column width="65%"}
+
+```{python}
+#| label: geographic-map
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+# Create geographic salary map
+from src.visualization.charts import SalaryVisualizer
+vis = SalaryVisualizer(df)
+geo_map = vis.create_plotly_geographic_map(top_n=300, height=420)
+# Ensure chart uses full width and auto-scales properly
+geo_map.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+geo_map
+```
+:::
+
+::: {.column width="35%" .smaller}
+#### The Ultimate Career Hack
+
+Secure remote role with tier-1 salary, live in tier-2/3 city.
+
+#### Why This Works
+
+  - Access high-paying markets remotely
+  - Lower cost of living = higher real income
+  - Best of both worlds: salary + lifestyle
+:::
+::::
+
+---
+
+## The Industry Multiplier
+
+### The $57K Industry Gap
+
+- **Tech Services: $133K** | Finance: $114K | Healthcare: $90K | Education: $73K
+- **Switching industries = instant 78% raise** for same skills
+
+```{python}
+#| label: industry-analysis
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_industry_analysis()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_industry_analysis")
+```
+
+---
+
+## The Remote Work Reality
+
+### The Myth vs Reality
+
+- **Myth**: "Remote work pays less"
+- **Reality**: Remote jobs pay **same or better** ($114K median)
+
+```{python}
+#| label: remote-analysis
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_remote_work_analysis()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_remote_analysis")
+```
+
+### The Numbers
+
+- **Remote**: $114K | **Hybrid**: $114K | **On-site**: $108K
+- **Plus save $5K/year** on commute + work clothes
+
+### 💡 The Ultimate Career Hack
+
+Remote work = same pay, lower expenses, better quality of life
+
+::: {.notes}
+This was the biggest surprise in our data. Remote work doesn't pay less—it often pays MORE. Why? Companies competing for talent nationally must offer competitive salaries. 22% of jobs are fully remote, 30% hybrid. And you save 2 hours/day commuting. That's 500 hours/year—equivalent to 12 work weeks—back in your life.
+:::
+
+---
+
+## The Skills Premium
+
+### What Employers Actually Pay For
+
+```{python}
+#| label: skills-callout
+#| echo: false
+#| output: asis
+
+# Get actual skills data and create callout
+from IPython.display import Markdown
+
+skill_stats = pcharts.get_skills_premium_data()
+top_3 = skill_stats.nlargest(3, 'premium')
+
+callout_text = f"""
+- **{top_3.iloc[0]['skill']}**: **+{int(top_3.iloc[0]['premium'])}%** salary ({int(top_3.iloc[0]['count']):,} jobs)
+- **{top_3.iloc[1]['skill']}**: **+{int(top_3.iloc[1]['premium'])}%** salary ({int(top_3.iloc[1]['count']):,} jobs)
+- **{top_3.iloc[2]['skill']}**: **+{int(top_3.iloc[2]['premium'])}%** salary ({int(top_3.iloc[2]['count']):,} jobs)
+"""
+
+display(Markdown(callout_text))
+```
+
+```{python}
+#| label: skills-analysis
+#| echo: false
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_skills_premium_analysis()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_skills_premium")
+```
+
+::: {.notes}
+The skill gap is real. Employers want cloud computing (AWS, Kubernetes), modern ML tools, and containerization. These aren't typically taught in undergrad. This is why many pursue Master's degrees or boot camps.
+:::
+
+---
+
+## Machine Learning Insights {.smaller}
+
+```{python}
+#| label: ml-feature-importance
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 5
+#| unless-format: docx, pdf
+
+fig = pcharts.create_feature_importance()
+# Ensure chart uses full width and auto-scales properly with reduced height
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=400,
+    margin=dict(l=50, r=50, t=60, b=40)
+)
+display_figure(fig, "presentation_ml_feature_importance")
+```
+
+### 💡 The ML Insight
+
+#### **Job title is #1** (35% importance). **83% accuracy** predicting salary from 72K+ jobs.
+
+**Our ML model reveals job title matters most (35%), followed by industry and location. You can control these factors through strategic career choices.**
+
+---
+
+## The $278K Question: Is A Master's Degree Worth It?
+
+### The Setup
+
+Your friend got a job at $110K. You went to grad school. Two years later, you graduate with $50K debt—and they've earned $220K. Are you behind?
+
+```{python}
+#| label: masters-roi
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+# Calculate breakeven for display
+bachelor_salary = median_salary
+master_salary = bachelor_salary * 1.20
+tuition = 50000
+years_in_program = 2
+foregone_earnings = bachelor_salary * years_in_program
+total_cost = tuition + foregone_earnings
+annual_premium = master_salary - bachelor_salary
+breakeven = int(total_cost / annual_premium)
+
+fig = pcharts.create_masters_roi(median_salary)
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_masters_roi")
+
+# Display the math callout with calculated values
+from IPython.display import Markdown, display
+
+math_text = f"""
+::: {{.callout-important}}
+## The Math
+
+**Real cost: ${int(total_cost/1000)}K** (tuition $50K + foregone earnings ${int(foregone_earnings/1000)}K). Salary premium: **20%** (${int(annual_premium/1000)}K/year). **Breakeven: {breakeven} years**.
+:::
+"""
+
+display(Markdown(math_text))
+```
+
+::: {.fragment}
+💡 **Job Seeker Insight**: Master's is an **investment**, not a guarantee. It pays off if you stay in the field 12+ years AND leverage the skills. Career switchers benefit most.
+:::
+
+::: {.notes}
+The Master's degree ROI calculation: $50K tuition + $228K foregone earnings = $278K total cost. With a 20% salary premium ($22K/year), you break even after 12 years. But here's the nuance: Master's degrees aren't about immediate ROI—they're about career ceiling. You need it for ML engineer, data scientist, research roles. It's the cost of entry to higher-paying career tracks.
+:::
+
+---
+
+## Your Career Action Plan {.smaller}
+
+```{python}
+#| label: action-plan-roadmap
+#| echo: false
+#| eval: True
+#| fig-width: 12
+#| fig-height: 6
+#| unless-format: docx, pdf
+
+fig = pcharts.create_action_plan_roadmap()
+# Ensure chart uses full width and auto-scales properly
+fig.update_layout(
+    autosize=True,
+    width=None,
+    height=500,
+    margin=dict(l=50, r=50, t=80, b=50)
+)
+display_figure(fig, "presentation_action_plan")
+```
+
+### 💡 Your Action Plan
+**Focus on what you control**: Location, industry, skills, and experience. Data shows clear patterns to success.
+
+::: {.notes}
+These recommendations are directly from our data analysis. Focus on what you can control: location choice, industry, skills, and experience accumulation.
+:::
+
+---
+
+## Your Data-Driven Career Strategy
+
+### The Three Levers You Control
+
+🎯 **Location** → Choose strategically or go remote
+🎯 **Industry** → Tech pays 78% more
+🎯 **Skills** → Cloud + ML = 30% salary boost
+
+### The One Thing You Can't Skip
+
+⏰ **Experience** → Time compounds, start now
+
+### The Bottom Line
+
+**Career success is predictable—if you use data, not guesswork**
+
+---
+
+## Questions? {.center}
+
+::: {.r-fit-text}
+**Thank you!**
+:::
+
+📧 **Contact**: Saurabh Sharma & Haocun Wang
+
+🔗 **Live Dashboard**: [Career Intelligence Platform](index.html)
+
+📊 **Full Report**: [Complete Analysis](tech-career-intelligence-report.html)
+
+💡 **Methodology**: [Technical Details](methodology.qmd)
+
+::: {.fragment}
+### One Final Thought
+
+*"The best time to start your career was 5 years ago. The second best time is today—armed with data."*
+:::
+
+::: {.notes}
+We've transformed 72,000 job postings into actionable career intelligence. Our thesis proved true: career outcomes follow predictable patterns. You can't control time, but you can control location, industry, and skills. Use this data to make strategic decisions, not emotional guesses. Your career is too important to leave to chance.
+:::
+

@@ -9,6 +9,7 @@ format:
     code-tools: true
     embed-resources: true
     css: styles.css
+    self-contained: true
 execute:
   echo: false
   warning: false
@@ -22,19 +23,35 @@ This page provides comprehensive salary analysis based on processed job market d
 ```{python}
 #| label: data-loading
 #| echo: false
+#| output: false
 
 # Load data using the website processor
 from src.data.website_processor import get_processed_dataframe, get_analysis_results, get_website_data_summary
+from src.visualization.charts import display_figure
 
 # Get processed data
 df = get_processed_dataframe()
 analysis = get_analysis_results()
 summary = get_website_data_summary()
+```
 
-print(f"Loaded {summary['total_records']:,} records")
-print(f"Salary coverage: {summary['salary_coverage']:.1f}%")
-print(f"Industries: {summary['unique_industries']}")
-print(f"Locations: {summary['unique_locations']}")
+```{python}
+#| label: data-summary
+#| echo: false
+#| output: asis
+
+from IPython.display import Markdown, display
+
+summary_text = f"""
+**Data Loaded:**
+
+- **Total Records**: {summary['total_records']:,}
+- **Salary Coverage**: {summary['salary_coverage']:.1f}%
+- **Industries**: {summary['unique_industries']}
+- **Locations**: {summary['unique_locations']}
+"""
+
+display(Markdown(summary_text))
 ```
 
 ## Key Salary Metrics
@@ -75,13 +92,10 @@ except Exception as e:
 #| echo: false
 
 # Display salary distribution chart
-from src.data.website_processor import get_figure_paths
-figures = get_figure_paths()
-
 from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 fig = dashboard.create_company_strategy_analysis()
-fig.show()
+display_figure(fig, "salary_distribution_analysis")
 ```
 
 ## Experience Level Analysis
@@ -112,12 +126,13 @@ try:
         plot_bgcolor='white',
         paper_bgcolor='white'
     )
-    exp_fig.show()
+    display_figure(exp_fig, "experience_level_analysis")
 
     # Display key insights from the analysis
     if exp_analysis and 'summary' in exp_analysis:
         summary_data = exp_analysis['summary']
         markdown_content = "\n### Experience Level Insights:\n\n"
+        markdown_content += "*These statistics are calculated from the [Experience Level Analysis chart](#experience-level-analysis) above.*\n\n"
         for level, data in summary_data.items():
             median_salary = data.get('median', 0)
             job_count = data.get('count', 0)
@@ -163,12 +178,13 @@ try:
         plot_bgcolor='white',
         paper_bgcolor='white'
     )
-    industry_fig.show()
+    display_figure(industry_fig, "industry_salary_analysis")
 
     # Get industry analysis data
     industry_data = visualizer.get_industry_salary_analysis(top_n=10)
     if not industry_data.empty:
         markdown_content = "\n### Top Industries by Salary:\n\n"
+        markdown_content += "*These statistics are derived from the [Industry Salary Analysis chart](#industry-analysis) above.*\n\n"
         for _, row in industry_data.head(5).iterrows():
             industry = row.get('Industry', 'Unknown')
             salary = row.get('Median Salary', 0)
@@ -210,12 +226,13 @@ try:
         width=None,
         font=dict(size=14)
     )
-    geo_fig.show()
+    display_figure(geo_fig, "geographic_salary_analysis")
 
     # Get geographic analysis data from abstraction layer
     geo_data = visualizer.get_geographic_salary_analysis(top_n=15)
     if not geo_data.empty:
         markdown_content = "\n### Top Geographic Markets:\n\n"
+        markdown_content += "*These statistics are calculated from the [Geographic Salary Analysis chart](#geographic-analysis) above.*\n\n"
         for _, row in geo_data.head(5).iterrows():
             location = row.get('Location', 'Unknown')
             salary = row.get('Median Salary', 0)
@@ -227,6 +244,54 @@ try:
 except Exception as e:
     display(Markdown(f"*Geographic analysis error: {e}*\n\n*Geographic analysis temporarily unavailable*"))
 ```
+
+### Interactive Geographic Map
+
+Explore job locations and salary distribution across the United States. Each marker represents a city, with size indicating job volume and color representing median salary.
+
+# Create interactive map showing job distribution and salary by location
+```{python}
+#| label: geographic-map-setup
+#| echo: false
+
+from src.visualization.charts import SalaryVisualizer, display_figure
+
+# Create visualizer
+vis = SalaryVisualizer(df)
+```
+
+# Create interactive Folium map for HTML
+::: {.content-hidden unless-format="html"}
+```{python}
+#| label: geographic-map-folium
+#| echo: false
+
+folium_map = vis.create_folium_salary_map(top_n=500, height=650)
+folium_map
+```
+:::
+
+# Create static Plotly map for DOCX/PDF/PPT
+::: {.content-hidden unless-format="docx pdf pptx"}
+```{python}
+#| label: geographic-map-plotly
+#| echo: false
+#| fig-format: png
+
+geo_map = vis.create_plotly_geographic_map(top_n=500, height=650)
+geo_map
+```
+:::
+
+
+**Key Geographic Insights:**
+
+- **Technology Hubs**: West Coast cities (SF, Seattle) show highest concentration of high-paying tech jobs
+- **Emerging Markets**: Austin, Denver, and Charlotte show rapid growth in job postings
+- **Remote Impact**: Cities with lower cost of living are attracting remote workers with competitive salaries
+- **Regional Clusters**: Clear clusters around major metropolitan areas with premium salaries
+
+---
 
 ## Correlation Analysis
 
@@ -254,7 +319,7 @@ try:
         width=None,
         font=dict(size=14)
     )
-    corr_fig.show()
+    display_figure(corr_fig, "salary_correlation_matrix")
 
     markdown_content = """
 ### Key Insights from Correlation Analysis:
@@ -281,20 +346,12 @@ from src.visualization.key_findings_dashboard import KeyFindingsDashboard
 dashboard = KeyFindingsDashboard(df)
 
 fig = dashboard.create_complete_intelligence_dashboard()
-fig.show()
+display_figure(fig, "complete_intelligence_dashboard")
 ```
 
 ## Summary
 
 This analysis provides comprehensive insights into salary trends across experience levels, industries, and geographic locations. The data processing pipeline ensures that all analysis is based on clean, validated data with automatic figure generation.
-
-### Key findings:
-
-   - **Data Quality**: High salary coverage ensures reliable analysis
-   - **Experience Impact**: Clear salary progression with experience level
-   - **Industry Variation**: Significant salary differences across industries
-   - **Geographic Trends**: Location-based salary variations
-   - **Interactive Insights**: Comprehensive dashboard for detailed exploration
 
 ---
 

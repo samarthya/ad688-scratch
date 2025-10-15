@@ -5,12 +5,24 @@ This module provides consolidated chart generation capabilities
 combining functionality from multiple visualization modules.
 """
 
-import pandas as pd
+# Standard library imports
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+# Third-party imports
+import folium
+from folium.plugins import MarkerCluster, HeatMap
 import numpy as np
-from typing import Dict, List, Optional, Any
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 from plotly.subplots import make_subplots
+
+# Local imports
+from src.utils.logger import get_logger
+
+logger = get_logger(level="WARNING")
 
 # Optional dependencies
 try:
@@ -20,6 +32,47 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 from .theme import JobMarketTheme, apply_salary_theme, apply_industry_theme, apply_experience_theme, apply_geographic_theme
+
+
+def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures/'):
+    """
+    Display and optionally save a Plotly figure.
+
+    This is a standalone utility function for use in Quarto documents and notebooks.
+    Returns the figure object so Quarto can automatically render it in the correct format.
+
+    Args:
+        fig: Plotly figure object
+        filename: Optional filename (without extension) to save the figure as PNG/SVG/HTML
+        save_dir: Directory to save figures (default: 'figures/')
+
+    Returns:
+        The figure object (Quarto automatically converts to HTML or PNG based on output format)
+
+    Example:
+        >>> fig = go.Figure(...)
+        >>> display_figure(fig, "my_chart")  # Saves and returns fig for Quarto to render
+    """
+    if filename:
+        png_path = Path(save_dir) / f"{filename}.png"
+        svg_path = Path(save_dir) / f"{filename}.svg"
+        html_path = Path(save_dir) / f"{filename}.html"
+
+        png_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save static images for both HTML and DOCX formats
+
+        # High-quality PNG for DOCX (higher DPI and scale)
+        fig.write_image(str(png_path), width=1200, height=800, scale=3, format='png')
+        # SVG
+        fig.write_image(str(svg_path), width=1200, height=800, format='svg')
+
+        # HTML
+        fig.write_html(str(html_path))
+
+    # Return the figure object - Quarto will automatically render it
+    # in the appropriate format (interactive HTML for .html, static PNG for .docx)
+    return fig
 
 
 class SalaryVisualizer:
@@ -60,7 +113,7 @@ class SalaryVisualizer:
             import os
             filepath = os.path.join(self.save_dir, f"{name}.html")
             fig.write_html(filepath)
-            print(f"  [AUTO-SAVE] {filepath}")
+            logger.info(f"  [AUTO-SAVE] {filepath}")
 
     def save_figure(self, fig, name: str, output_dir: Optional[str] = None, formats: list = ['html']) -> Dict[str, str]:
         """
@@ -98,8 +151,8 @@ class SalaryVisualizer:
                         fig.write_image(filepath, width=1200, height=800)
                     saved_files[fmt] = filepath
                 except Exception as e:
-                    print(f"  [WARNING] Could not save {fmt} format: {e}")
-                    print(f"  [INFO] Install kaleido for static image export: pip install kaleido")
+                    logger.info(f"Could not save {fmt} format: {e}")
+                    logger.info(f"Install kaleido for static image export: pip install kaleido")
 
         return saved_files
 
@@ -122,15 +175,15 @@ class SalaryVisualizer:
         if salary_col not in self.df.columns:
             raise ValueError('Salary column not found in dataset. Cannot perform experience analysis without salary data.')
 
-        salary_series = self.df[salary_col].dropna()  # Pipeline should have cleaned this
-        valid_salary_mask = salary_series.notna() & (salary_series > 0)
+        # Create mask DIRECTLY from original DataFrame (maintains index alignment)
+        valid_salary_mask = self.df[salary_col].notna() & (self.df[salary_col] > 0)
 
         if valid_salary_mask.sum() == 0:
             raise ValueError('No valid salary data found for experience analysis. All salary values are missing or invalid.')
 
         # Create a clean dataframe with valid salary data
         clean_df = self.df[valid_salary_mask].copy()
-        clean_df['SALARY_AVG_CLEAN'] = salary_series[valid_salary_mask]
+        clean_df['SALARY_AVG_CLEAN'] = clean_df[salary_col]
 
         # Check if we have experience-related columns
         experience_columns = [col for col in clean_df.columns if any(exp in col.lower() for exp in ['experience', 'level', 'seniority', 'years'])]
@@ -197,16 +250,16 @@ class SalaryVisualizer:
             # Use standardized column names from config
             from src.config.column_mapping import get_analysis_column
 
-            # Get industry column (returns 'naics2_name' after processing)
+            # Get industry column (returns 'industry' after processing)
             industry_col = get_analysis_column('industry')
             if industry_col not in self.df.columns:
                 # Fallback to common industry columns (all snake_case)
-                for col in ['naics2_name', 'industry', 'naics3_name']:
+                for col in ['industry', 'naics3_name', 'naics4_name']:
                     if col in self.df.columns:
                         industry_col = col
                         break
                 else:
-                    print("No industry column found for analysis")
+                    logger.info("No industry column found for analysis")
                     return pd.DataFrame()
 
             # Get salary column (returns 'salary_avg' after processing)
@@ -219,11 +272,9 @@ class SalaryVisualizer:
                 'count', 'mean', 'median', 'std', 'min', 'max'
             ]).reset_index()
 
-            # Filter out invalid industries
-            industry_analysis = industry_analysis[
-                (industry_analysis[industry_col].notna()) &
-                (industry_analysis['count'] >= 5)  # At least 5 jobs per industry
-            ]
+            # Filter out invalid industries - create mask from same DataFrame
+            valid_industry_mask = (industry_analysis[industry_col].notna()) & (industry_analysis['count'] >= 5)
+            industry_analysis = industry_analysis[valid_industry_mask].copy()
 
             # Sort by median salary and get top N
             industry_analysis = industry_analysis.sort_values('median', ascending=False).head(top_n)
@@ -242,7 +293,7 @@ class SalaryVisualizer:
             return industry_analysis
 
         except Exception as e:
-            print(f"Industry analysis error: {e}")
+            logger.error(f"Industry analysis error: {e}")
             return pd.DataFrame()
 
     def get_overall_statistics(self) -> Dict[str, Any]:
@@ -308,7 +359,7 @@ class SalaryVisualizer:
 
         # Fallback to available salary columns
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
@@ -354,19 +405,19 @@ class SalaryVisualizer:
 
         # Fallback to available title columns
         if title_col not in self.df.columns:
-            for candidate in ['title', 'title_name', 'title_clean', 'TITLE_NAME']:
+            for candidate in ['title', 'title_name', 'title_clean']:
                 if candidate in self.df.columns:
                     title_col = candidate
                     break
             else:
-                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean, TITLE_NAME')
+                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean')
 
         # Get salary column using standardized configuration
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         # Fallback to available salary columns
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
@@ -437,19 +488,19 @@ class SalaryVisualizer:
 
         # Fallback to available title columns
         if title_col not in self.df.columns:
-            for candidate in ['title', 'title_name', 'title_clean', 'TITLE_NAME']:
+            for candidate in ['title', 'title_name', 'title_clean']:
                 if candidate in self.df.columns:
                     title_col = candidate
                     break
             else:
-                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean, TITLE_NAME')
+                raise ValueError(f'Title column not found in dataset. Checked: title, title_name, title_clean')
 
         # Get salary column using standardized configuration
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         # Fallback to available salary columns
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
@@ -630,7 +681,7 @@ class SalaryVisualizer:
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
@@ -842,7 +893,7 @@ class SalaryVisualizer:
         # Check for any remaining invalid salary data (should be rare after pipeline processing)
         invalid_salary_count = clean_df[salary_col].isna().sum()
         if invalid_salary_count > 0:
-            print(f"Warning: Found {invalid_salary_count:,} records with missing salary data after pipeline processing")
+            logger.info(f"Found {invalid_salary_count:,} records with missing salary data after pipeline processing")
             clean_df = clean_df.dropna(subset=[salary_col])
 
         if len(clean_df) == 0:
@@ -915,7 +966,7 @@ class SalaryVisualizer:
         salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
 
         if salary_col not in self.df.columns:
-            for candidate in ['salary_avg', 'salary', 'SALARY_AVG']:
+            for candidate in ['salary_avg', 'salary']:
                 if candidate in self.df.columns:
                     salary_col = candidate
                     break
@@ -958,6 +1009,318 @@ class SalaryVisualizer:
 
         return fig
 
+    def create_salary_distribution_histogram(self):
+        """Create salary distribution histogram with median line."""
+        import plotly.express as px
+        import plotly.graph_objects as go
+
+        # Get salary column using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')  # Returns 'salary_avg'
+
+        if salary_col not in self.df.columns:
+            # Only snake_case fallbacks (data is processed)
+            for candidate in ['salary_avg', 'salary']:
+                if candidate in self.df.columns:
+                    salary_col = candidate
+                    break
+            else:
+                raise ValueError(f'salary_avg column not found in dataset. Available columns: {list(self.df.columns)[:20]}')
+
+        # Create salary distribution visualization (simplified to avoid Kaleido issues)
+        fig = px.histogram(
+            self.df,
+            x=salary_col,
+            nbins=20,  # Reduced bins
+            title="Salary Distribution in Tech Job Market",
+            labels={salary_col: "Annual Salary ($)"},
+            color_discrete_sequence=['#3498db']
+        )
+
+        # Add median line
+        median_salary = self.df[salary_col].median()
+        fig.add_vline(
+            x=median_salary,
+            line_dash="dash",
+            line_color="red",
+            annotation_text=f"Median: ${median_salary:,.0f}",
+            annotation_position="top"
+        )
+
+        fig.update_layout(
+            height=500,
+            showlegend=False,
+            xaxis_title="Annual Salary ($)",
+            yaxis_title="Number of Jobs"
+        )
+
+        return fig
+
+    def create_geographic_salary_bar_chart(self):
+        """Create simple bar chart for top cities by median salary."""
+        import plotly.graph_objects as go
+
+        # Get columns using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')
+        city_col = get_analysis_column('city')
+
+        if salary_col not in self.df.columns:
+            salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'salary'
+        if city_col not in self.df.columns:
+            city_col = 'city_name' if 'city_name' in self.df.columns else 'city'
+
+        # Get top 10 cities by median salary
+        city_salaries = self.df.groupby(city_col)[salary_col].median().sort_values(ascending=False).head(10)
+
+        fig = go.Figure(data=[
+            go.Bar(
+                x=city_salaries.index,
+                y=city_salaries.values,
+                text=[f'${s:,.0f}' for s in city_salaries.values],
+                textposition='outside',
+                marker_color='lightblue'
+            )
+        ])
+
+        fig.update_layout(
+            title="Top 10 Cities by Median Salary",
+            xaxis_title="City",
+            yaxis_title="Median Salary ($)",
+            height=500,
+            xaxis=dict(tickangle=-45)
+        )
+
+        return fig
+
+    def create_experience_analysis_data(self):
+        """Create experience analysis data for reports."""
+        # Calculate experience statistics from actual data
+        # Use processed column names (all lowercase after ETL)
+        exp_col = 'experience_level'
+        salary_col = 'salary_avg'
+
+        # Validate salary column exists
+        if salary_col not in self.df.columns:
+            raise ValueError(f"ERROR: Required column '{salary_col}' not found in dataframe. Available columns: {self.df.columns.tolist()}")
+
+        # Calculate from actual data
+        exp_stats = self.df.groupby(exp_col)[salary_col].agg(['median', 'count']).sort_values('median')
+        levels = exp_stats.index.tolist()
+        salaries = exp_stats['median'].tolist()
+        counts = exp_stats['count'].tolist()
+
+        # Calculate growth rates
+        growth_rates = []
+        for i in range(1, len(salaries)):
+            growth = ((salaries[i] - salaries[i-1]) / salaries[i-1]) * 100
+            growth_rates.append(growth)
+
+        # Statistics table data
+        total_jobs = sum(counts)
+        salary_coverage = (sum(counts) / len(self.df)) * 100
+
+        # Create table data
+        table_data = []
+        for i, level in enumerate(levels):
+            if i < len(growth_rates):
+                growth = growth_rates[i]
+            else:
+                growth = 0
+
+            table_data.append({
+                'Level': level,
+                'Median Salary': f"${salaries[i]:,.0f}",
+                'Jobs': f"{counts[i]:,}",
+                'Growth': f"{growth:.1f}%" if i > 0 else "N/A"
+            })
+
+        return {
+            'levels': levels,
+            'salaries': salaries,
+            'counts': counts,
+            'growth_rates': growth_rates,
+            'table_data': table_data,
+            'total_jobs': total_jobs,
+            'salary_coverage': salary_coverage
+        }
+
+    def create_experience_salary_progression_chart(self, levels, salaries):
+        """Create salary progression bar chart for DOCX format."""
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=levels, y=salaries,
+            marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+            text=[f'${s:,.0f}' for s in salaries],
+            textposition='outside', textfont=dict(size=14)
+        ))
+
+        fig.update_layout(
+            title="Salary Progression by Experience Level",
+            title_x=0.5, title_font_size=18,
+            xaxis_title="Experience Level", yaxis_title="Median Salary ($)",
+            height=500, font=dict(size=12),
+            margin=dict(l=80, r=80, t=100, b=80),
+            plot_bgcolor='white', paper_bgcolor='white', showlegend=False
+        )
+
+        return fig
+
+    def create_experience_job_distribution_chart(self, levels, counts):
+        """Create job market distribution pie chart for DOCX format."""
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+        fig.add_trace(go.Pie(
+            labels=levels, values=counts,
+            marker_colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+            textinfo='label+percent', textfont=dict(size=13), hole=0.3
+        ))
+
+        fig.update_layout(
+            title="Job Market Distribution by Experience Level",
+            title_x=0.5, title_font_size=18,
+            height=500, font=dict(size=12),
+            margin=dict(l=80, r=80, t=100, b=80),
+            plot_bgcolor='white', paper_bgcolor='white'
+        )
+
+        return fig
+
+    def create_experience_growth_trajectory_chart(self, levels, growth_rates):
+        """Create growth trajectory line chart for DOCX format."""
+        import plotly.graph_objects as go
+
+        # Create growth trajectory data
+        growth_levels = levels[1:]  # Skip first level (no growth from previous)
+        growth_values = growth_rates + [0]  # Add 0 for last level
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=growth_levels, y=growth_values,
+            mode='lines+markers+text',
+            line=dict(color='#2ca02c', width=3),
+            marker=dict(size=10, color='#2ca02c'),
+            text=[f'{g:.1f}%' for g in growth_values],
+            textposition='top center', textfont=dict(size=12, color='#2ca02c')
+        ))
+
+        fig.update_layout(
+            title="Salary Growth Trajectory Between Levels",
+            title_x=0.5, title_font_size=18,
+            xaxis_title="Experience Level", yaxis_title="Growth Rate (%)",
+            height=500, font=dict(size=12),
+            margin=dict(l=80, r=80, t=100, b=80),
+            plot_bgcolor='white', paper_bgcolor='white', showlegend=False,
+            yaxis=dict(showgrid=True, gridcolor='lightgray')
+        )
+
+        return fig
+
+    def create_experience_statistics_table_chart(self, table_data):
+        """Create statistics table chart for DOCX format."""
+        import plotly.graph_objects as go
+
+        # Extract data for table
+        levels = [row[0] for row in table_data]
+        salaries = [row[1] for row in table_data]
+        jobs = [row[2] for row in table_data]
+        percentages = [row[3] for row in table_data]
+
+        fig = go.Figure(data=[go.Table(
+            header=dict(
+                values=['<b>Experience Level</b>', '<b>Median Salary</b>', '<b>Job Count</b>', '<b>Market Share</b>'],
+                fill_color='#4472C4', font=dict(color='white', size=14),
+                align='center', height=40
+            ),
+            cells=dict(
+                values=[levels, salaries, jobs, percentages],
+                fill_color=['white', '#F2F2F2', 'white', '#F2F2F2'],
+                font=dict(size=12), align='center', height=35
+            )
+        )])
+
+        fig.update_layout(
+            title="Experience Level Statistics Summary",
+            title_x=0.5, title_font_size=18,
+            height=400, font=dict(size=12),
+            margin=dict(l=80, r=80, t=100, b=80),
+            plot_bgcolor='white', paper_bgcolor='white'
+        )
+
+        return fig
+
+    def create_employment_remote_heatmap(self):
+        """Create employment type vs remote work salary heatmap."""
+        import plotly.graph_objects as go
+        import numpy as np
+
+        # Get columns using standardized configuration
+        from src.config.column_mapping import get_analysis_column
+        salary_col = get_analysis_column('salary')
+        emp_col = get_analysis_column('employment_type')
+        remote_col = get_analysis_column('remote_type')
+
+        if salary_col not in self.df.columns:
+            salary_col = 'salary_avg' if 'salary_avg' in self.df.columns else 'salary'
+        if emp_col not in self.df.columns:
+            emp_col = 'employment_type' if 'employment_type' in self.df.columns else 'employment_type_name'
+        if remote_col not in self.df.columns:
+            remote_col = 'remote_type' if 'remote_type' in self.df.columns else 'remote_type_name'
+
+        # Create combined analysis
+        combined = self.df.groupby([emp_col, remote_col])[salary_col].agg([
+            ('count', 'count'),
+            ('median', 'median')
+        ]).reset_index()
+
+        # Filter for meaningful combinations (at least 50 records)
+        combined = combined[combined['count'] >= 50]
+
+        # Pivot for heatmap
+        pivot_data = combined.pivot(
+            index=emp_col,
+            columns=remote_col,
+            values='median'
+        )
+
+        if not pivot_data.empty:
+            fig = go.Figure(data=go.Heatmap(
+                z=pivot_data.values,
+                x=pivot_data.columns,
+                y=pivot_data.index,
+                colorscale='Viridis',
+                text=[[f'${v:,.0f}' if not np.isnan(v) else 'N/A' for v in row] for row in pivot_data.values],
+                texttemplate='%{text}',
+                textfont={"size": 12},
+                colorbar=dict(title="Median<br>Salary ($)")
+            ))
+
+            fig.update_layout(
+                title="Salary Heatmap: Employment Type × Remote Work",
+                xaxis_title="Remote Work Type",
+                yaxis_title="Employment Type",
+                height=500,
+                title_x=0.5,
+                title_font_size=18,
+                font=dict(size=12),
+                margin=dict(l=200, r=100, t=100, b=100),
+                plot_bgcolor='white',
+                paper_bgcolor='white'
+            )
+
+            return fig
+        else:
+            # Return empty figure if no data
+            fig = go.Figure()
+            fig.update_layout(
+                title="No sufficient data for employment/remote work heatmap",
+                height=500
+            )
+            return fig
+
     def create_correlation_matrix(self):
         """Create correlation matrix heatmap focusing on salary-related features."""
         import plotly.express as px
@@ -968,7 +1331,7 @@ class SalaryVisualizer:
             # Focus on salary-related and key numeric columns
             # Priority: salary columns, experience, and ID-based classifications
             priority_cols = [
-                'salary_avg', 'salary_from', 'salary_to',
+                'salary_avg', 'salary_min', 'salary_max',
                 'min_years_experience', 'max_years_experience',
                 'min_edulevels', 'max_edulevels',
                 'duration', 'modeled_duration'
@@ -1047,7 +1410,7 @@ class SalaryVisualizer:
             return fig
 
     def create_key_findings_graphics(self, output_dir: str = 'figures/') -> Dict:
-        """Create key findings graphics."""
+        """Create key findings graphics with all formats (HTML, PNG, SVG)."""
         import os
         os.makedirs(output_dir, exist_ok=True)
 
@@ -1056,47 +1419,47 @@ class SalaryVisualizer:
         try:
             # Create salary distribution
             fig = self.plot_salary_distribution()
-            fig.write_html(os.path.join(output_dir, 'key_finding_salary_distribution.html'))
+            display_figure(fig, 'key_finding_salary_distribution', save_dir=output_dir)
             graphics['salary_distribution'] = 'key_finding_salary_distribution.html'
         except Exception as e:
-            print(f"Failed to create salary distribution: {e}")
+            logger.info(f"Failed to create salary distribution: {e}")
 
         try:
             # Create industry analysis using actual column name
-            industry_col = 'naics2_name' if 'naics2_name' in self.df.columns else None
+            industry_col = 'industry' if 'industry' in self.df.columns else None
             if industry_col:
                 fig = self.plot_salary_by_category(industry_col)
-                fig.write_html(os.path.join(output_dir, 'key_finding_industry_analysis.html'))
+                display_figure(fig, 'key_finding_industry_analysis', save_dir=output_dir)
                 graphics['industry_analysis'] = 'key_finding_industry_analysis.html'
             else:
-                print(f"Skipped industry analysis: no industry column found")
+                logger.info(f"Skipped industry analysis: no industry column found")
         except Exception as e:
-            print(f"Failed to create industry analysis: {e}")
+            logger.info(f"Failed to create industry analysis: {e}")
 
         try:
             # Create geographic analysis
             city_col = 'city_name' if 'city_name' in self.df.columns else None
             if city_col:
                 fig = self.plot_salary_by_category(city_col)
-                fig.write_html(os.path.join(output_dir, 'key_finding_geographic_analysis.html'))
+                display_figure(fig, 'key_finding_geographic_analysis', save_dir=output_dir)
                 graphics['geographic_analysis'] = 'key_finding_geographic_analysis.html'
             else:
-                print(f"Skipped geographic analysis: no city column found")
+                logger.info(f"Skipped geographic analysis: no city column found")
         except Exception as e:
-            print(f"Failed to create geographic analysis: {e}")
+            logger.info(f"Failed to create geographic analysis: {e}")
 
         try:
             # Create correlation matrix
             fig = self.create_correlation_matrix()
-            fig.write_html(os.path.join(output_dir, 'key_finding_correlation_matrix.html'))
+            display_figure(fig, 'key_finding_correlation_matrix', save_dir=output_dir)
             graphics['correlation_matrix'] = 'key_finding_correlation_matrix.html'
         except Exception as e:
-            print(f"Failed to create correlation matrix: {e}")
+            logger.info(f"Failed to create correlation matrix: {e}")
 
         return graphics
 
     def create_executive_dashboard_suite(self, output_dir: str = 'figures/') -> Dict:
-        """Create executive dashboard suite."""
+        """Create executive dashboard suite with all formats (HTML, PNG, SVG)."""
         import os
         os.makedirs(output_dir, exist_ok=True)
 
@@ -1105,22 +1468,22 @@ class SalaryVisualizer:
         try:
             # Create overview chart
             fig = self.plot_salary_distribution()
-            fig.write_html(os.path.join(output_dir, 'executive_dashboard_overview.html'))
+            display_figure(fig, 'executive_dashboard_overview', save_dir=output_dir)
             dashboard['overview'] = 'executive_dashboard_overview.html'
         except Exception as e:
-            print(f"Failed to create overview: {e}")
+            logger.info(f"Failed to create overview: {e}")
 
         try:
             # Create industry comparison using actual column name
-            industry_col = 'naics2_name' if 'naics2_name' in self.df.columns else None
+            industry_col = 'industry' if 'industry' in self.df.columns else None
             if industry_col:
                 fig = self.plot_salary_by_category(industry_col)
-                fig.write_html(os.path.join(output_dir, 'executive_dashboard_industry.html'))
+                display_figure(fig, 'executive_dashboard_industry', save_dir=output_dir)
                 dashboard['industry'] = 'executive_dashboard_industry.html'
             else:
-                print(f"Skipped industry dashboard: no industry column found")
+                logger.info(f"Skipped industry dashboard: no industry column found")
         except Exception as e:
-            print(f"Failed to create industry comparison: {e}")
+            logger.info(f"Failed to create industry comparison: {e}")
 
         return dashboard
 
@@ -1139,7 +1502,7 @@ class SalaryVisualizer:
                         city_col = col
                         break
                 else:
-                    print("No location column found for geographic analysis")
+                    logger.info("No location column found for geographic analysis")
                     return pd.DataFrame()
 
             # Get salary column (returns 'salary_avg' after processing)
@@ -1179,8 +1542,469 @@ class SalaryVisualizer:
             return geo_analysis
 
         except Exception as e:
-            print(f"Geographic analysis error: {e}")
+            logger.error(f"Geographic analysis error: {e}")
             return pd.DataFrame()
+
+    def create_geographic_salary_map(self, top_n: int = 1000, color_by: str = 'salary') -> go.Figure:
+        """
+        Create interactive map visualization of job locations.
+
+        Args:
+            top_n: Number of top cities to display (default 1000 for performance)
+            color_by: Color points by 'salary', 'industry', or 'experience'
+
+        Returns:
+            Plotly figure with interactive map
+        """
+        import pandas as pd
+        import json
+
+        # Parse location JSON if needed
+        df_map = self.df.copy()
+
+        # Extract lat/lon from location column if it's JSON
+        if 'location' in df_map.columns:
+            def extract_coords(loc):
+                if pd.isna(loc):
+                    return pd.Series({'lat': None, 'lon': None})
+                try:
+                    if isinstance(loc, dict):
+                        return pd.Series({'lat': loc.get('lat'), 'lon': loc.get('lon')})
+                    elif isinstance(loc, str):
+                        loc_dict = json.loads(loc)
+                        return pd.Series({'lat': loc_dict.get('lat'), 'lon': loc_dict.get('lon')})
+                except:
+                    return pd.Series({'lat': None, 'lon': None})
+                return pd.Series({'lat': None, 'lon': None})
+
+            coords = df_map['location'].apply(extract_coords)
+            df_map['lat'] = coords['lat']
+            df_map['lon'] = coords['lon']
+
+        # Filter to records with valid coordinates and salary
+        df_map = df_map[
+            df_map['lat'].notna() &
+            df_map['lon'].notna() &
+            df_map['salary_avg'].notna()
+        ].copy()
+
+        # Aggregate by city to reduce points and improve performance
+        city_col = 'city_name' if 'city_name' in df_map.columns else None
+
+        if city_col and city_col in df_map.columns:
+            # Group by city and aggregate
+            city_agg = df_map.groupby(city_col).agg({
+                'lat': 'first',
+                'lon': 'first',
+                'salary_avg': 'median',
+                city_col: 'count'  # job count
+            }).rename(columns={city_col: 'job_count'})
+
+            city_agg = city_agg.reset_index()
+            city_agg = city_agg.sort_values('job_count', ascending=False).head(top_n)
+        else:
+            # Use individual points (sample if too many)
+            if len(df_map) > top_n:
+                city_agg = df_map.sample(top_n, random_state=42)
+            else:
+                city_agg = df_map
+            city_agg['job_count'] = 1
+
+        # Create figure
+        fig = go.Figure()
+
+        # Add scatter mapbox
+        fig.add_trace(go.Scattermapbox(
+            lat=city_agg['lat'],
+            lon=city_agg['lon'],
+            mode='markers',
+            marker=dict(
+                size=city_agg['job_count'].apply(lambda x: min(x/20 + 5, 30)),  # Size by job count
+                color=city_agg['salary_avg'],
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(
+                    title="Median<br>Salary ($)",
+                    thickness=15,
+                    len=0.7,
+                    x=1.02
+                ),
+                opacity=0.7,
+                sizemode='diameter'
+            ),
+            text=city_agg.apply(lambda row:
+                f"{row[city_col] if city_col in row else 'Location'}<br>" +
+                f"Median Salary: ${row['salary_avg']:,.0f}<br>" +
+                f"Jobs: {int(row['job_count']):,}",
+                axis=1
+            ),
+            hovertemplate='%{text}<extra></extra>',
+            name='Jobs'
+        ))
+
+        # Update layout for map with explicit interactivity settings
+        fig.update_layout(
+            title=dict(
+                text="Interactive Job Market Map: Salary by Location",
+                x=0.5,
+                xanchor='center',
+                font=dict(size=20)
+            ),
+            mapbox=dict(
+                style='open-street-map',  # Free, no API key required
+                center=dict(lat=39.8283, lon=-98.5795),  # Center of USA
+                zoom=3.5
+            ),
+            height=700,
+            margin=dict(l=0, r=0, t=60, b=0),
+            hovermode='closest',
+            showlegend=False,
+            # Explicitly enable interactive controls
+            dragmode='zoom',  # Enable click-and-drag to zoom
+            modebar=dict(
+                orientation='v',
+                bgcolor='rgba(255,255,255,0.8)',
+                color='rgba(0,0,0,0.7)',
+                activecolor='rgba(0,120,212,1)'
+            )
+        )
+
+        # Configure modebar buttons for better UX
+        config = {
+            'displayModeBar': True,  # Always show modebar
+            'displaylogo': False,    # Hide Plotly logo
+            'modeBarButtonsToAdd': ['drawopenpath', 'eraseshape'],
+            'modeBarButtonsToRemove': [],
+            'scrollZoom': True,      # Enable scroll wheel zoom
+        }
+
+        # Store config in figure for Quarto rendering
+        fig.layout.updatemenus = []  # Clear any update menus
+
+        return fig
+
+    def create_plotly_geographic_map(self, top_n: int = 1000, height: int = 600) -> go.Figure:
+        """
+        Create Plotly geographic map visualization of job locations.
+
+        This is DOCX-compatible alternative to Folium maps.
+
+        Args:
+            top_n: Number of top cities to display (default 1000)
+            height: Map height in pixels (default 600)
+
+        Returns:
+            Plotly figure object
+        """
+        import pandas as pd
+        import json
+
+        # Parse location JSON if needed
+        df_map = self.df.copy()
+
+        # Extract lat/lon from location column if it's JSON
+        if 'location' in df_map.columns:
+            def extract_coords(loc):
+                if pd.isna(loc):
+                    return pd.Series({'lat': None, 'lon': None})
+                try:
+                    if isinstance(loc, dict):
+                        return pd.Series({'lat': loc.get('lat'), 'lon': loc.get('lon')})
+                    elif isinstance(loc, str):
+                        loc_dict = json.loads(loc)
+                        return pd.Series({'lat': loc_dict.get('lat'), 'lon': loc_dict.get('lon')})
+                except:
+                    return pd.Series({'lat': None, 'lon': None})
+                return pd.Series({'lat': None, 'lon': None})
+
+            coords = df_map['location'].apply(extract_coords)
+            df_map['lat'] = coords['lat']
+            df_map['lon'] = coords['lon']
+
+        # Compute salary_avg if it doesn't exist or is empty
+        if 'salary_avg' not in df_map.columns or df_map['salary_avg'].notna().sum() == 0:
+            # Try to compute from salary_min and salary_max
+            if 'salary_min' in df_map.columns and 'salary_max' in df_map.columns:
+                df_map['salary_avg'] = (df_map['salary_min'] + df_map['salary_max']) / 2
+            elif 'salary_single' in df_map.columns:
+                df_map['salary_avg'] = df_map['salary_single']
+            else:
+                # Fallback: use median salary for all records
+                df_map['salary_avg'] = 100000  # Default salary
+
+        # Filter out records without coordinates
+        df_map = df_map.dropna(subset=['lat', 'lon'])
+
+        if len(df_map) == 0:
+            # Fallback: create a simple text-based visualization
+            fig = go.Figure()
+            fig.add_annotation(
+                text="Geographic data not available for visualization",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=16, color="gray")
+            )
+            fig.update_layout(
+                title="Job Market Geographic Distribution",
+                height=height,
+                showlegend=False
+            )
+            return fig
+
+        # Group by city and calculate statistics
+        city_stats = df_map.groupby(['city_name', 'lat', 'lon']).agg({
+            'salary_avg': ['median', 'count'],
+            'title': 'count'
+        }).round(0)
+
+        # Flatten column names
+        city_stats.columns = ['median_salary', 'job_count', 'total_jobs']
+        city_stats = city_stats.reset_index()
+
+        # Filter to top cities by job count
+        city_stats = city_stats.nlargest(top_n, 'job_count')
+
+        # Create size mapping (job count to marker size)
+        min_size, max_size = 5, 50
+        city_stats['marker_size'] = (
+            (city_stats['job_count'] - city_stats['job_count'].min()) /
+            (city_stats['job_count'].max() - city_stats['job_count'].min()) *
+            (max_size - min_size) + min_size
+        )
+
+        # Create color mapping (salary to color)
+        min_salary = city_stats['median_salary'].min()
+        max_salary = city_stats['median_salary'].max()
+
+        # Create the scatter plot
+        fig = go.Figure()
+
+        fig.add_trace(go.Scattermapbox(
+            lat=city_stats['lat'],
+            lon=city_stats['lon'],
+            mode='markers',
+            marker=dict(
+                size=city_stats['marker_size'],
+                color=city_stats['median_salary'],
+                colorscale='Viridis',
+                colorbar=dict(
+                    title="Median Salary ($)",
+                    x=1.02
+                ),
+                opacity=0.7
+            ),
+            text=city_stats.apply(lambda row:
+                f"{row['city_name']}<br>"
+                f"Jobs: {row['job_count']:,}<br>"
+                f"Median Salary: ${row['median_salary']:,.0f}", axis=1),
+            hovertemplate='%{text}<extra></extra>',
+            name='Job Markets'
+        ))
+
+        # Update layout
+        fig.update_layout(
+            title=dict(
+                text="Job Market Geographic Distribution<br><sub>Marker size = Job count, Color = Median salary</sub>",
+                x=0.5,
+                font=dict(size=16)
+            ),
+            mapbox=dict(
+                style="open-street-map",
+                center=dict(lat=39.8283, lon=-98.5795),  # Center of US
+                zoom=3
+            ),
+            height=height,
+            margin=dict(l=0, r=0, t=60, b=0),
+            showlegend=False
+        )
+
+        return fig
+
+    def create_folium_salary_map(self, top_n: int = 1000, height: int = 600) -> folium.Map:
+        """
+        Create interactive Folium map visualization of job locations.
+
+        Folium is better than Plotly for geospatial visualizations because:
+        - Built on Leaflet.js (industry-standard mapping library)
+        - Better performance with large datasets
+        - More intuitive zoom/pan controls
+        - Cleaner marker clustering
+        - Better basemap options (OpenStreetMap, Stamen, etc.)
+
+        Args:
+            top_n: Number of top cities to display (default 1000)
+            height: Map height in pixels (default 600)
+
+        Returns:
+            Folium map object
+        """
+        import pandas as pd
+        import json
+
+        # Parse location JSON if needed
+        df_map = self.df.copy()
+
+        # Extract lat/lon from location column if it's JSON
+        if 'location' in df_map.columns:
+            def extract_coords(loc):
+                if pd.isna(loc):
+                    return pd.Series({'lat': None, 'lon': None})
+                try:
+                    if isinstance(loc, dict):
+                        return pd.Series({'lat': loc.get('lat'), 'lon': loc.get('lon')})
+                    elif isinstance(loc, str):
+                        loc_dict = json.loads(loc)
+                        return pd.Series({'lat': loc_dict.get('lat'), 'lon': loc_dict.get('lon')})
+                except:
+                    return pd.Series({'lat': None, 'lon': None})
+                return pd.Series({'lat': None, 'lon': None})
+
+            coords = df_map['location'].apply(extract_coords)
+            df_map['lat'] = coords['lat']
+            df_map['lon'] = coords['lon']
+
+        # Compute salary_avg if it doesn't exist or is empty
+        if 'salary_avg' not in df_map.columns or df_map['salary_avg'].notna().sum() == 0:
+            # Try to compute from salary_min and salary_max
+            if 'salary_min' in df_map.columns and 'salary_max' in df_map.columns:
+                df_map['salary_avg'] = (df_map['salary_min'] + df_map['salary_max']) / 2
+            elif 'salary_single' in df_map.columns:
+                df_map['salary_avg'] = df_map['salary_single']
+            else:
+                raise ValueError("No salary data available (need salary_avg, salary_min/max, or salary_single)")
+
+        # Filter to records with valid coordinates and salary
+        df_map = df_map[
+            df_map['lat'].notna() &
+            df_map['lon'].notna() &
+            df_map['salary_avg'].notna()
+        ].copy()
+
+        # Aggregate by city to reduce points and improve performance
+        city_col = 'city_name' if 'city_name' in df_map.columns else None
+
+        if city_col and city_col in df_map.columns:
+            # Group by city and aggregate
+            city_agg = df_map.groupby(city_col).agg({
+                'lat': 'first',
+                'lon': 'first',
+                'salary_avg': 'median',
+                city_col: 'count'  # job count
+            }).rename(columns={city_col: 'job_count'})
+
+            city_agg = city_agg.reset_index()
+            city_agg = city_agg.sort_values('job_count', ascending=False).head(top_n)
+        else:
+            # Use individual points (sample if too many)
+            if len(df_map) > top_n:
+                city_agg = df_map.sample(top_n, random_state=42)
+            else:
+                city_agg = df_map
+            city_agg['job_count'] = 1
+
+        # Check if we have any data
+        if len(city_agg) == 0:
+            raise ValueError("No valid location data found to create map")
+
+        # Calculate center of map (mean of all coordinates)
+        center_lat = city_agg['lat'].mean()
+        center_lon = city_agg['lon'].mean()
+
+        # Default to US center if coordinates are invalid
+        if pd.isna(center_lat) or pd.isna(center_lon):
+            center_lat, center_lon = 39.8283, -98.5795  # Geographic center of US
+            zoom_start = 4
+        else:
+            zoom_start = 4
+
+        # Create Folium map with a clean basemap
+        m = folium.Map(
+            location=[center_lat, center_lon],
+            zoom_start=zoom_start,
+            tiles='OpenStreetMap',  # Clean, professional basemap
+            width='100%',
+            height=f'{height}px',
+            control_scale=True  # Add scale bar
+        )
+
+        # Add marker cluster for better performance
+        marker_cluster = MarkerCluster(
+            name='Job Locations',
+            overlay=True,
+            control=False,  # Don't show in layer control
+            icon_create_function=None  # Use default clustering
+        ).add_to(m)
+
+        # Determine color scale for salary
+        min_salary = city_agg['salary_avg'].min()
+        max_salary = city_agg['salary_avg'].max()
+
+        def get_marker_color(salary):
+            """Get color based on salary (green-yellow-red scale)"""
+            normalized = (salary - min_salary) / (max_salary - min_salary) if max_salary > min_salary else 0.5
+
+            if normalized < 0.33:
+                return 'red'  # Low salary
+            elif normalized < 0.67:
+                return 'orange'  # Medium salary
+            else:
+                return 'green'  # High salary
+
+        # Add markers for each city
+        for idx, row in city_agg.iterrows():
+            city = row[city_col] if city_col else f"Location {idx}"
+            salary = row['salary_avg']
+            job_count = row['job_count']
+
+            # Create popup content with job details
+            popup_html = f"""
+            <div style="font-family: Arial, sans-serif; width: 200px;">
+                <h4 style="margin: 5px 0; color: #2c3e50;">{city}</h4>
+                <hr style="margin: 5px 0;">
+                <p style="margin: 3px 0;"><strong>Median Salary:</strong> ${salary:,.0f}</p>
+                <p style="margin: 3px 0;"><strong>Job Postings:</strong> {job_count:,}</p>
+            </div>
+            """
+
+            # Add marker to cluster
+            folium.CircleMarker(
+                location=[row['lat'], row['lon']],
+                radius=min(job_count / 50 + 3, 15),  # Size by job count (3-15 pixels)
+                popup=folium.Popup(popup_html, max_width=250),
+                tooltip=f"{city}: ${salary:,.0f} ({job_count:,} jobs)",
+                color=get_marker_color(salary),
+                fill=True,
+                fillColor=get_marker_color(salary),
+                fillOpacity=0.7,
+                weight=2
+            ).add_to(marker_cluster)
+
+        # Add legend
+        legend_html = f"""
+        <div style="position: fixed;
+                    top: 10px; right: 10px; width: 180px;
+                    background-color: white;
+                    border:2px solid grey; z-index:9999;
+                    font-size:14px; padding: 10px;
+                    box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">
+            <p style="margin: 0 0 5px 0; font-weight: bold;">Salary Legend</p>
+            <p style="margin: 3px 0;"><span style="color: green;">●</span> High (${max_salary*0.67:,.0f}+)</p>
+            <p style="margin: 3px 0;"><span style="color: orange;">●</span> Medium (${min_salary + (max_salary-min_salary)*0.33:,.0f} - ${max_salary*0.67:,.0f})</p>
+            <p style="margin: 3px 0;"><span style="color: red;">●</span> Low (&lt; ${min_salary + (max_salary-min_salary)*0.33:,.0f})</p>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Showing top {len(city_agg)} cities</p>
+        </div>
+        """
+        m.get_root().html.add_child(folium.Element(legend_html))
+
+        # Add fullscreen button
+        folium.plugins.Fullscreen(
+            position='topleft',
+            title='Fullscreen',
+            title_cancel='Exit fullscreen',
+            force_separate_button=True
+        ).add_to(m)
+
+        return m
 
 
 class QuartoChartExporter:
@@ -1203,3 +2027,4 @@ class QuartoChartExporter:
         """Create industry salary chart."""
         # Simple implementation
         return f"Chart created: {title}"
+

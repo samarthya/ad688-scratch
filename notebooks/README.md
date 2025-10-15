@@ -50,6 +50,7 @@ All notebooks use **PySpark MLlib** for machine learning and NLP tasks, aligned 
 - Demonstrate `VectorAssembler`, `StandardScaler`, `StringIndexer`
 
 **Key Features**:
+
 - 100% PySpark MLlib (no scikit-learn)
 - Uses standardized column names: `salary_avg`, `salary_from`, `salary_to`, `min_years_experience`, `naics2_name`
 - Automatic data loading from Parquet
@@ -96,6 +97,32 @@ This ensures:
 - Consistent data across all notebooks
 - Fast loading from pre-processed Parquet
 - Automatic generation if processed data is missing
+
+---
+
+## Visualization
+
+For Plotly visualizations, use the **centralized `display_figure()` utility**:
+
+```python
+from src.visualization.charts import display_figure
+import plotly.graph_objects as go
+
+# Create a figure
+fig = go.Figure(...)
+
+# Display and save automatically
+display_figure(fig, "my_chart")  # Saves to figures/my_chart.png
+```
+
+**Benefits**:
+
+- Automatic PNG export for reports (high-quality, 1200x800, scale=2)
+- Consistent file naming and organization
+- Centralized error handling
+- Works in both notebooks and Quarto QMD files
+
+**Note**: For matplotlib plots, continue using `plt.show()` as usual.
 
 ---
 

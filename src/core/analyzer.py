@@ -67,14 +67,14 @@ class SparkJobAnalyzer:
         """Validate raw data structure for basic requirements."""
         errors = []
 
-        # Check for essential columns
-        essential_columns = ['TITLE', 'COMPANY']
+        # Check for essential columns (raw Lightcast data - uppercase)
+        essential_columns = ['TITLE_NAME', 'COMPANY_NAME']
         missing_essential = [col for col in essential_columns if col not in df.columns]
         if missing_essential:
             errors.extend([f"Missing essential column: {col}" for col in missing_essential])
 
-        # Check for optional but important columns
-        optional_columns = ['salary_avg', 'INDUSTRY', 'LOCATION']
+        # Check for optional but important columns (raw Lightcast data - uppercase)
+        optional_columns = ['SALARY_FROM', 'SALARY_TO', 'NAICS2_NAME', 'CITY_NAME', 'MIN_YEARS_EXPERIENCE', 'REMOTE_TYPE_NAME', 'EMPLOYMENT_TYPE_NAME']
         missing_optional = [col for col in optional_columns if col not in df.columns]
         if missing_optional:
             logger.warning(f"Missing optional columns: {missing_optional}")
@@ -93,14 +93,14 @@ class SparkJobAnalyzer:
         # Industry analysis query
         industry_query = """
             SELECT
-                COALESCE(INDUSTRY, 'Unknown') as industry,
+                COALESCE(industry, 'Undefined') as industry,
                 COUNT(*) as job_count,
                 ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary,
                 ROUND(MIN(COALESCE(salary_avg, 0)), 0) as min_salary,
                 ROUND(MAX(COALESCE(salary_avg, 0)), 0) as max_salary
             FROM job_data
             WHERE salary_avg IS NOT NULL AND salary_avg > 0
-            GROUP BY INDUSTRY
+            GROUP BY industry
             ORDER BY avg_salary DESC
             LIMIT {}
         """.format(top_n)
@@ -125,12 +125,12 @@ class SparkJobAnalyzer:
         # Experience analysis query
         exp_query = """
             SELECT
-                COALESCE(EXPERIENCE_LEVEL, 'Unknown') as experience_level,
+                COALESCE(experience_level, 'Unknown') as experience_level,
                 COUNT(*) as job_count,
                 ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary
             FROM job_data
             WHERE salary_avg IS NOT NULL AND salary_avg > 0
-            GROUP BY EXPERIENCE_LEVEL
+            GROUP BY experience_level
             ORDER BY avg_salary DESC
         """
 
@@ -154,12 +154,12 @@ class SparkJobAnalyzer:
         # Geographic analysis query
         geo_query = """
             SELECT
-                COALESCE(STATE, 'Unknown') as state,
+                COALESCE(city_name, 'Undefined') as city_name,
                 COUNT(*) as job_count,
                 ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary
             FROM job_data
             WHERE salary_avg IS NOT NULL AND salary_avg > 0
-            GROUP BY STATE
+            GROUP BY city_name
             ORDER BY avg_salary DESC
             LIMIT {}
         """.format(top_n)
@@ -173,7 +173,7 @@ class SparkJobAnalyzer:
 
         return {
             'data': [dict(row.asDict()) for row in geo_results],
-            'summary': f"Top {top_n} states by average salary"
+            'summary': f"Top {top_n} cities by average salary"
         }
 
     def get_overall_statistics(self) -> Dict[str, Any]:
@@ -185,8 +185,8 @@ class SparkJobAnalyzer:
         stats_query = """
             SELECT
                 COUNT(*) as total_jobs,
-                COUNT(DISTINCT COMPANY) as unique_companies,
-                COUNT(DISTINCT INDUSTRY) as unique_industries,
+                COUNT(DISTINCT company_name) as unique_companies,
+                COUNT(DISTINCT industry) as unique_industries,
                 ROUND(AVG(COALESCE(salary_avg, 0)), 0) as avg_salary,
                 ROUND(MIN(COALESCE(salary_avg, 0)), 0) as min_salary,
                 ROUND(MAX(COALESCE(salary_avg, 0)), 0) as max_salary
