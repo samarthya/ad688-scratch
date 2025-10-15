@@ -60,14 +60,10 @@ def display_figure(fig, filename: Optional[str] = None, save_dir: str = 'figures
 
         png_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Save static images for both HTML and DOCX formats
-
-        # High-quality PNG for DOCX (higher DPI and scale)
         fig.write_image(str(png_path), width=1200, height=800, scale=3, format='png')
         # SVG
         fig.write_image(str(svg_path), width=1200, height=800, format='svg')
-
-        # HTML
+        # HTML (this should always work)
         fig.write_html(str(html_path))
 
     # Return the figure object - Quarto will automatically render it
