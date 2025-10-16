@@ -364,10 +364,12 @@ rf = RandomForestClassifier(
 - No significant overfitting (train R² ≈ test R²)
 - Best hyperparameters: `regParam=0.01`, `elasticNetParam=0.0` (Ridge)
 
+
+::: {.content-visible when-format="html"}
 ```{python}
 #| label: ml-model-performance
 #| echo: false
-#| fig-width: 10
+#| unless-format: html
 
 # Use centralized ML visualization functions from src/visualization/ml_charts.py
 from src.visualization.ml_charts import (
@@ -393,6 +395,42 @@ fig_ml.update_layout(
 
 display_figure(fig_ml, "ml_model_performance")
 ```
+:::
+
+::: {.content-visible when-format="docx"}
+```{python}
+#| label: ml-model-performance-docx
+#| echo: false
+#| fig-width: 10
+#| fig-format: png
+#| unless-format: docx, pdf
+
+# Use centralized ML visualization functions from src/visualization/ml_charts.py
+from src.visualization.ml_charts import (
+    create_ml_performance_comparison,
+    get_default_ml_results
+)
+
+# Get ML results from our trained models
+ml_results = get_default_ml_results()
+
+# Create performance comparison chart using reusable function
+fig_ml = create_ml_performance_comparison(
+    ml_results['regression'],
+    ml_results['classification']
+)
+
+# Adjust layout for DOCX compatibility
+fig_ml.update_layout(
+    width=500,
+    height=400,  # Reduced height for DOCX
+    margin=dict(l=60, r=60, t=80, b=60),
+    font=dict(size=11)  # Slightly smaller font
+)
+
+display_figure(fig_ml, "ml_model_performance")
+```
+:::
 
 ```{python}
 #| label: ml-feature-importance
@@ -537,6 +575,7 @@ display(Markdown(pred_insights))
 
 ### Classification Model: Confusion Matrix
 
+::: {.content-visible when-format="html"}
 ```{python}
 #| label: ml-confusion-matrix
 #| echo: false
@@ -576,6 +615,51 @@ fig_conf.update_layout(
 
 display_figure(fig_conf, "ml_confusion_matrix")
 ```
+:::
+
+::: {.content-visisble when-format="docx"}
+
+```{python}
+#| label: ml-confusion-matrix
+#| echo: false
+#| fig-format: png
+#| unless-format: docx, pdf
+
+# Use centralized confusion matrix visualization function
+import numpy as np
+from src.visualization.ml_charts import create_confusion_matrix_heatmap_docx_optimized
+
+# Confusion matrix values (normalized to percentages)
+# Based on 85% accuracy classification model
+# True Negative: 43%, False Positive: 7%, False Negative: 8%, True Positive: 42%
+confusion_data = np.array([
+    [43, 7],   # Below-average: 43% correct, 7% incorrect
+    [8, 42]    # Above-average: 8% incorrect, 42% correct
+])
+
+class_labels = ['Below Average', 'Above Average']
+
+# Create confusion matrix using DOCX-optimized function with enhanced gradient
+fig_conf = create_confusion_matrix_heatmap_docx_optimized(
+    confusion_data,
+    class_labels,
+    title="Classification Model: Confusion Matrix (Above/Below Median Salary)",
+    colorscale_name='heat_style'  # Use heat style for maximum readability
+)
+
+# Adjust layout for DOCX compatibility (let the function handle colorscale)
+fig_conf.update_layout(
+    height=500,  # Increased height for better visibility
+    margin=dict(l=80, r=80, t=100, b=80),
+    font=dict(size=12),  # Slightly larger font for DOCX
+    autosize=False,
+    width=900
+)
+
+display_figure(fig_conf, "ml_confusion_matrix")
+```
+:::
+
 
 ```{python}
 #| label: confusion-matrix-insights
