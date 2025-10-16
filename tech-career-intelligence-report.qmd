@@ -577,7 +577,7 @@ display(Markdown(pred_insights))
 
 ::: {.content-visible when-format="html"}
 ```{python}
-#| label: ml-confusion-matrix
+#| label: ml-confusion-matrix-html
 #| echo: false
 #| fig-height: 4
 
@@ -617,7 +617,7 @@ display_figure(fig_conf, "ml_confusion_matrix")
 ```
 :::
 
-::: {.content-visisble when-format="docx"}
+::: {.content-visible when-format="docx"}
 
 ```{python}
 #| label: ml-confusion-matrix
