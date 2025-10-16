@@ -1416,26 +1416,56 @@ fig_ai_ml_pct.update_layout(
 display_figure(fig_ai_ml_pct, "ai_ml_percentage_by_location")
 ```
 
-### Comprehensive AI/ML Market Dashboard
+### AI/ML Jobs Count by Location
 
 ```{python}
-#| label: ai-ml-dashboard
+#| label: ai-ml-jobs-count
 #| echo: false
-#| fig-height: 10
+#| fig-height: 6
 
-from src.visualization.ai_ml_charts import create_ai_ml_combined_dashboard
+from src.visualization.ai_ml_charts import create_ai_ml_jobs_count_chart
 
-# Create comprehensive dashboard
-fig_ai_ml_dash = create_ai_ml_combined_dashboard(city_stats)
-fig_ai_ml_dash.update_layout(
-    height=800,
-    margin=dict(l=80, r=80, t=100, b=80),
-    plot_bgcolor='white',
-    paper_bgcolor='white',
-    font=dict(size=11)
-)
+fig_ai_ml_count = create_ai_ml_jobs_count_chart(city_stats)
+display_figure(fig_ai_ml_count, "ai_ml_jobs_count")
+```
 
-display_figure(fig_ai_ml_dash, "ai_ml_location_dashboard")
+### AI/ML Job Concentration by Location
+
+```{python}
+#| label: ai-ml-job-percentage
+#| echo: false
+#| fig-height: 6
+
+from src.visualization.ai_ml_charts import create_ai_ml_concentration_chart
+
+fig_ai_ml_concentration = create_ai_ml_concentration_chart(city_stats)
+display_figure(fig_ai_ml_concentration, "ai_ml_job_percentage")
+```
+
+### Median Salary by Location
+
+```{python}
+#| label: ai-ml-median-salary
+#| echo: false
+#| fig-height: 6
+
+from src.visualization.ai_ml_charts import create_ai_ml_median_salary_chart
+
+fig_ai_ml_salary = create_ai_ml_median_salary_chart(city_stats)
+display_figure(fig_ai_ml_salary, "ai_ml_median_salary")
+```
+
+### Total Jobs Distribution Across Locations
+
+```{python}
+#| label: ai-ml-jobs-distribution
+#| echo: false
+#| fig-height: 6
+
+from src.visualization.ai_ml_charts import create_ai_ml_jobs_distribution_chart
+
+fig_ai_ml_dist = create_ai_ml_jobs_distribution_chart(city_stats)
+display_figure(fig_ai_ml_dist, "ai_ml_jobs_distribution")
 ```
 
 ### AI/ML Market Insights

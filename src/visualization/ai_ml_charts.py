@@ -219,6 +219,206 @@ def create_ai_ml_salary_comparison_chart(
     return fig
 
 
+def create_ai_ml_jobs_count_chart(
+    city_stats: pd.DataFrame,
+    title: str = "AI/ML Jobs Count by Top 5 Locations"
+) -> go.Figure:
+    """
+    Create bar chart showing AI/ML jobs count by location.
+
+    Args:
+        city_stats: DataFrame with columns: city_name, ai_ml_jobs
+        title: Chart title
+
+    Returns:
+        Plotly Figure
+    """
+    # Sort by AI/ML jobs for display
+    city_stats_sorted = city_stats.sort_values('ai_ml_jobs', ascending=False)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=city_stats_sorted['city_name'],
+            y=city_stats_sorted['ai_ml_jobs'],
+            marker=dict(color='#e74c3c'),
+            text=city_stats_sorted['ai_ml_jobs'].apply(lambda x: f'{int(x):,}'),
+            textposition='outside',
+            hovertemplate='<b>%{x}</b><br>AI/ML Jobs: %{y:,}<extra></extra>'
+        )
+    )
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,
+            xanchor='center',
+            font=dict(size=18, color='#2c3e50')
+        ),
+        xaxis_title="Location",
+        yaxis_title="Number of AI/ML Jobs",
+        height=500,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=12),
+        margin=dict(l=80, r=80, t=100, b=80),
+        xaxis=dict(showgrid=False, tickangle=-45),
+        yaxis=dict(showgrid=True, gridcolor='lightgray')
+    )
+
+    return fig
+
+
+def create_ai_ml_concentration_chart(
+    city_stats: pd.DataFrame,
+    title: str = "AI/ML Job Concentration (% of Total Jobs)"
+) -> go.Figure:
+    """
+    Create bar chart showing AI/ML job concentration percentage by location.
+
+    Args:
+        city_stats: DataFrame with columns: city_name, ai_ml_percentage
+        title: Chart title
+
+    Returns:
+        Plotly Figure
+    """
+    # Sort by AI/ML jobs for consistent display
+    city_stats_sorted = city_stats.sort_values('ai_ml_jobs', ascending=False)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=city_stats_sorted['city_name'],
+            y=city_stats_sorted['ai_ml_percentage'],
+            marker=dict(color='#3498db'),
+            text=city_stats_sorted['ai_ml_percentage'].apply(lambda x: f'{x:.1f}%'),
+            textposition='outside',
+            hovertemplate='<b>%{x}</b><br>AI/ML Concentration: %{y:.1f}%<extra></extra>'
+        )
+    )
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,
+            xanchor='center',
+            font=dict(size=18, color='#2c3e50')
+        ),
+        xaxis_title="Location",
+        yaxis_title="Percentage of Jobs in AI/ML (%)",
+        height=500,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=12),
+        margin=dict(l=80, r=80, t=100, b=80),
+        xaxis=dict(showgrid=False, tickangle=-45),
+        yaxis=dict(showgrid=True, gridcolor='lightgray')
+    )
+
+    return fig
+
+
+def create_ai_ml_median_salary_chart(
+    city_stats: pd.DataFrame,
+    title: str = "Median Salary by Top 5 AI/ML Locations"
+) -> go.Figure:
+    """
+    Create bar chart showing median salary by location with color gradient.
+
+    Args:
+        city_stats: DataFrame with columns: city_name, median_salary
+        title: Chart title
+
+    Returns:
+        Plotly Figure
+    """
+    # Sort by AI/ML jobs for consistent display
+    city_stats_sorted = city_stats.sort_values('ai_ml_jobs', ascending=False)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=city_stats_sorted['city_name'],
+            y=city_stats_sorted['median_salary'],
+            marker=dict(
+                color=city_stats_sorted['median_salary'],
+                colorscale='Greens',
+                showscale=True,
+                colorbar=dict(title=dict(text="Salary ($)", side='right'))
+            ),
+            text=city_stats_sorted['median_salary'].apply(lambda x: f'${x:,.0f}'),
+            textposition='outside',
+            hovertemplate='<b>%{x}</b><br>Median Salary: $%{y:,.0f}<extra></extra>'
+        )
+    )
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,
+            xanchor='center',
+            font=dict(size=18, color='#2c3e50')
+        ),
+        xaxis_title="Location",
+        yaxis_title="Median Salary ($)",
+        height=500,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=12),
+        margin=dict(l=80, r=80, t=100, b=80),
+        xaxis=dict(showgrid=False, tickangle=-45),
+        yaxis=dict(showgrid=True, gridcolor='lightgray')
+    )
+
+    return fig
+
+
+def create_ai_ml_jobs_distribution_chart(
+    city_stats: pd.DataFrame,
+    title: str = "Total Jobs Distribution Across Top 5 AI/ML Locations"
+) -> go.Figure:
+    """
+    Create pie chart showing total jobs distribution across locations.
+
+    Args:
+        city_stats: DataFrame with columns: city_name, total_jobs
+        title: Chart title
+
+    Returns:
+        Plotly Figure
+    """
+    # Sort by AI/ML jobs for consistent display
+    city_stats_sorted = city_stats.sort_values('ai_ml_jobs', ascending=False)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Pie(
+            labels=city_stats_sorted['city_name'],
+            values=city_stats_sorted['total_jobs'],
+            marker=dict(colors=px.colors.qualitative.Set3),
+            textinfo='label+percent',
+            hovertemplate='<b>%{label}</b><br>Total Jobs: %{value:,}<br>%{percent}<extra></extra>'
+        )
+    )
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,
+            xanchor='center',
+            font=dict(size=18, color='#2c3e50')
+        ),
+        height=500,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=12),
+        margin=dict(l=80, r=80, t=100, b=80)
+    )
+
+    return fig
+
+
 def create_ai_ml_combined_dashboard(
     city_stats: pd.DataFrame,
     title: str = "AI/ML Jobs Analysis: Top 5 Locations"
