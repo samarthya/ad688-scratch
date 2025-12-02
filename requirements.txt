@@ -25,7 +25,7 @@ defusedxml==0.7.1
 executing==2.2.1
 fastjsonschema==2.21.2
 findspark==2.0.1
-fonttools==4.60.0
+fonttools==4.61.0
 fqdn==1.5.1
 greenlet==3.2.4
 
