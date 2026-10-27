@@ -85,7 +85,7 @@ parso==0.8.5
 
 patsy==1.0.1
 pexpect==4.9.0
-pillow==11.3.0
+pillow==13.0.0
 platformdirs==4.4.0
 plotly==6.3.0
 folium==0.18.0
