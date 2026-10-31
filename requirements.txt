@@ -66,7 +66,7 @@ MarkupSafe==3.0.2
 matplotlib==3.10.6
 matplotlib-inline==0.1.7
 mccabe==0.7.0
-mistune==3.1.4
+mistune==3.3.3
 narwhals==2.5.0
 nbclient==0.10.2
 nbconvert==7.16.6
