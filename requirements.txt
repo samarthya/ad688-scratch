@@ -9,7 +9,7 @@ attrs==25.3.0
 babel==2.17.0
 bleach==6.2.0
 blinker==1.9.0
-certifi==2025.8.3
+certifi==2026.10.18
 cffi==2.0.0
 charset-normalizer==3.4.3
 choreographer==1.1.1
